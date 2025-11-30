@@ -280,8 +280,6 @@ def selectRandomGraphNodeByCentrality(graph, centrality):
         return random.choice(selected_nodes)
     return None
 
-
-
 def generate_random_infrastructure(setup, **kwargs):
     """
     Generates a random graph using the NetworkX library.
@@ -421,7 +419,6 @@ def solve_application_placement(graph, application_set, user_set):
         print(f"No Optimal Solution Found. Status: {LpStatus[prob.status]}")
         return None, None
 
-
 def solve_application_placementOLD(graph, application_set, user_set):
     """Solves the application placement problem using ILP."""
     applications = application_set.get_all_applications()
@@ -524,7 +521,6 @@ if __name__ == "__main__":
         print(generated_users)
 
     if generated_apps and generated_users and generated_infrastructure:
-
         optimal_placement, total_latency = solve_application_placement(generated_infrastructure, generated_apps, generated_users)
 
         if optimal_placement:
