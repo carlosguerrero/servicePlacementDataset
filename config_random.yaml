@@ -1,0 +1,29 @@
+setup:
+  mode: random
+  num_nodes: 10
+  graph_model: 'watts_strogatz' 
+
+model_params:
+  k: 4
+  p_rewire: 0.1
+
+# Min and max of the random generartions
+attributes:
+  node:
+    ram: [1.0, 16.0]
+  
+  edge:
+    delay: [0.1, 5.0]
+  
+  app:
+    num_apps: 3
+    popularity: [0.1, 1.0]
+    cpu: [0.1, 4.0]
+    ram: [0.5, 8.0]
+    disk: [10, 100]
+    
+  user:
+    num_users: 2
+    request_ratio: [0.1, 1.0]
+    request_popularity: [0.1, 1.0]
+    centrality: [0.1, 1.0]

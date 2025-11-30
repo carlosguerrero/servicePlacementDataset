@@ -1,0 +1,35 @@
+setup:
+  mode: manual
+
+topology:
+  nodes:
+    - id: 0
+      ram: 32.0
+      cpu: 8
+      type: "master"
+    - id: 1
+      ram: 4.0
+      cpu: 2
+      type: "worker"
+    - id: 2
+      ram: 4.0
+      cpu: 2
+      type: "worker"
+    - id: 3
+      ram: 2.0
+      cpu: 1
+      type: "edge_device"
+
+  edges:
+    - source: 0
+      target: 1
+      delay: 1.5
+      bandwidth: 1000
+    - source: 0
+      target: 2
+      delay: 1.2
+      bandwidth: 1000
+    - source: 1
+      target: 3
+      delay: 10.5
+      bandwidth: 100
