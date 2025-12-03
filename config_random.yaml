@@ -27,3 +27,5 @@ attributes:
     request_ratio: [0.1, 1.0]
     request_popularity: [0.1, 1.0]
     centrality: [0.1, 1.0]
+    time: [0, 300]
+    action: [1, 0]

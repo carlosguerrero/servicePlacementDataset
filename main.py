@@ -12,13 +12,13 @@ def load_config(config_path):
     with open(config_path, 'r') as file:
         return yaml.safe_load(file)
 
-def get_random_from_range(config, category, key):
-    """Helper to get a random float between min and max defined in YAML."""
-    try:
-        r = config['attributes'][category][key]
-        return round(random.uniform(r[0], r[1]), 2)
-    except KeyError:
-        return 1.0
+def get_random_from_range(config, category, key, distribution=None):
+    """Helper to get a random float between min and max defined in YAML.
+    with the probability distribution function as we choose.
+    """
+    r = config['attributes'][category][key]
+    dist_func = distribution if distribution else random.uniform
+    return round(dist_func(r[0], r[1]), 2)
 
 def _generate_random_graph(config):
     """Internal function to handle the 'random' generation mode."""
@@ -253,14 +253,16 @@ class UserSet:
         self.user_counter += 1
         return name
 
-    def newUserItem(self, name, requestedApp, appName, requestRatio, connectedTo):
+    def newUserItem(self, name, requestedApp, appName, requestRatio, connectedTo, time, action):
         """Creates a new user item with the given attributes."""
         return {
             'name': name,
             'requestedApp': requestedApp,
             'appName': appName,
             'requestRatio': requestRatio,
-            'connectedTo': connectedTo
+            'connectedTo': connectedTo,
+            'time': time,
+            'action': action
         }
 
     def getAllUsersByApp(self, appId):
@@ -292,6 +294,14 @@ class UserSet:
             del self.users[user_id]
             return True
         return False
+    
+    # REVISAR: pendiente de definir
+    def move_user(self, user_id, graph):
+        node = None
+        selected_nodes = [node for node, data in graph.nodes(data=True)] # if ]
+        # quiero coger por ahora un nodo aleatprio que no esté cogido por ningún otro usuario
+        # puede haber más de un usuario en el mismo nodo??
+        # y que no sea el mismo que tenía hasta ahora
 
     def get_user(self, user_id):
         """Retrieves a user by their ID from the set."""
@@ -337,7 +347,9 @@ def generate_random_users(config, appsSet, infrastructure):
             requestedApp=rqApp,  # Randomly select an application based on popularity
             appName=appNm,
             requestRatio=get_random_from_range(config, 'user', 'request_popularity'),
-            connectedTo=selectRandomGraphNodeByCentrality(infrastructure, get_random_from_range(config, 'user', 'centrality'))  # Randomly select a node from the graph
+            connectedTo=selectRandomGraphNodeByCentrality(infrastructure, get_random_from_range(config, 'user', 'centrality')),  # Randomly select a node from the graph
+            time = get_random_from_range(config, 'user', 'time'),
+            action = selectRandomAction('user', config['attributes']['user']['action'])
         )
         user_set.add_user(userAttributes)
     return user_set
@@ -357,6 +369,19 @@ def selectRandomGraphNodeByCentrality(graph, centrality):
     if selected_nodes:
         return random.choice(selected_nodes)
     return None
+
+def selectRandomAction(type_object, probabilities):
+    if type_object == 'user':
+        actions = ["remove_user", "move_user"]
+        return random.choices(actions, weights=probabilities, k=1)[0]
+        # necesito asignarle una acción aleatoria de la lista:
+        # remove_user o move_user
+    elif type_object == 'app':
+        # REVISAR
+        actions = ["add_app", "remove_app"]
+        return random.choices(actions, weights=probabilities, k=1)[0]
+    else:
+        return "unknown type"
 
 def solve_application_placement(graph, application_set, user_set):
     """Solves the application placement problem using ILP."""
@@ -422,8 +447,6 @@ def solve_application_placement(graph, application_set, user_set):
                     placement[app_data['name']] = node
                     total_ram_used_per_node[node] += app_data['ram']
                     break
-        print("Application Placement:", placement)
-        print("Total Weighted Latency:", value(prob.objective))
 
         # Update the graph nodes with the placement information
         #for node in nodes:
@@ -441,7 +464,14 @@ def solve_application_placement(graph, application_set, user_set):
         print(f"No Optimal Solution Found. Status: {LpStatus[prob.status]}")
         return None, None
 
-if __name__ == "__main__":
+
+
+
+
+def scenario1():
+    pass
+
+def main():
     random.seed(42)
 
     # MANUAL GENERATION OF GRAPH: config_manual = "config_manual.yaml"
@@ -472,7 +502,19 @@ if __name__ == "__main__":
             print("\nUpdated Node Information with Application Placement:")
             for node in generated_infrastructure.nodes(data=True):
                 print(f"Node {node[0]}: RAM Total={node[1].get('ram')}, RAM Used={node[1].get('ram_used')}, Running Apps={[generated_apps.get_application(app_id)['name'] for app_id in node[1].get('running_applications', [])]}")
+            # return optimal_placement
         else:
             print("No feasible solution found for application placement.")
+
+
+    # WORKING ON ITERATIONS
+    print(" ")
+
+    print("User added:", generated_users.get_user('f4a4813c-b169-4f6a-8728-4a2d5622c04f'))
+    print(selectRandomAction('user', [9,1]))
+
+
+if __name__ == "__main__":
+    main()
 
             
