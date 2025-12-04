@@ -21,6 +21,8 @@ attributes:
     cpu: [0.1, 4.0]
     ram: [0.5, 8.0]
     disk: [10, 100]
+    time: [0, 300]
+    action: [1, 0]
     
   user:
     num_users: 2

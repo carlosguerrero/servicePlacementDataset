@@ -170,14 +170,16 @@ class ApplicationSet:
                 return app['ram']
         return None
 
-    def newAppItem(self, name, popularity, cpu, ram, disk):
+    def newAppItem(self, name, popularity, cpu, ram, disk, time, action):
         """Creates a new application item with the given attributes."""
         return {
             'name': name,
             'popularity': popularity,
             'cpu': cpu,
             'ram': ram,
-            'disk': disk
+            'disk': disk,
+            'time': time,
+            'action': action
         }
 
     def add_application(self, appAttributes):
@@ -199,7 +201,7 @@ class ApplicationSet:
         """Retrieves an application by its ID from the set."""
         return self.applications.get(app_id)
 
-    def get_all_applications(self):
+    def get_all_apps(self):
         """Returns all applications in the set."""
         return self.applications
     
@@ -237,7 +239,9 @@ def generate_random_apps(config):
             popularity=get_random_from_range(config, 'app', 'popularity'),  # Random popularity between 0.1 and 1.0
             cpu=get_random_from_range(config, 'app', 'cpu'),  # Random CPU requirement between 0.1 and 4.0 cores
             ram=get_random_from_range(config, 'app', 'ram'),  # Random RAM requirement between 0.5 and 8.0 GB
-            disk=get_random_from_range(config, 'app', 'disk')  ) # Random disk space requirement between 10 and 100 GB
+            disk=get_random_from_range(config, 'app', 'disk'),  # Random disk space requirement between 10 and 100 GB
+            time = get_random_from_range(config, 'app', 'time'),
+            action = selectRandomAction('app', config['attributes']['app']['action']) ) 
        application_set.add_application(appAttributes)
     return application_set
 
@@ -339,9 +343,7 @@ def generate_random_users(config, appsSet, infrastructure):
     # Create some users in the set
     for i in range(num_users):
         rqApp=appsSet.selectRandomAppIdByPopularity(get_random_from_range(config, 'user', 'request_popularity'))
-        print(rqApp)
         appNm=appsSet.get_application(rqApp)['name']
-        print(appNm)
         userAttributes = user_set.newUserItem(
             name=user_set.getNextUserId(),
             requestedApp=rqApp,  # Randomly select an application based on popularity
@@ -378,14 +380,53 @@ def selectRandomAction(type_object, probabilities):
         # remove_user o move_user
     elif type_object == 'app':
         # REVISAR
-        actions = ["add_app", "remove_app"]
+        actions = ["remove_app", "add_app"]
         return random.choices(actions, weights=probabilities, k=1)[0]
     else:
-        return "unknown type"
+        return "No type_object recognized"
+
+class EventSet:
+    def __init__(self):
+        self.events = {}
+        self.global_time = 0
+
+    def newUserItem(self, type_object, id, time, action):
+        """Creates a new user item with the given attributes."""
+        return {
+            'type_object': type_object,
+            'id': id,
+            'time': time,
+            'action': action
+        }
+    
+    def add_event(self, eventAttributes):
+        """Adds a new user to the set."""
+        event_id = str(uuid.uuid4())  # Generates a unique identifier
+        eventAttributes['id'] = event_id
+        self.events[event_id] = eventAttributes
+        return event_id
+
+    def __str__(self):
+        """Returns a string representation of the EventSet (the events list)."""
+        return str(self.events)
+
+def generate_events(objects_list, type_object, event_set):
+    """type_object: 'user' or 'app'
+    Later will be also be node"""
+
+    for i in eval('objects_list' + '.get_all_' + type_object + 's().values()'):
+        eventAttributes = event_set.newUserItem(
+            id=i['id'],
+            type_object=type_object,
+            time = i['time'],
+            action = i['action']
+        )
+        event_set.add_event(eventAttributes)
+    return event_set
 
 def solve_application_placement(graph, application_set, user_set):
     """Solves the application placement problem using ILP."""
-    applications = application_set.get_all_applications()
+    applications = application_set.get_all_apps()
     nodes = list(graph.nodes())
     users = user_set.get_all_users()
 
@@ -464,12 +505,37 @@ def solve_application_placement(graph, application_set, user_set):
         print(f"No Optimal Solution Found. Status: {LpStatus[prob.status]}")
         return None, None
 
+# REVISAR: CARLOS no sé si esta es la forma más óptima de hacerlo
+def update_system_state(event, update_set):
+    if event[1]['action'].startswith('remove'):
+        # No need to update anything
+        print("Id es ", event[1]['id'])
+        update_set = update_set.remove_user(event[1]['id']) 
+        # update_set = eval('update_set.' + event[1]['action'] + '(' + event[1]['id'] + ')')
+        # BORRAR: update_set = eval(f"update_set.{event[1]['action']}({repr(event[1]['id'])})")
 
+        return update_set
+    elif event[1]['action'].startswith('move'):
+        # user_set.move_user(event[1]['id'])) # por graph
+        # Hay que actualizar el nodo al que está conectado el usuario
+        # y también hay que asignar un nuevo tiempo: random time + global_time
+        pass
 
+def scenario1(events_list, application_set, user_set):
+    sorted_events = sorted(events_list.items(), key=lambda item: item[1]['time'])
+    global_time = 0
+    while sorted_events or global_time < 300:
+        for event in sorted_events:
+            global_time = event[1]['time']
+            if event[1]['type_object'] == 'user':
+                user_set = update_system_state(event, user_set)
+            elif event[1]['type_object'] == 'app':
+                application_set = update_system_state(event, application_set)
+            
+            print(f"Global Time: {global_time}")
+            print(f"Users: {user_set}")
 
-
-def scenario1():
-    pass
+    return sorted_events
 
 def main():
     random.seed(42)
@@ -506,12 +572,24 @@ def main():
         else:
             print("No feasible solution found for application placement.")
 
+    
 
     # WORKING ON ITERATIONS
     print(" ")
+    print("---- EVENTS ----")
 
-    print("User added:", generated_users.get_user('f4a4813c-b169-4f6a-8728-4a2d5622c04f'))
-    print(selectRandomAction('user', [9,1]))
+    
+
+    generated_events = EventSet()
+    generated_events = generate_events(generated_users, 'user', generated_events)
+    # REVISAR: Por ahora no añado las apps aún
+    # generated_events = generate_events(generated_apps, 'app', generated_events)
+    print(generated_events)
+
+    # print("Elemento eliminado: ", list(generated_users.get_all_users().keys())[0])
+    # generated_users.remove_user(list(generated_users.get_all_users().keys())[0])  # Remove first user for testing
+
+    scenario1(generated_events.events, generated_apps, generated_users)
 
 
 if __name__ == "__main__":
