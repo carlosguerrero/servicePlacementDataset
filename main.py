@@ -6,6 +6,8 @@ import random
 import uuid
 import networkx as nx
 from pulp import *
+# import json
+import pickle
 
 def load_config(config_path):
     """Loads the YAML configuration file."""
@@ -390,11 +392,25 @@ class EventSet:
         self.events = {}
         self.global_time = 0
 
-    def newUserItem(self, type_object, id, time, action):
+    def sort_by_time(self):
+        # 1. Get items, 2. Sort them by time, 3. Convert back to dict
+        self.events = dict(sorted(
+            self.events.items(), 
+            key=lambda item: item[1]['time']
+        ))
+    
+    def get_first_event(self):
+        if not self.events:
+            return None
+            
+        first_id = next(iter(self.events))
+        return self.events[first_id]
+
+    def newUserItem(self, type_object, object_id, time, action):
         """Creates a new user item with the given attributes."""
         return {
             'type_object': type_object,
-            'id': id,
+            'object_id': object_id,
             'time': time,
             'action': action
         }
@@ -405,6 +421,13 @@ class EventSet:
         eventAttributes['id'] = event_id
         self.events[event_id] = eventAttributes
         return event_id
+    
+    def remove_event(self, event_id):
+        """Removes a user from the set based on its ID."""
+        if event_id in self.events:
+            del self.events[event_id]
+            return True
+        return False
 
     def __str__(self):
         """Returns a string representation of the EventSet (the events list)."""
@@ -416,9 +439,9 @@ def generate_events(objects_list, type_object, event_set):
 
     for i in eval('objects_list' + '.get_all_' + type_object + 's().values()'):
         eventAttributes = event_set.newUserItem(
-            id=i['id'],
+            object_id=i['id'],
             type_object=type_object,
-            time = i['time'],
+            time = i['time'] + event_set.global_time, # BORRAR: puede dar problemas
             action = i['action']
         )
         event_set.add_event(eventAttributes)
@@ -441,8 +464,6 @@ def solve_application_placement(graph, application_set, user_set):
         print("Warning: Graph is disconnected. Some shortest paths might not exist.")
         # Handle disconnected components if necessary, e.g., by assigning a very large delay
         all_pairs_shortest_paths = {} # Fallback
-
-    print(all_pairs_shortest_paths)
 
     # Decision variable: Is application 'a' placed on node 'n'? (Binary: 0 = no, 1 = yes)
     x_an = LpVariable.dicts("Place", [(app_id, node) for app_id in applications for node in nodes], cat='Binary')
@@ -506,36 +527,41 @@ def solve_application_placement(graph, application_set, user_set):
         return None, None
 
 # REVISAR: CARLOS no sé si esta es la forma más óptima de hacerlo
-def update_system_state(event, update_set):
-    if event[1]['action'].startswith('remove'):
-        # No need to update anything
-        print("Id es ", event[1]['id'])
-        update_set = update_set.remove_user(event[1]['id']) 
-        # update_set = eval('update_set.' + event[1]['action'] + '(' + event[1]['id'] + ')')
-        # BORRAR: update_set = eval(f"update_set.{event[1]['action']}({repr(event[1]['id'])})")
+def update_system_state(events_list, update_set):
+    # Apply action to the set user_set or app_set
+    event = events_list.get_first_event()
+    eval(f"update_set.{event['action']}('{event['object_id']}')")
 
-        return update_set
-    elif event[1]['action'].startswith('move'):
+    if events_list.get_first_event()['action'].startswith('remove'):
+        events_list.remove_event(events_list.get_first_event()['id'])
+        print(update_set)
+        print("Update event list después update:", events_list)
+        print(" ")
+
+    elif events_list.get_first_event()['action'].startswith('move'):
         # user_set.move_user(event[1]['id'])) # por graph
         # Hay que actualizar el nodo al que está conectado el usuario
         # y también hay que asignar un nuevo tiempo: random time + global_time
         pass
 
-def scenario1(events_list, application_set, user_set):
-    sorted_events = sorted(events_list.items(), key=lambda item: item[1]['time'])
+def scenario1(events_list, app_set, user_set):
     global_time = 0
-    while sorted_events or global_time < 300:
-        for event in sorted_events:
-            global_time = event[1]['time']
-            if event[1]['type_object'] == 'user':
-                user_set = update_system_state(event, user_set)
-            elif event[1]['type_object'] == 'app':
-                application_set = update_system_state(event, application_set)
-            
-            print(f"Global Time: {global_time}")
-            print(f"Users: {user_set}")
+    max_iterations = 1
 
-    return sorted_events
+    while events_list.events and max_iterations < 10: # and global_time < 300
+        # 1 Sort the events by time
+        # 2 Get first event
+        # 3 Update everything (user_set/app_set and events_list)
+        # 3.2 Update global_time!!
+        # 4 Save new scenario and solutions
+        print("Paso ", max_iterations)
+        events_list.sort_by_time()
+        set_for_update = eval(events_list.get_first_event()['type_object'] + '_set')
+        update_system_state(events_list, set_for_update)
+
+        max_iterations += 1
+
+    pass
 
 def main():
     random.seed(42)
@@ -549,9 +575,7 @@ def main():
     generated_infrastructure = generate_infrastructure(config)
     print(f"Nodes: {generated_infrastructure.number_of_nodes()}")
     print(f"Edges: {generated_infrastructure.number_of_edges()}")
-    first_edge = list(generated_infrastructure.edges())[0]
-    print(f"Edge {first_edge} Attributes: {generated_infrastructure.edges[first_edge]}")
-    
+
     generated_apps = generate_random_apps(config)
     print(f"Apps: {generated_apps}")
 
@@ -572,24 +596,56 @@ def main():
         else:
             print("No feasible solution found for application placement.")
 
+    all_results = []
+
+    current_result = {
+        "infrastructure": generated_infrastructure,
+        "apps": generated_apps,
+        "users": generated_users,
+        "iteration_id": 0,
+        "event": "START",
+        "placement": optimal_placement,
+        "total_latency": total_latency
+    }
+    
+    all_results.append(current_result)
     
 
     # WORKING ON ITERATIONS
     print(" ")
     print("---- EVENTS ----")
-
+    print("Users son", generated_users)
     
 
     generated_events = EventSet()
     generated_events = generate_events(generated_users, 'user', generated_events)
     # REVISAR: Por ahora no añado las apps aún
     # generated_events = generate_events(generated_apps, 'app', generated_events)
-    print(generated_events)
+    print("Events son:", generated_events)
 
-    # print("Elemento eliminado: ", list(generated_users.get_all_users().keys())[0])
+    print("Elemento eliminado: ", list(generated_users.get_all_users().keys())[0])
     # generated_users.remove_user(list(generated_users.get_all_users().keys())[0])  # Remove first user for testing
 
-    scenario1(generated_events.events, generated_apps, generated_users)
+    scenario1(generated_events, generated_apps, generated_users)
+
+    # BORRAR: no funciona el JSON
+    # with open('simulation_results.json', 'w') as f:
+    #     json.dump(all_results, f, indent=4)
+
+    # print("Results saved to simulation_results.json")
+
+
+    with open('simulation_results.pkl', 'wb') as f:  # 'wb' means Write Binary
+        pickle.dump(all_results, f)
+
+    print("Objects saved to simulation_results.pkl")
+
+    # with open('simulation_results.pkl', 'rb') as f:  # 'rb' means Read Binary
+    # loaded_results = pickle.load(f)
+
+    # # Now you have your actual objects back!
+    # first_result = loaded_results[0]
+    # print(first_result.total_latency) # Works perfectly
 
 
 if __name__ == "__main__":
