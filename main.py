@@ -6,21 +6,15 @@ import random
 import uuid
 import networkx as nx
 from pulp import *
-# import json
 import pickle
+
+from src import EventSet, generate_events, ApplicationSet, generate_random_apps, UserSet, generate_random_users
+from utils import get_random_from_range
 
 def load_config(config_path):
     """Loads the YAML configuration file."""
     with open(config_path, 'r') as file:
         return yaml.safe_load(file)
-
-def get_random_from_range(config, category, key, distribution=None):
-    """Helper to get a random float between min and max defined in YAML.
-    with the probability distribution function as we choose.
-    """
-    r = config['attributes'][category][key]
-    dist_func = distribution if distribution else random.uniform
-    return round(dist_func(r[0], r[1]), 2)
 
 def _generate_random_graph(config):
     """Internal function to handle the 'random' generation mode."""
@@ -112,340 +106,6 @@ def generate_infrastructure(config):
             print(f"Could not calculate centrality: {e}")
 
     return graph
-
-class ApplicationSet:
-    def __init__(self):
-        self.applications = {}
-        # Initialize a counter to keep track of App IDs (App_0, App_1)
-        self.app_counter = 0
-
-    def getNextAppId(self):
-        """Generates the next sequential application name."""
-        name = f"App_{self.app_counter}"
-        self.app_counter += 1
-        return name
-
-    def selectRandomAppByAggregatedPopularity(self, popularity):
-        """
-        Selects a random application based on the aggregated popularity of the applications.
-
-        Args:
-            popularity (float): The aggregated popularity value to use for selection.
-
-        Returns:
-            str: The name of the selected application.
-        """
-        total_popularity = sum(app['popularity'] for app in self.applications.values())
-        if total_popularity == 0:
-            return None
-
-        # Normalize the popularity values
-        normalized_popularity = {app_id: app['popularity'] / total_popularity for app_id, app in self.applications.items()}
-
-        # Select a random application based on the normalized popularity
-        selected_app = random.choices(list(normalized_popularity.keys()), weights=normalized_popularity.values(), k=1)[0]
-        return selected_app
-    
-    def selectRandomAppIdByPopularity(self, popularity):
-        """Selects a random application based on its popularity."""
-        selected_apps = [app for app in self.applications.values() if app['popularity'] >= popularity]
-        if selected_apps:
-            rndApp = random.choice(selected_apps)
-            return rndApp['id']
-        # If no applications meet the popularity criteria, return any random application to satisfy requirement of 
-        # all the users should have an application to request  
-        selected_apps = [app for app in self.applications.values()]
-        rndApp = random.choice(selected_apps)
-        return rndApp['id']
-
-    def get_application_name_by_id(self, app_id):   
-        """Retrieves the name of an application by its ID."""
-        app = self.applications.get(app_id)
-        if app:
-            return app['name']
-        return None
-       
-    def get_application_ram_by_name(self, app_name):
-        """Retrieves the RAM requirement of an application by its name."""
-        for app in self.applications.values():
-            if app['name'] == app_name:
-                return app['ram']
-        return None
-
-    def newAppItem(self, name, popularity, cpu, ram, disk, time, action):
-        """Creates a new application item with the given attributes."""
-        return {
-            'name': name,
-            'popularity': popularity,
-            'cpu': cpu,
-            'ram': ram,
-            'disk': disk,
-            'time': time,
-            'action': action
-        }
-
-    def add_application(self, appAttributes):
-        """Adds a new application to the set."""
-        app_id = str(uuid.uuid4())  # Generates a unique identifier
-        appAttributes['id'] = app_id
-        self.applications[app_id] = appAttributes
-        return app_id
-
-    def remove_application(self, app_id, users):
-        """Removes an application from the set based on its ID."""
-        if app_id in self.applications:
-            del self.applications[app_id]
-            users.remove_user_by_requested_app(app_id)  # Remove users requesting this app
-            return True
-        return False
-
-    def get_application(self, app_id):
-        """Retrieves an application by its ID from the set."""
-        return self.applications.get(app_id)
-
-    def get_all_apps(self):
-        """Returns all applications in the set."""
-        return self.applications
-    
-    def __str__(self):
-        """Returns a string representation of the ApplicationSet (the applications dictionary)."""
-        return str(self.applications)
-    
-    def __repr__(self):
-        """Official string representation for developers (useful for debugging)."""
-        return f"ApplicationSet(applications={self.applications})"
-
-def generate_random_apps(config):
-    """
-    Generates a list of random applications with random resource requirements.
-
-    Args:
-        num_apps (int): The number of applications to generate.
-        **kwargs: Additional arguments to customize the application generation.
-
-    Returns:
-        list: A list of dictionaries representing the generated applications.
-    """
-
-
-    application_set = ApplicationSet()
-    # Create some applications in the set
-
-    attributes = config.get('attributes', {})
-    app = attributes.get('app', {})
-    num_apps = app.get('num_apps', 1)
-
-    for i in range(num_apps):
-       appAttributes=application_set.newAppItem(
-            name=application_set.getNextAppId(),
-            popularity=get_random_from_range(config, 'app', 'popularity'),  # Random popularity between 0.1 and 1.0
-            cpu=get_random_from_range(config, 'app', 'cpu'),  # Random CPU requirement between 0.1 and 4.0 cores
-            ram=get_random_from_range(config, 'app', 'ram'),  # Random RAM requirement between 0.5 and 8.0 GB
-            disk=get_random_from_range(config, 'app', 'disk'),  # Random disk space requirement between 10 and 100 GB
-            time = get_random_from_range(config, 'app', 'time'),
-            action = selectRandomAction('app', config['attributes']['app']['action']) ) 
-       application_set.add_application(appAttributes)
-    return application_set
-
-class UserSet:
-    def __init__(self):
-        self.users = {}
-        # Initialize a counter to keep track of User IDs (User_0, Usser_1)
-        self.user_counter = 0
-
-    def getNextUserId(self):
-        """Generates the next sequential application name."""
-        name = f"User_{self.user_counter}"
-        self.user_counter += 1
-        return name
-
-    def newUserItem(self, name, requestedApp, appName, requestRatio, connectedTo, time, action):
-        """Creates a new user item with the given attributes."""
-        return {
-            'name': name,
-            'requestedApp': requestedApp,
-            'appName': appName,
-            'requestRatio': requestRatio,
-            'connectedTo': connectedTo,
-            'time': time,
-            'action': action
-        }
-
-    def getAllUsersByApp(self, appId):
-        """Returns all users that requested a specific application."""
-        return [user for user in self.users.values() if user['requestedApp'] == appId]
-    
-    def getAllUsersByNode(self, nodeId):
-        """Returns all users connected to a specific node."""
-        return [user for user in self.users.values() if user['connectedTo'] == nodeId]
-
-    def add_user(self, userAttributes):
-        """Adds a new user to the set."""
-        user_id = str(uuid.uuid4())  # Generates a unique identifier
-        userAttributes['id'] = user_id
-        self.users[user_id] = userAttributes
-        return user_id
-
-    def remove_user_by_requested_app(self, requested_app):
-        """Removes a user from the set based on their requested application."""
-        for user_id, user in list(self.users.items()):
-            if user['requestedApp'] == requested_app:
-                del self.users[user_id]
-                return True
-        return False
-    
-    def remove_user(self, user_id):
-        """Removes a user from the set based on its ID."""
-        if user_id in self.users:
-            del self.users[user_id]
-            return True
-        return False
-    
-    # REVISAR: pendiente de definir
-    def move_user(self, user_id, graph):
-        node = None
-        selected_nodes = [node for node, data in graph.nodes(data=True)] # if ]
-        # quiero coger por ahora un nodo aleatprio que no esté cogido por ningún otro usuario
-        # puede haber más de un usuario en el mismo nodo??
-        # y que no sea el mismo que tenía hasta ahora
-
-    def get_user(self, user_id):
-        """Retrieves a user by their ID from the set."""
-        return self.users.get(user_id)
-
-    def get_all_users(self):
-        """Returns all users in the set."""
-        return self.users
-
-    def __str__(self):
-        """Returns a string representation of the UserSet (the users dictionary)."""
-        return str(self.users)
-
-    def __repr__(self):
-        """Official string representation for developers (useful for debugging)."""
-        return f"UserSet(users={self.users})"
-
-def generate_random_users(config, appsSet, infrastructure):
-    """
-    Generates a list of random users with random application requests.
-
-    Args:
-        num_users (int): The number of users to generate.
-        **kwargs: Additional arguments to customize the user generation.
-
-    Returns:
-        list: A list of dictionaries representing the generated users.
-    """
-    user_set = UserSet()
-
-    attributes = config.get('attributes', {})
-    app = attributes.get('user', {})
-    num_users = app.get('num_users', 2)
-
-    # Create some users in the set
-    for i in range(num_users):
-        rqApp=appsSet.selectRandomAppIdByPopularity(get_random_from_range(config, 'user', 'request_popularity'))
-        appNm=appsSet.get_application(rqApp)['name']
-        userAttributes = user_set.newUserItem(
-            name=user_set.getNextUserId(),
-            requestedApp=rqApp,  # Randomly select an application based on popularity
-            appName=appNm,
-            requestRatio=get_random_from_range(config, 'user', 'request_popularity'),
-            connectedTo=selectRandomGraphNodeByCentrality(infrastructure, get_random_from_range(config, 'user', 'centrality')),  # Randomly select a node from the graph
-            time = get_random_from_range(config, 'user', 'time'),
-            action = selectRandomAction('user', config['attributes']['user']['action'])
-        )
-        user_set.add_user(userAttributes)
-    return user_set
-
-def selectRandomGraphNodeByCentrality(graph, centrality):  
-    """
-    Selects a random node from the graph based on its betweenness centrality.
-
-    Args:
-        graph (networkx.Graph): The input graph.
-        centrality (float): The centrality threshold for selection.
-
-    Returns:
-        str: The ID of the selected node.
-    """
-    selected_nodes = [node for node, data in graph.nodes(data=True) if data['betweenness_centrality'] <= centrality]
-    if selected_nodes:
-        return random.choice(selected_nodes)
-    return None
-
-def selectRandomAction(type_object, probabilities):
-    if type_object == 'user':
-        actions = ["remove_user", "move_user"]
-        return random.choices(actions, weights=probabilities, k=1)[0]
-        # necesito asignarle una acción aleatoria de la lista:
-        # remove_user o move_user
-    elif type_object == 'app':
-        # REVISAR
-        actions = ["remove_app", "add_app"]
-        return random.choices(actions, weights=probabilities, k=1)[0]
-    else:
-        return "No type_object recognized"
-
-class EventSet:
-    def __init__(self):
-        self.events = {}
-        self.global_time = 0
-
-    def sort_by_time(self):
-        # 1. Get items, 2. Sort them by time, 3. Convert back to dict
-        self.events = dict(sorted(
-            self.events.items(), 
-            key=lambda item: item[1]['time']
-        ))
-    
-    def get_first_event(self):
-        if not self.events:
-            return None
-            
-        first_id = next(iter(self.events))
-        return self.events[first_id]
-
-    def newUserItem(self, type_object, object_id, time, action):
-        """Creates a new user item with the given attributes."""
-        return {
-            'type_object': type_object,
-            'object_id': object_id,
-            'time': time,
-            'action': action
-        }
-    
-    def add_event(self, eventAttributes):
-        """Adds a new user to the set."""
-        event_id = str(uuid.uuid4())  # Generates a unique identifier
-        eventAttributes['id'] = event_id
-        self.events[event_id] = eventAttributes
-        return event_id
-    
-    def remove_event(self, event_id):
-        """Removes a user from the set based on its ID."""
-        if event_id in self.events:
-            del self.events[event_id]
-            return True
-        return False
-
-    def __str__(self):
-        """Returns a string representation of the EventSet (the events list)."""
-        return str(self.events)
-
-def generate_events(objects_list, type_object, event_set):
-    """type_object: 'user' or 'app'
-    Later will be also be node"""
-
-    for i in eval('objects_list' + '.get_all_' + type_object + 's().values()'):
-        eventAttributes = event_set.newUserItem(
-            object_id=i['id'],
-            type_object=type_object,
-            time = i['time'] + event_set.global_time, # BORRAR: puede dar problemas
-            action = i['action']
-        )
-        event_set.add_event(eventAttributes)
-    return event_set
 
 def solve_application_placement(graph, application_set, user_set):
     """Solves the application placement problem using ILP."""
@@ -556,6 +216,7 @@ def scenario1(events_list, app_set, user_set):
         # 4 Save new scenario and solutions
         print("Paso ", max_iterations)
         events_list.sort_by_time()
+        # REVISAR: aquí tengo que coger el mínimo, no hacer sort
         set_for_update = eval(events_list.get_first_event()['type_object'] + '_set')
         update_system_state(events_list, set_for_update)
 
@@ -611,12 +272,11 @@ def main():
     all_results.append(current_result)
     
 
+
     # WORKING ON ITERATIONS
-    print(" ")
-    print("---- EVENTS ----")
+    print("\n---- EVENTS ----")
     print("Users son", generated_users)
     
-
     generated_events = EventSet()
     generated_events = generate_events(generated_users, 'user', generated_events)
     # REVISAR: Por ahora no añado las apps aún
@@ -628,24 +288,11 @@ def main():
 
     scenario1(generated_events, generated_apps, generated_users)
 
-    # BORRAR: no funciona el JSON
-    # with open('simulation_results.json', 'w') as f:
-    #     json.dump(all_results, f, indent=4)
-
-    # print("Results saved to simulation_results.json")
-
-
+    
     with open('simulation_results.pkl', 'wb') as f:  # 'wb' means Write Binary
         pickle.dump(all_results, f)
 
     print("Objects saved to simulation_results.pkl")
-
-    # with open('simulation_results.pkl', 'rb') as f:  # 'rb' means Read Binary
-    # loaded_results = pickle.load(f)
-
-    # # Now you have your actual objects back!
-    # first_result = loaded_results[0]
-    # print(first_result.total_latency) # Works perfectly
 
 
 if __name__ == "__main__":

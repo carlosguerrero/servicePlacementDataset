@@ -1,17 +1,35 @@
+import sys
+import os
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
+########################################
+
 import uuid
+from utils import get_random_from_range, selectRandomGraphNodeByCentrality, selectRandomAction
 
 class UserSet:
     def __init__(self):
         self.users = {}
+        # Initialize a counter to keep track of User IDs (User_0, Usser_1)
+        self.user_counter = 0
 
-    def newUserItem(self, name, requestedApp, appName, requestRatio, connectedTo):
+    def getNextUserId(self):
+        """Generates the next sequential application name."""
+        name = f"User_{self.user_counter}"
+        self.user_counter += 1
+        return name
+
+    def newUserItem(self, name, requestedApp, appName, requestRatio, connectedTo, time, action):
         """Creates a new user item with the given attributes."""
         return {
             'name': name,
             'requestedApp': requestedApp,
             'appName': appName,
             'requestRatio': requestRatio,
-            'connectedTo': connectedTo
+            'connectedTo': connectedTo,
+            'time': time,
+            'action': action
         }
 
     def getAllUsersByApp(self, appId):
@@ -43,6 +61,14 @@ class UserSet:
             del self.users[user_id]
             return True
         return False
+    
+    # REVISAR: pendiente de definir
+    def move_user(self, user_id, graph):
+        node = None
+        selected_nodes = [node for node, data in graph.nodes(data=True)] # if ]
+        # quiero coger por ahora un nodo aleatprio que no esté cogido por ningún otro usuario
+        # puede haber más de un usuario en el mismo nodo??
+        # y que no sea el mismo que tenía hasta ahora
 
     def get_user(self, user_id):
         """Retrieves a user by their ID from the set."""
@@ -59,36 +85,36 @@ class UserSet:
     def __repr__(self):
         """Official string representation for developers (useful for debugging)."""
         return f"UserSet(users={self.users})"
-    
 
+def generate_random_users(config, appsSet, infrastructure):
+    """
+    Generates a list of random users with random application requests.
 
+    Args:
+        num_users (int): The number of users to generate.
+        **kwargs: Additional arguments to customize the user generation.
 
-if __name__ == "__main__":
-    userset = UserSet()
+    Returns:
+        list: A list of dictionaries representing the generated users.
+    """
+    user_set = UserSet()
 
-    # Create and add users
-    user1 = userset.newUserItem("Alice", requestedApp=1, appName="AppOne", requestRatio=0.5, connectedTo=101)
-    user2 = userset.newUserItem("Bob", requestedApp=2, appName="AppTwo", requestRatio=0.8, connectedTo=102)
+    attributes = config.get('attributes', {})
+    app = attributes.get('user', {})
+    num_users = app.get('num_users', 2)
 
-    id1 = userset.add_user(user1)
-    id2 = userset.add_user(user2)
-
-    print("\nAll Users:")
-    print(userset.get_all_users())
-
-    print("\nUsers requesting App 1:")
-    print(userset.getAllUsersByApp(1))
-
-    print("\nUsers connected to Node 102:")
-    print(userset.getAllUsersByNode(102))
-
-    print("\nGet user by ID:")
-    print(userset.get_user(id1))
-
-    print("\nRemove user by requested app (App 1):")
-    userset.remove_user_by_requested_app(1)
-    print(userset.get_all_users())
-
-    print("\nRemove user by ID:")
-    userset.remove_user(id2)
-    print(userset.get_all_users())
+    # Create some users in the set
+    for i in range(num_users):
+        rqApp=appsSet.selectRandomAppIdByPopularity(get_random_from_range(config, 'user', 'request_popularity'))
+        appNm=appsSet.get_application(rqApp)['name']
+        userAttributes = user_set.newUserItem(
+            name=user_set.getNextUserId(),
+            requestedApp=rqApp,  # Randomly select an application based on popularity
+            appName=appNm,
+            requestRatio=get_random_from_range(config, 'user', 'request_popularity'),
+            connectedTo=selectRandomGraphNodeByCentrality(infrastructure, get_random_from_range(config, 'user', 'centrality')),  # Randomly select a node from the graph
+            time = get_random_from_range(config, 'user', 'time'),
+            action = selectRandomAction('user', config['attributes']['user']['action'])
+        )
+        user_set.add_user(userAttributes)
+    return user_set
