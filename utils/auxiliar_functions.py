@@ -1,0 +1,38 @@
+import random
+
+def get_random_from_range(config, category, key, distribution=None):
+    """Helper to get a random float between min and max defined in YAML.
+    with the probability distribution function as we choose.
+    """
+    r = config['attributes'][category][key]
+    dist_func = distribution if distribution else random.uniform
+    return round(dist_func(r[0], r[1]), 2)
+
+def selectRandomAction(type_object, probabilities):
+    if type_object == 'user':
+        actions = ["remove_user", "move_user"]
+        return random.choices(actions, weights=probabilities, k=1)[0]
+        # necesito asignarle una acción aleatoria de la lista:
+        # remove_user o move_user
+    elif type_object == 'app':
+        # REVISAR
+        actions = ["remove_app", "add_app"]
+        return random.choices(actions, weights=probabilities, k=1)[0]
+    else:
+        return "No type_object recognized"
+
+def selectRandomGraphNodeByCentrality(graph, centrality):  
+    """
+    Selects a random node from the graph based on its betweenness centrality.
+
+    Args:
+        graph (networkx.Graph): The input graph.
+        centrality (float): The centrality threshold for selection.
+
+    Returns:
+        str: The ID of the selected node.
+    """
+    selected_nodes = [node for node, data in graph.nodes(data=True) if data['betweenness_centrality'] <= centrality]
+    if selected_nodes:
+        return random.choice(selected_nodes)
+    return None
