@@ -19,8 +19,8 @@ class UserSet:
         name = f"User_{self.user_counter}"
         self.user_counter += 1
         return name
-    
-    def newUserItem(self, name, requestedApp, appName, requestRatio, connectedTo, actions):
+
+    def newUserItem(self, name, requestedApp, appName, requestRatio, connectedTo, time, action):
         """Creates a new user item with the given attributes."""
         return {
             'name': name,
@@ -28,7 +28,8 @@ class UserSet:
             'appName': appName,
             'requestRatio': requestRatio,
             'connectedTo': connectedTo,
-            'actions': actions 
+            'time': time,
+            'action': action
         }
 
     def getAllUsersByApp(self, appId):
@@ -41,7 +42,7 @@ class UserSet:
 
     def add_user(self, userAttributes):
         """Adds a new user to the set."""
-        user_id = str(uuid.uuid4()) 
+        user_id = str(uuid.uuid4())  # Generates a unique identifier
         userAttributes['id'] = user_id
         self.users[user_id] = userAttributes
         return user_id
@@ -99,9 +100,8 @@ def generate_random_users(config, appsSet, infrastructure):
     user_set = UserSet()
 
     attributes = config.get('attributes', {})
-    user_conf = attributes.get('user', {})
-    num_users = user_conf.get('num_users', 2)
-    user_actions_config = user_conf.get('actions', {})
+    app = attributes.get('user', {})
+    num_users = app.get('num_users', 2)
 
     # Create some users in the set
     for i in range(num_users):
@@ -113,7 +113,8 @@ def generate_random_users(config, appsSet, infrastructure):
             appName=appNm,
             requestRatio=get_random_from_range(config, 'user', 'request_popularity'),
             connectedTo=selectRandomGraphNodeByCentrality(infrastructure, get_random_from_range(config, 'user', 'centrality')),  # Randomly select a node from the graph
-            actions=user_actions_config
+            time = get_random_from_range(config, 'user', 'time'),
+            action = selectRandomAction('user', config['attributes']['user']['action'])
         )
         user_set.add_user(userAttributes)
     return user_set
