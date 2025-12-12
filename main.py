@@ -204,7 +204,7 @@ def update_system_state(events_list, update_set):
         # y también hay que asignar un nuevo tiempo: random time + global_time
         pass
 
-def scenario1(events_list, app_set, user_set):
+def generate_scenario(events_list, app_set, user_set):
     global_time = 0
     max_iterations = 1
 
@@ -214,11 +214,9 @@ def scenario1(events_list, app_set, user_set):
         # 3 Update everything (user_set/app_set and events_list)
         # 3.2 Update global_time!!
         # 4 Save new scenario and solutions
-        print("Paso ", max_iterations)
-        events_list.sort_by_time()
-        # REVISAR: aquí tengo que coger el mínimo, no hacer sort
-        set_for_update = eval(events_list.get_first_event()['type_object'] + '_set')
-        update_system_state(events_list, set_for_update)
+        print(f"First event {events_list.get_first_event()}")
+        # set_for_update = eval(events_list.get_first_event()['type_object'] + '_set')
+        # update_system_state(events_list, set_for_update)
 
         max_iterations += 1
 
@@ -237,11 +235,15 @@ def main():
     print(f"Nodes: {generated_infrastructure.number_of_nodes()}")
     print(f"Edges: {generated_infrastructure.number_of_edges()}")
 
+    generated_events = EventSet()
+
     generated_apps = generate_random_apps(config)
     print(f"Apps: {generated_apps}")
 
-    generated_users = generate_random_users(config, generated_apps, generated_infrastructure)
-    print(f"Users: {generated_users}")
+    generated_users = generate_random_users(config, generated_apps, generated_infrastructure, generated_events)
+    print(f"\nUsers: {generated_users}")
+
+    print("\nEvents:", generated_events)
 
     # SOLVE PROBLEM
     if generated_apps and generated_users and generated_infrastructure:
@@ -275,18 +277,8 @@ def main():
 
     # WORKING ON ITERATIONS
     print("\n---- EVENTS ----")
-    print("Users son", generated_users)
-    
-    generated_events = EventSet()
-    generated_events = generate_events(generated_users, 'user', generated_events)
-    # REVISAR: Por ahora no añado las apps aún
-    # generated_events = generate_events(generated_apps, 'app', generated_events)
-    print("Events son:", generated_events)
 
-    print("Elemento eliminado: ", list(generated_users.get_all_users().keys())[0])
-    # generated_users.remove_user(list(generated_users.get_all_users().keys())[0])  # Remove first user for testing
-
-    scenario1(generated_events, generated_apps, generated_users)
+    generate_scenario(generated_events, generated_apps, generated_users)
 
     
     with open('simulation_results.pkl', 'wb') as f:  # 'wb' means Write Binary

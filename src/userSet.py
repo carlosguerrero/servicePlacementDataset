@@ -7,6 +7,7 @@ sys.path.append(parent_dir)
 
 import uuid
 from utils import get_random_from_range, selectRandomGraphNodeByCentrality, selectRandomAction
+from src import EventSet, generate_events
 
 class UserSet:
     def __init__(self):
@@ -54,7 +55,7 @@ class UserSet:
                 return True
         return False
     
-    def remove_user(self, user_id):
+    def remove_user(self, user_id, params=None):
         """Removes a user from the set based on its ID."""
         if user_id in self.users:
             del self.users[user_id]
@@ -62,9 +63,10 @@ class UserSet:
         return False
     
     # REVISAR: pendiente de definir
-    def move_user(self, user_id, graph):
+    def move_user(self, user_id, params=None):
         node = None
-        selected_nodes = [node for node, data in graph.nodes(data=True)] # if ]
+        if len(params) > 0:
+            selected_nodes = [node for node, data in params[0].nodes(data=True)] # if ]
         # quiero coger por ahora un nodo aleatprio que no esté cogido por ningún otro usuario
         # puede haber más de un usuario en el mismo nodo??
         # y que no sea el mismo que tenía hasta ahora
@@ -85,7 +87,7 @@ class UserSet:
         """Official string representation for developers (useful for debugging)."""
         return f"UserSet(users={self.users})"
 
-def generate_random_users(config, appsSet, infrastructure):
+def generate_random_users(config, appsSet, infrastructure, events_list):
     """
     Generates a list of random users with random application requests.
 
@@ -116,4 +118,8 @@ def generate_random_users(config, appsSet, infrastructure):
             actions=user_actions_config
         )
         user_set.add_user(userAttributes)
+    
+    for user in user_set.get_all_users().values():
+        generate_events(user, 'user', events_list)
+
     return user_set

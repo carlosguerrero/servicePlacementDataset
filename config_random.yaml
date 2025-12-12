@@ -31,8 +31,8 @@ attributes:
     centrality: [0.1, 1.0]
     actions:
       remove_user:
-        distribution: 'uniform'
-        params: [0, 300]
+        distribution: 'random.uniform(0, 300)'
+        params: []
       move_user:
-        distribution: 'uniform'
-        params: [0, 300]
+        distribution: 'random.uniform(0, 300)'
+        params: []

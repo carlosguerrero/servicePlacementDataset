@@ -28,9 +28,11 @@ if __name__ == "__main__":
     print(f"Nodes: {generated_infrastructure.number_of_nodes()}")
     print(f"Edges: {generated_infrastructure.number_of_edges()}")
 
+    generated_events = EventSet()
+
     generated_apps = generate_random_apps(config)
     print(f"Apps: {generated_apps}")
 
-    generated_users = generate_random_users(config, generated_apps, generated_infrastructure)
-    print(f"Users: {generated_users}")
-
+    generated_users = generate_random_users(config, generated_apps, generated_infrastructure, generated_events)
+    print(f"\nUsers: {generated_users}")
+    print("\nEvents in the set:", generated_events)
