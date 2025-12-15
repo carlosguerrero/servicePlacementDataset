@@ -64,12 +64,9 @@ class UserSet:
     
     # REVISAR: pendiente de definir
     def move_user(self, user_id, params=None):
-        node = None
-        if len(params) > 0:
-            selected_nodes = [node for node, data in params[0].nodes(data=True)] # if ]
-        # quiero coger por ahora un nodo aleatprio que no esté cogido por ningún otro usuario
-        # puede haber más de un usuario en el mismo nodo??
-        # y que no sea el mismo que tenía hasta ahora
+        if params is not None:
+            self.users[user_id]['connectedTo'] = params[0]
+
 
     def get_user(self, user_id):
         """Retrieves a user by their ID from the set."""

@@ -1,4 +1,5 @@
 import random
+import copy
 
 def get_random_from_range(config, category, key, distribution=None):
     """Helper to get a random float between min and max defined in YAML.
@@ -21,7 +22,7 @@ def selectRandomAction(type_object, probabilities):
     else:
         return "No type_object recognized"
 
-def selectRandomGraphNodeByCentrality(graph, centrality):  
+def selectRandomGraphNodeByCentrality(graph, centrality, node=None):  
     """
     Selects a random node from the graph based on its betweenness centrality.
 
@@ -32,7 +33,13 @@ def selectRandomGraphNodeByCentrality(graph, centrality):
     Returns:
         str: The ID of the selected node.
     """
-    selected_nodes = [node for node, data in graph.nodes(data=True) if data['betweenness_centrality'] <= centrality]
+    nodes_dict = dict(graph.nodes(data=True))
+    nodes_copy = copy.deepcopy(nodes_dict)
+    if node in nodes_copy:
+        del nodes_copy[node]
+
+    # BORRAR: selected_nodes = [node for node, data in graph.nodes(data=True) if data['betweenness_centrality'] <= centrality]
+    selected_nodes = [node for node, data in nodes_copy.items() if data['betweenness_centrality'] <= centrality]
     if selected_nodes:
         return random.choice(selected_nodes)
     return None
