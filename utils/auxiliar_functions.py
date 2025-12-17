@@ -43,3 +43,12 @@ def selectRandomGraphNodeByCentrality(graph, centrality, node=None):
     if selected_nodes:
         return random.choice(selected_nodes)
     return None
+
+def selectRandomNodeWhenMoving(graph, centrality, node=None):  
+    """
+    I want this function to select from the nodes that have an edge
+    attached to the current node's user
+    The node needs to be chosen randonly but we have weights favoring the 
+    betweenness centrality (the lowest betweenness centrality gets the highest weight)
+    """
+    selectRandomGraphNodeByCentrality(graph, centrality, node=None)

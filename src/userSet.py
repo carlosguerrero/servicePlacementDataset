@@ -64,8 +64,7 @@ class UserSet:
     
     # REVISAR: pendiente de definir
     def move_user(self, user_id, params=None):
-        if params is not None:
-            self.users[user_id]['connectedTo'] = params[0]
+        pass
 
 
     def get_user(self, user_id):

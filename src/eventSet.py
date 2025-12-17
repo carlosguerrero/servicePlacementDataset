@@ -37,13 +37,25 @@ class EventSet:
         return False
     
     def update_event(self, event_id):
-        print("DESDE remove: The", self.events[event_id]['type_object'], "with id", self.events[event_id]['object_id'], "has been removed")
+        
         if self.events[event_id]['action'].startswith('remove'):
-            events_copy = copy.deepcopy(self.events)
+            id_to_remove = self.events[event_id]['object_id']
+            print("DESDE remove: The", self.events[event_id]['type_object'], "with id", id_to_remove, "has been removed")
 
-            for event in events_copy.values():
-                if event['object_id'] == self.events[event_id]['object_id']:
-                    self.remove_event(event['id'])
+            events_to_delete = [
+                event_id
+                for event_id, value in self.events.items()
+                if value['object_id'] == id_to_remove
+            ]
+            print("Events to delete:", events_to_delete)
+
+            for event_id in events_to_delete:
+                self.remove_event(event_id)
+
+            # events_copy = copy.deepcopy(self.events)
+            # for event in events_copy.values():
+            #     if event['object_id'] == self.events[event_id]['object_id']:
+            #         self.remove_event(event['id'])
 
         elif self.events[event_id]['action'].startswith('move'):
             print("DESDE move: The", self.events[event_id]['type_object'], "with id", self.events[event_id]['object_id'], "has been removed")
@@ -70,12 +82,8 @@ def generate_events(object, type_object, event_set):
             type_object=type_object,
             time = round(eval(object['actions'][action]['distribution']), 2) + event_set.global_time, 
             action = action,
-            action_params = object['actions'][action]['params']
+            action_params = object['actions'][action]['action_params']
         )
         event_set.add_event(eventAttributes)
 
     return event_set
-
-if __name__ == "__main__":
-    event_set = EventSet()
-    print(event_set)

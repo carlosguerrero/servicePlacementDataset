@@ -191,38 +191,15 @@ def solve_application_placement(graph, application_set, user_set):
 def update_system_state(events_list, update_set):
     # Apply action to the set user_set or app_set (for now)
     first_event = events_list.get_first_event()
-    eval(f"update_set.{first_event['action']}('{first_event['object_id']}')")
+    print("Processing event:", first_event)
+    eval(f"update_set.{first_event['action']}('{first_event['object_id']}', {first_event['action_params']})")
 
     events_list.global_time = first_event['time']
     print("Updated global time to", events_list.global_time)
 
     events_list.update_event(first_event['id'])
     
-    # if first_event['action'].startswith('remove'):
-    #     print("DESDE delete: The", first_event['type_object'], "with id", first_event['object_id'], "has been removed")
-
-    #     for event in events_list_copy.events.values():
-    #         print("event:", event['object_id'])
-    #         if event['object_id'] == first_event['object_id']:
-    #             events_list.remove_event(event['id'])
-
-    #     print("Update event list después update:", events_list)
-    #     print(" ")
-
-    # elif first_event['action'].startswith('move'):
-    #     print("DESDE move: The", first_event['type_object'], "with id", first_event['object_id'], "has been removed")
-    #     events_list.remove_event(first_event['id'])
-
-    #     print("Update event list después update:", events_list)
-    #     print(" ")
-    #     # user_set.move_user(event[1]['id'])) # por graph
-    #     # Hay que actualizar el nodo al que está conectado el usuario
-    #     # y también hay que asignar un nuevo tiempo: random time + global_time
-    
-    
-
 def generate_scenario(events_list, app_set, user_set):
-    global_time = 0
     max_iterations = 1
 
     while events_list.events and max_iterations < 10: # and global_time < 300
