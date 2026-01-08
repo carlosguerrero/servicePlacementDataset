@@ -73,7 +73,7 @@ class EventSet:
         """Returns a string representation of the EventSet (the events list)."""
         return str(self.events)
 
-def generate_events(object, type_object, event_set):
+def generate_events(object, type_object, event_set, config):
     """type_object: 'user' or 'app'
     Later will be also be node"""
     for action in object['actions']:
@@ -85,5 +85,8 @@ def generate_events(object, type_object, event_set):
             action_params = object['actions'][action]['action_params']
         )
         event_set.add_event(eventAttributes)
+
+    # Add the initialization factor
+    
 
     return event_set

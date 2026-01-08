@@ -36,5 +36,8 @@ attributes:
       move_user:
         distribution: 'random.uniform(0, 300)'
         action_params: 
-          p: 0.7
-          node: 5
+          infrastructure: None
+      new_user:
+        distribution: 'random.uniform(0, 300)'
+
+  

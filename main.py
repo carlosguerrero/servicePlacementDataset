@@ -10,7 +10,7 @@ import pickle
 import copy
 
 from src import EventSet, generate_events, ApplicationSet, generate_random_apps, UserSet, generate_random_users
-from utils import get_random_from_range
+from src.utils.auxiliar_functions import get_random_from_range
 
 def load_config(config_path):
     """Loads the YAML configuration file."""
@@ -48,7 +48,7 @@ def _generate_random_graph(config):
         print(f"Graph model '{model_name}' not recognized.")
         return None
 
-    # 2. Assign Random Attributes
+    # 2. Assign Random Ram
     for node in graph.nodes():
         graph.nodes[node]['ram'] = get_random_from_range(config, 'node', 'ram')
 
@@ -56,6 +56,7 @@ def _generate_random_graph(config):
     for u, v in graph.edges():
         # BORRAR: graph.edges[u, v]['delay'] = round(random.uniform(0.1, 5.0), 2)
         graph.edges[u, v]['delay'] = get_random_from_range(config, 'edge', 'delay')
+
     return graph
 
 # BORRAR: por ahora lo dejo estar
@@ -202,8 +203,7 @@ def update_system_state(events_list, update_set):
 def generate_scenario(events_list, app_set, user_set):
     max_iterations = 1
 
-    while events_list.events and max_iterations < 10: # and global_time < 300
-        # 1 Sort the events by time
+    while events_list.events and max_iterations < 20: # and global_time < 300
         # 2 Get first event
         # 3 Update everything (user_set/app_set and events_list)
         # 3.2 Update global_time!!

@@ -1,14 +1,15 @@
-import sys
-import os
-current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-sys.path.append(parent_dir)
+# import sys
+# import os
+# current_dir = os.path.dirname(os.path.abspath(__file__))
+# parent_dir = os.path.dirname(current_dir)
+# sys.path.append(parent_dir)
 ########################################
 
 import random
 import uuid
 
-from utils import get_random_from_range, selectRandomAction
+# BORRAr from utils import get_random_from_range, selectRandomAction
+from .utils.auxiliar_functions import get_random_from_range, selectRandomAction
 
 class ApplicationSet:
     def __init__(self):

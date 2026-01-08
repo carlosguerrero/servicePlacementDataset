@@ -1,13 +1,13 @@
-import sys
-import os
-current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-sys.path.append(parent_dir)
+# import sys
+# import os
+# current_dir = os.path.dirname(os.path.abspath(__file__))
+# parent_dir = os.path.dirname(current_dir)
+# sys.path.append(parent_dir)
 ########################################
 
 import uuid
-from utils import get_random_from_range, selectRandomGraphNodeByCentrality, selectRandomAction
-from src import EventSet, generate_events
+from .utils.auxiliar_functions import get_random_from_range, selectRandomGraphNodeByCentrality, selectRandomAction, selectAdjacentNodeWhenMoving
+from .eventSet import EventSet, generate_events
 
 class UserSet:
     def __init__(self):
@@ -63,9 +63,11 @@ class UserSet:
         return False
     
     # REVISAR: pendiente de definir
-    def move_user(self, user_id, params=None):
-        pass
-
+    def move_user(self, infrastructure, user_id, params=None):
+        if user_id in self.users:
+            self.users[user_id]['connectedTo'] = selectAdjacentNodeWhenMoving(infrastructure, self.users[user_id]['connectedTo'])
+            return True
+        return False
 
     def get_user(self, user_id):
         """Retrieves a user by their ID from the set."""
@@ -82,8 +84,54 @@ class UserSet:
     def __repr__(self):
         """Official string representation for developers (useful for debugging)."""
         return f"UserSet(users={self.users})"
+    
+def create_new_user(config, appsSet, infrastructure, user_set):
+
+    attributes = config.get('attributes', {})
+    user_conf = attributes.get('user', {})
+    user_actions_config = user_conf.get('actions', {})
+
+    rqApp=appsSet.selectRandomAppIdByPopularity(get_random_from_range(config, 'user', 'request_popularity'))
+    appNm=appsSet.get_application(rqApp)['name']
+    userAttributes = user_set.newUserItem(
+        name=user_set.getNextUserId(),
+        requestedApp=rqApp,  # Randomly select an application based on popularity
+        appName=appNm,
+        requestRatio=get_random_from_range(config, 'user', 'request_popularity'),
+        connectedTo=selectRandomGraphNodeByCentrality(infrastructure, get_random_from_range(config, 'user', 'centrality')),  # Randomly select a node from the graph
+        actions=user_actions_config
+    )
+    
+    user_set.add_user(userAttributes)
 
 def generate_random_users(config, appsSet, infrastructure, events_list):
+    """
+    Generates a list of random users with random application requests.
+
+    Args:
+        num_users (int): The number of users to generate.
+        **kwargs: Additional arguments to customize the user generation.
+
+    Returns:
+        list: A list of dictionaries representing the generated users.
+    """
+    user_set = UserSet()
+
+    attributes = config.get('attributes', {})
+    user_conf = attributes.get('user', {})
+    num_users = user_conf.get('num_users', 2)
+
+    # Create some users in the set
+    for i in range(num_users):
+        create_new_user(config, appsSet, infrastructure, user_set)
+    
+    for user in user_set.get_all_users().values():
+        generate_events(user, 'user', events_list)
+
+    return user_set
+
+# BORRAR
+def generate_random_users2(config, appsSet, infrastructure, events_list):
     """
     Generates a list of random users with random application requests.
 
