@@ -35,6 +35,13 @@ class EventSet:
             del self.events[event_id]
             return True
         return False
+
+    def update_event_params(self, event_id, infrastructure):
+        if self.events[event_id]['action'].startswith('move'):
+            print("DESDE move: The", self.events[event_id]['type_object'], "with id", self.events[event_id]['object_id'], "has been removed")
+            self.events[event_id]['action_params']['infrastructure'] = infrastructure
+        print("Update event list después update:", self.events)
+        print(" ")
     
     def update_event(self, event_id):
         
@@ -73,7 +80,7 @@ class EventSet:
         """Returns a string representation of the EventSet (the events list)."""
         return str(self.events)
 
-def generate_events(object, type_object, event_set, config):
+def generate_events(object, type_object, event_set):
     """type_object: 'user' or 'app'
     Later will be also be node"""
     for action in object['actions']:
@@ -86,7 +93,21 @@ def generate_events(object, type_object, event_set, config):
         )
         event_set.add_event(eventAttributes)
 
-    # Add the initialization factor
-    
+    return event_set
+
+def init_new_object(config, event_set):
+    """type_object: 'user' or 'app'
+    Later will be also be node"""
+    attributes = config.get('attributes', {})
+    new_object_conf = attributes.get('new_object', {})
+    for action, type_conf in new_object_conf.items():
+        eventAttributes = event_set.newEventItem(
+            object_id=None,
+            type_object=action.removeprefix("new_"),
+            time = round(eval(type_conf['distribution']), 2) + event_set.global_time, 
+            action = action,
+            action_params = {}
+        )
+        event_set.add_event(eventAttributes)
 
     return event_set

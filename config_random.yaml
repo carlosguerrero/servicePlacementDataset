@@ -37,7 +37,7 @@ attributes:
         distribution: 'random.uniform(0, 300)'
         action_params: 
           infrastructure: None
-      new_user:
-        distribution: 'random.uniform(0, 300)'
 
-  
+  new_object:
+    new_user: 
+      distribution: 'random.uniform(0, 300)'

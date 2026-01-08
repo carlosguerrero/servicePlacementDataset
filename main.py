@@ -9,7 +9,7 @@ from pulp import *
 import pickle
 import copy
 
-from src import EventSet, generate_events, ApplicationSet, generate_random_apps, UserSet, generate_random_users
+from src import EventSet, generate_events, init_new_object, ApplicationSet, generate_random_apps, UserSet, generate_random_users
 from src.utils.auxiliar_functions import get_random_from_range
 
 def load_config(config_path):
@@ -188,7 +188,6 @@ def solve_application_placement(graph, application_set, user_set):
         print(f"No Optimal Solution Found. Status: {LpStatus[prob.status]}")
         return None, None
 
-# REVISAR: CARLOS no sé si esta es la forma más óptima de hacerlo
 def update_system_state(events_list, update_set):
     # Apply action to the set user_set or app_set (for now)
     first_event = events_list.get_first_event()
@@ -199,8 +198,24 @@ def update_system_state(events_list, update_set):
     print("Updated global time to", events_list.global_time)
 
     events_list.update_event(first_event['id'])
+
+def update_system_state(events_list, update_set):
+    # Apply action to the set user_set or app_set (for now)
+    first_event = events_list.get_first_event()
+    print("Processing event:", first_event)
+    params = first_event['action_params']
+    if params == 'None':
+        params = None
+
+    # BORRAR: eval(f"update_set.{first_event['action']}('{first_event['object_id']}', {first_event['action_params']})")
+    eval(f"update_set.{first_event['action']}('{first_event['object_id']}', params)", 
+         {"update_set": update_set, "params": params})
+
+    events_list.global_time = first_event['time']
+    print("Updated global time to", events_list.global_time)
+    events_list.update_event(first_event['id'])
     
-def generate_scenario(events_list, app_set, user_set):
+def generate_scenario(events_list, app_set, user_set, infrastructure):
     max_iterations = 1
 
     while events_list.events and max_iterations < 20: # and global_time < 300
@@ -208,6 +223,7 @@ def generate_scenario(events_list, app_set, user_set):
         # 3 Update everything (user_set/app_set and events_list)
         # 3.2 Update global_time!!
         # 4 Save new scenario and solutions
+        events_list.update_event_params(events_list.get_first_event()['id'], infrastructure)
         set_for_update = eval(events_list.get_first_event()['type_object'] + '_set')
         update_system_state(events_list, set_for_update)
 
@@ -235,6 +251,8 @@ def main():
 
     generated_users = generate_random_users(config, generated_apps, generated_infrastructure, generated_events)
     print(f"\nUsers: {generated_users}")
+
+    init_new_object(config, generated_events)
 
     print("\nEvents:", generated_events)
 
@@ -271,7 +289,7 @@ def main():
     # WORKING ON ITERATIONS
     print("\n---- EVENTS ----")
 
-    generate_scenario(generated_events, generated_apps, generated_users)
+    generate_scenario(generated_events, generated_apps, generated_users, generated_infrastructure)
 
     
     with open('simulation_results.pkl', 'wb') as f:  # 'wb' means Write Binary
