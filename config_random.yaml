@@ -41,3 +41,9 @@ attributes:
   new_object:
     new_user: 
       distribution: 'random.uniform(0, 300)'
+      action_params:
+        config: None,
+        app_set: None,
+        user_set: None,
+        infrastructure: None,
+        event_set: None

@@ -1,6 +1,3 @@
-# BORRAR: Here I will be running all the main code and calling the classeskept in other files
-# BORRAR: from src.experimentSetup import experimentSetup
-
 import yaml
 import random
 import uuid
@@ -51,10 +48,10 @@ def _generate_random_graph(config):
     # 2. Assign Random Ram
     for node in graph.nodes():
         graph.nodes[node]['ram'] = get_random_from_range(config, 'node', 'ram')
+        graph.nodes[node]['enable'] = True
 
     # 3. Assign Random Edge Delays
     for u, v in graph.edges():
-        # BORRAR: graph.edges[u, v]['delay'] = round(random.uniform(0.1, 5.0), 2)
         graph.edges[u, v]['delay'] = get_random_from_range(config, 'edge', 'delay')
 
     return graph
@@ -188,34 +185,42 @@ def solve_application_placement(graph, application_set, user_set):
         print(f"No Optimal Solution Found. Status: {LpStatus[prob.status]}")
         return None, None
 
-def update_system_state(events_list, update_set):
-    # Apply action to the set user_set or app_set (for now)
+def update_system_state(events_list, config, app_set, user_set, infrastructure):
     first_event = events_list.get_first_event()
-    print("Processing event:", first_event)
-    eval(f"update_set.{first_event['action']}('{first_event['object_id']}', {first_event['action_params']})")
+    set_map = {
+        'user': user_set,
+        'app': app_set,
+        'infrastructure': infrastructure 
+    }
+    
+    # Identify which set we need to update based on 'type_object': user, app, infrastructure
+    target_object = set_map.get(first_event['type_object'])
+    if not target_object:
+        raise ValueError(f"Unknown object type: {first_event['type_object']}")
 
-    events_list.global_time = first_event['time']
-    print("Updated global time to", events_list.global_time)
-
-    events_list.update_event(first_event['id'])
-
-def update_system_state(events_list, update_set):
-    # Apply action to the set user_set or app_set (for now)
-    first_event = events_list.get_first_event()
-    print("Processing event:", first_event)
+    events_list.update_event_params(first_event['id'], config, app_set, user_set, infrastructure)
     params = first_event['action_params']
     if params == 'None':
         params = None
+    
+    # Ensure event_set is always included in params for actions that need it
+    if params is None:
+        params = {}
+    if isinstance(params, dict):
+        params['event_set'] = events_list
 
-    # BORRAR: eval(f"update_set.{first_event['action']}('{first_event['object_id']}', {first_event['action_params']})")
-    eval(f"update_set.{first_event['action']}('{first_event['object_id']}', params)", 
-         {"update_set": update_set, "params": params})
+    # Print event with action_params but exclude 'config' from it
+    print("Processing event:", first_event['action'])
+    print("Time event:", first_event['time'])
+
+    action_method = getattr(target_object, first_event['action'])
+    action_method(first_event['object_id'], params)
 
     events_list.global_time = first_event['time']
     print("Updated global time to", events_list.global_time)
     events_list.update_event(first_event['id'])
     
-def generate_scenario(events_list, app_set, user_set, infrastructure):
+def generate_scenario(events_list, config, app_set, user_set, infrastructure):
     max_iterations = 1
 
     while events_list.events and max_iterations < 20: # and global_time < 300
@@ -223,9 +228,7 @@ def generate_scenario(events_list, app_set, user_set, infrastructure):
         # 3 Update everything (user_set/app_set and events_list)
         # 3.2 Update global_time!!
         # 4 Save new scenario and solutions
-        events_list.update_event_params(events_list.get_first_event()['id'], infrastructure)
-        set_for_update = eval(events_list.get_first_event()['type_object'] + '_set')
-        update_system_state(events_list, set_for_update)
+        update_system_state(events_list, config, app_set, user_set, infrastructure)
 
         max_iterations += 1
 
@@ -264,8 +267,8 @@ def main():
             print("Application Placement:", optimal_placement)
             print("Total Latency:", total_latency)
             print("\nUpdated Node Information with Application Placement:")
-            for node in generated_infrastructure.nodes(data=True):
-                print(f"Node {node[0]}: RAM Total={node[1].get('ram')}, RAM Used={node[1].get('ram_used')}, Running Apps={[generated_apps.get_application(app_id)['name'] for app_id in node[1].get('running_applications', [])]}")
+            for node, feat in generated_infrastructure.nodes(data=True):
+                print(f"Node {node}: RAM Total={feat.get('ram')}, RAM Used={feat.get('ram_used')}, Running Apps={[generated_apps.get_application(app_id)['name'] for app_id in feat.get('running_applications', [])]}")
             # return optimal_placement
         else:
             print("No feasible solution found for application placement.")
@@ -289,7 +292,7 @@ def main():
     # WORKING ON ITERATIONS
     print("\n---- EVENTS ----")
 
-    generate_scenario(generated_events, generated_apps, generated_users, generated_infrastructure)
+    generate_scenario(generated_events, config, generated_apps, generated_users, generated_infrastructure)
 
     
     with open('simulation_results.pkl', 'wb') as f:  # 'wb' means Write Binary

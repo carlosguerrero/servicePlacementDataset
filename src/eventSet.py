@@ -36,15 +36,41 @@ class EventSet:
             return True
         return False
 
-    def update_event_params(self, event_id, infrastructure):
-        if self.events[event_id]['action'].startswith('move'):
-            print("DESDE move: The", self.events[event_id]['type_object'], "with id", self.events[event_id]['object_id'], "has been removed")
-            self.events[event_id]['action_params']['infrastructure'] = infrastructure
-        print("Update event list después update:", self.events)
-        print(" ")
+    # BORRAR
+    # def update_event_params(self, event_id, config, app_set, user_set, infrastructure):
+    #     if self.events[event_id]['action'].startswith('move'):
+    #         print("DESDE move: The", self.events[event_id]['type_object'], "with id", self.events[event_id]['object_id'], "has been removed")
+    #         self.events[event_id]['action_params']['infrastructure'] = infrastructure
+    #     elif self.events[event_id]['action'].startswith('new'):
+    #         print("DESDE new: A new", self.events[event_id]['type_object'], "will be created")
+    #         self.events[event_id]['action_params']['config'] = config
+    #         self.events[event_id]['action_params']['app_set'] = app_set
+    #         self.events[event_id]['action_params']['user_set'] = user_set
+    #         self.events[event_id]['action_params']['infrastructure'] = infrastructure
+    #     print("Update event list después update:", self.events)
+    #     print(" ")
+
+    def update_event_params(self, event_id, config, app_set, user_set, infrastructure):
+        event = self.events[event_id]
+        params = event.get('action_params')
+
+        if not isinstance(params, dict):
+            return
+
+        params_map = {
+            'infrastructure': infrastructure,
+            'config': config,
+            'app_set': app_set,
+            'user_set': user_set,
+            'event_set': self.events
+        }
+
+        for key, obj_value in params_map.items():
+            if key in params:
+                params[key] = obj_value
     
     def update_event(self, event_id):
-        
+
         if self.events[event_id]['action'].startswith('remove'):
             id_to_remove = self.events[event_id]['object_id']
             print("DESDE remove: The", self.events[event_id]['type_object'], "with id", id_to_remove, "has been removed")
@@ -68,7 +94,7 @@ class EventSet:
             print("DESDE move: The", self.events[event_id]['type_object'], "with id", self.events[event_id]['object_id'], "has been removed")
             self.remove_event(event_id)
 
-        print("Update event list después update:", self.events)
+        print("Update event list después update:", self)
         print(" ")
         # user_set.move_user(event[1]['id'])) # por graph
         # Hay que actualizar el nodo al que está conectado el usuario
@@ -77,8 +103,13 @@ class EventSet:
         # y asignar un nuevo tiempo
 
     def __str__(self):
-        """Returns a string representation of the EventSet (the events list)."""
-        return str(self.events)
+        """Returns a string representation of the EventSet (the events list) without action_params."""
+        events_to_print = {}
+        for event_id, event in self.events.items():
+            event_copy = {k: v for k, v in event.items() if k != 'action_params'}
+            events_to_print[event_id] = event_copy
+        return str(events_to_print)
+        # return str(self.events)
 
 def generate_events(object, type_object, event_set):
     """type_object: 'user' or 'app'
@@ -106,7 +137,7 @@ def init_new_object(config, event_set):
             type_object=action.removeprefix("new_"),
             time = round(eval(type_conf['distribution']), 2) + event_set.global_time, 
             action = action,
-            action_params = {}
+            action_params = type_conf['action_params']
         )
         event_set.add_event(eventAttributes)
 

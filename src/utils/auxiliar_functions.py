@@ -44,7 +44,7 @@ def selectRandomGraphNodeByCentrality(graph, centrality, node=None):
         return random.choice(selected_nodes)
     return None
 
-def selectAdjacentNodeWhenMoving(graph, node_id, centrality=float('inf')):  
+def selectAdjacentNodeWhenMoving(graph, node_id, centrality, active=True):  
     """
     This function selects a node from the nodes that have an edge
     attached to the given "node" as argument
@@ -54,21 +54,29 @@ def selectAdjacentNodeWhenMoving(graph, node_id, centrality=float('inf')):
     betweenness centrality (the lowest betweenness centrality gets the highest weight)
     """
     adjacent_nodes = graph.neighbors(node_id)
+
     adjacent_nodes_info = {
-        n: graph.nodes[n].get('betweenness_centrality', 0) 
+        n: {
+            'betweenness_centrality': graph.nodes[n].get('betweenness_centrality', 0),
+            'enable': graph.nodes[n].get('enable', True)
+        }
         for n in adjacent_nodes
     }
 
-    # We filter the centrality so that the betweenness centrality is smaller than a given centrality
-    adjacent_nodes_info_filtered = {node: btw_c for node, btw_c in adjacent_nodes_info.items() if btw_c <= centrality}
+    adjacent_nodes_info_filtered = {
+        n: info 
+        for n, info in adjacent_nodes_info.items() 
+        if info['betweenness_centrality'] <= centrality and info['enable']
+    }
 
+  
     if not adjacent_nodes_info_filtered:
         return None
     
     # From the filtered nodes,
     # We want to choose the node randomly but with weights favoring the lowest betweenness centrality
     nodes = list(adjacent_nodes_info_filtered.keys())
-    centralities = list(adjacent_nodes_info_filtered.values())
+    centralities = [info['betweenness_centrality'] for info in adjacent_nodes_info_filtered.values()]
 
     epsilon = 0.0001
     max_c = max(centralities) + epsilon

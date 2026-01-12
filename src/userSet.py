@@ -21,7 +21,7 @@ class UserSet:
         self.user_counter += 1
         return name
     
-    def newUserItem(self, name, requestedApp, appName, requestRatio, connectedTo, actions):
+    def newUserItem(self, name, requestedApp, appName, requestRatio, connectedTo, centrality, actions):
         """Creates a new user item with the given attributes."""
         return {
             'name': name,
@@ -29,6 +29,7 @@ class UserSet:
             'appName': appName,
             'requestRatio': requestRatio,
             'connectedTo': connectedTo,
+            'centrality': centrality,
             'actions': actions 
         }
 
@@ -65,12 +66,15 @@ class UserSet:
     def move_user(self, user_id, params=None):
         if params is None:
             params = {}
+
+        if user_id in self.users:
+            user_centrality = self.users[user_id]['centrality']
     
         infrastructure = params.get('infrastructure')
 
         if user_id in self.users and infrastructure is not None:
             current_node = self.users[user_id]['connectedTo']
-            self.users[user_id]['connectedTo'] = selectAdjacentNodeWhenMoving(infrastructure, current_node)
+            self.users[user_id]['connectedTo'] = selectAdjacentNodeWhenMoving(infrastructure, current_node, user_centrality)
             return True
             
         return False
@@ -93,14 +97,20 @@ class UserSet:
     
     def new_user(self, user_id, params):
         """Creates a new user with random attributes based on the configuration."""
-        # This method can be expanded to generate random attributes based on config
-        pass
+        config = params.get('config')
+        app_set = params.get('app_set')
+        infrastructure = params.get('infrastructure')
+        user_set = params.get('user_set')
+        event_set = params.get('event_set')
+
+        create_new_user(config, app_set, infrastructure, user_set, event_set)
     
-def create_new_user(config, appsSet, infrastructure, user_set):
+def create_new_user(config, appsSet, infrastructure, user_set, event_set):
 
     attributes = config.get('attributes', {})
     user_conf = attributes.get('user', {})
     user_actions_config = user_conf.get('actions', {})
+    user_centrality=get_random_from_range(config, 'user', 'centrality')
 
     rqApp=appsSet.selectRandomAppIdByPopularity(get_random_from_range(config, 'user', 'request_popularity'))
     appNm=appsSet.get_application(rqApp)['name']
@@ -109,13 +119,15 @@ def create_new_user(config, appsSet, infrastructure, user_set):
         requestedApp=rqApp,  # Randomly select an application based on popularity
         appName=appNm,
         requestRatio=get_random_from_range(config, 'user', 'request_popularity'),
-        connectedTo=selectRandomGraphNodeByCentrality(infrastructure, get_random_from_range(config, 'user', 'centrality')),  # Randomly select a node from the graph
+        connectedTo=selectRandomGraphNodeByCentrality(infrastructure, user_centrality),  # Randomly select a node from the graph
+        centrality=user_centrality,
         actions=user_actions_config
     )
     
     user_set.add_user(userAttributes)
+    generate_events(userAttributes, 'user', event_set)
 
-def generate_random_users(config, appsSet, infrastructure, events_list):
+def generate_random_users(config, appsSet, infrastructure, event_set):
     """
     Generates a list of random users with random application requests.
 
@@ -134,9 +146,10 @@ def generate_random_users(config, appsSet, infrastructure, events_list):
 
     # Create some users in the set
     for i in range(num_users):
-        create_new_user(config, appsSet, infrastructure, user_set)
+        create_new_user(config, appsSet, infrastructure, user_set, event_set)
     
-    for user in user_set.get_all_users().values():
-        generate_events(user, 'user', events_list)
+    # BORRAR:
+    # for user in user_set.get_all_users().values():
+    #     generate_events(user, 'user', events_list)
 
     return user_set
