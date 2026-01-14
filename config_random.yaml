@@ -11,6 +11,10 @@ model_params:
 attributes:
   node:
     ram: [1.0, 16.0]
+    actions:
+      remove_node:
+        distribution: 'random.uniform(0, 300)'
+        action_params: None
   
   edge:
     delay: [0.1, 5.0]
@@ -22,7 +26,13 @@ attributes:
     ram: [0.5, 8.0]
     disk: [10, 100]
     time: [0, 300]
-    action: [1, 0]
+    actions: 
+      remove_app:
+        distribution: 'random.uniform(0, 300)'
+        action_params: None
+      move_app:
+        distribution: 'random.uniform(0, 300)'
+        action_params: None
     
   user:
     num_users: 2
@@ -37,6 +47,10 @@ attributes:
         distribution: 'random.uniform(0, 300)'
         action_params: 
           infrastructure: None
+      change_request_ratio:
+        distribution: 'random.uniform(0, 300)'
+        action_params:
+          config: None
 
   new_object:
     new_user: 

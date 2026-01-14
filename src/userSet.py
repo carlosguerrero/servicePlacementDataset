@@ -78,6 +78,11 @@ class UserSet:
             return True
             
         return False
+    
+    def change_request_ratio(self, user_id, params=None):
+        config = params.get('config')
+        self.users[user_id]['requestRatio'] = get_random_from_range(config, 'user', 'request_ratio')
+        return True
 
     def get_user(self, user_id):
         """Retrieves a user by their ID from the set."""
@@ -118,7 +123,7 @@ def create_new_user(config, appsSet, infrastructure, user_set, event_set):
         name=user_set.getNextUserId(),
         requestedApp=rqApp,  # Randomly select an application based on popularity
         appName=appNm,
-        requestRatio=get_random_from_range(config, 'user', 'request_popularity'),
+        requestRatio=get_random_from_range(config, 'user', 'request_ratio'),
         connectedTo=selectRandomGraphNodeByCentrality(infrastructure, user_centrality),  # Randomly select a node from the graph
         centrality=user_centrality,
         actions=user_actions_config

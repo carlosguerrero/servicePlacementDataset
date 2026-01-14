@@ -69,7 +69,7 @@ class EventSet:
             if key in params:
                 params[key] = obj_value
     
-    def update_event(self, event_id):
+    def update_event(self, event_id, config):
 
         if self.events[event_id]['action'].startswith('remove'):
             id_to_remove = self.events[event_id]['object_id']
@@ -85,22 +85,20 @@ class EventSet:
             for event_id in events_to_delete:
                 self.remove_event(event_id)
 
-            # events_copy = copy.deepcopy(self.events)
-            # for event in events_copy.values():
-            #     if event['object_id'] == self.events[event_id]['object_id']:
-            #         self.remove_event(event['id'])
-
-        elif self.events[event_id]['action'].startswith('move'):
-            print("DESDE move: The", self.events[event_id]['type_object'], "with id", self.events[event_id]['object_id'], "has been removed")
-            self.remove_event(event_id)
+        # elif self.events[event_id]['action'].startswith('move'):
+            # print("DESDE move: The", self.events[event_id]['type_object'], "with id", self.events[event_id]['object_id'], "has been moved")
+            # self.remove_event(event_id)
+        
+        else:
+            # We just need to get a new time from config + global_time
+            actual_type_object = self.events[event_id]['type_object']
+            actual_action = self.events[event_id]['action']
+            self.events[event_id]['time'] = get_time(config, actual_type_object, actual_action) + self.global_time
+            print("DESDE others: The", self.events[event_id]['action'], "for the type of object", self.events[event_id]['type_object'], "has been updated to time", self.events[event_id]['time'])
 
         print("Update event list después update:", self)
         print(" ")
-        # user_set.move_user(event[1]['id'])) # por graph
-        # Hay que actualizar el nodo al que está conectado el usuario
-        # y también hay que asignar un nuevo tiempo: random time + global_time
-        # Aquí añadiré lo de elegir un nuevo nodo
-        # y asignar un nuevo tiempo
+
 
     def __str__(self):
         """Returns a string representation of the EventSet (the events list) without action_params."""
@@ -142,3 +140,31 @@ def init_new_object(config, event_set):
         event_set.add_event(eventAttributes)
 
     return event_set
+
+def get_time(config, type_object, action_name):
+    """
+    Retrieves a time value by evaluating the distribution string 
+    found in the config file for a specific object and action.
+    """
+    attributes = config.get('attributes', {})
+
+    if action_name.startswith('new'):
+        obj_conf = attributes.get('new_object', {})
+        actions_conf = obj_conf.get(action_name, {})
+        distr_string = actions_conf.get('distribution')
+    else:
+        obj_conf = attributes.get(type_object, {})
+        actions_conf = obj_conf.get('actions', {})
+        specific_action_conf = actions_conf.get(action_name, {})
+        distr_string = specific_action_conf.get('distribution')
+        
+    if distr_string:
+        try:
+            # explicit dictionary ensures eval has access to the 'random' module
+            return eval(distr_string, {"random": random})
+        except Exception as e:
+            print(f"Error evaluating distribution '{distr_string}' for {action_name}: {e}")
+            return 0.0
+                
+    return False
+

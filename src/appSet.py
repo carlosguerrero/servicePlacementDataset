@@ -70,7 +70,7 @@ class ApplicationSet:
                 return app['ram']
         return None
 
-    def newAppItem(self, name, popularity, cpu, ram, disk, time, action):
+    def newAppItem(self, name, popularity, cpu, ram, disk, time, actions):
         """Creates a new application item with the given attributes."""
         return {
             'name': name,
@@ -79,7 +79,7 @@ class ApplicationSet:
             'ram': ram,
             'disk': disk,
             'time': time,
-            'action': action
+            'actions': actions
         }
 
     def add_application(self, appAttributes):
@@ -130,8 +130,9 @@ def generate_random_apps(config):
     # Create some applications in the set
 
     attributes = config.get('attributes', {})
-    app = attributes.get('app', {})
-    num_apps = app.get('num_apps', 1)
+    app_conf = attributes.get('app', {})
+    app_actions_config = app_conf.get('actions', {})
+    num_apps = app_conf.get('num_apps', 1)
 
     for i in range(num_apps):
        appAttributes=application_set.newAppItem(
@@ -140,8 +141,8 @@ def generate_random_apps(config):
             cpu=get_random_from_range(config, 'app', 'cpu'),  # Random CPU requirement between 0.1 and 4.0 cores
             ram=get_random_from_range(config, 'app', 'ram'),  # Random RAM requirement between 0.5 and 8.0 GB
             disk=get_random_from_range(config, 'app', 'disk'),  # Random disk space requirement between 10 and 100 GB
-            time = get_random_from_range(config, 'app', 'time'),
-            action = selectRandomAction('app', config['attributes']['app']['action']) ) 
+            time=get_random_from_range(config, 'app', 'time'),
+            actions=app_actions_config ) 
        application_set.add_application(appAttributes)
     return application_set
 

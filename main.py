@@ -192,6 +192,8 @@ def update_system_state(events_list, config, app_set, user_set, infrastructure):
         'app': app_set,
         'infrastructure': infrastructure 
     }
+
+    events_list.global_time = first_event['time']
     
     # Identify which set we need to update based on 'type_object': user, app, infrastructure
     target_object = set_map.get(first_event['type_object'])
@@ -209,21 +211,19 @@ def update_system_state(events_list, config, app_set, user_set, infrastructure):
     if isinstance(params, dict):
         params['event_set'] = events_list
 
-    # Print event with action_params but exclude 'config' from it
     print("Processing event:", first_event['action'])
     print("Time event:", first_event['time'])
 
     action_method = getattr(target_object, first_event['action'])
     action_method(first_event['object_id'], params)
 
-    events_list.global_time = first_event['time']
-    print("Updated global time to", events_list.global_time)
-    events_list.update_event(first_event['id'])
+    events_list.update_event(first_event['id'], config)
     
 def generate_scenario(events_list, config, app_set, user_set, infrastructure):
     max_iterations = 1
 
     while events_list.events and max_iterations < 20: # and global_time < 300
+        print("ITERATION", max_iterations)
         # 2 Get first event
         # 3 Update everything (user_set/app_set and events_list)
         # 3.2 Update global_time!!
@@ -303,5 +303,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-            
