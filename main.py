@@ -249,7 +249,7 @@ def main():
 
     generated_events = EventSet()
 
-    generated_apps = generate_random_apps(config)
+    generated_apps = generate_random_apps(config, generated_events)
     print(f"Apps: {generated_apps}")
 
     generated_users = generate_random_users(config, generated_apps, generated_infrastructure, generated_events)

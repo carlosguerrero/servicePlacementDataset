@@ -4,7 +4,7 @@
 # parent_dir = os.path.dirname(current_dir)
 # sys.path.append(parent_dir)
 ########################################
-
+import random
 import uuid
 from .utils.auxiliar_functions import get_random_from_range, selectRandomGraphNodeByCentrality, selectRandomAction, selectAdjacentNodeWhenMoving
 from .eventSet import EventSet, generate_events
@@ -48,18 +48,36 @@ class UserSet:
         self.users[user_id] = userAttributes
         return user_id
 
-    def remove_user_by_requested_app(self, requested_app):
+    def remove_user_by_requested_app(self, requested_app, params):
         """Removes a user from the set based on their requested application."""
         for user_id, user in list(self.users.items()):
             if user['requestedApp'] == requested_app:
-                del self.users[user_id]
+                # del self.users[user_id]
+                self.remove_user(user_id, params)
                 return True
         return False
     
-    def remove_user(self, user_id, params=None):
-        """Removes a user from the set based on its ID."""
+    def remove_user(self, user_id, params):
+        """Removes a user from the set based on its ID from the user_set and the event_set"""
+        if params is None:
+            params = {}
+
+        event_set = params.get('event_set')
+
         if user_id in self.users:
             del self.users[user_id]
+
+            print("DESDE user - remove_user:", user_id, "has been removed")
+            events_to_delete = [
+                event_id
+                for event_id, value in event_set.events.items()
+                if value['object_id'] == user_id
+            ]
+            print("Events to delete:", events_to_delete)
+
+            for event_id in events_to_delete:
+                event_set.remove_event(event_id)
+
             return True
         return False
     
@@ -79,9 +97,36 @@ class UserSet:
             
         return False
     
-    def change_request_ratio(self, user_id, params=None):
-        config = params.get('config')
-        self.users[user_id]['requestRatio'] = get_random_from_range(config, 'user', 'request_ratio')
+    def increase_request_ratio_by_requested_app(self, requested_app, params):
+        """Removes a user from the set based on their requested application."""
+        for user_id, user in list(self.users.items()):
+            if user['requestedApp'] == requested_app:
+                self.increase_request_ratio(user_id, params)
+                print("DESDE user - increase_request_ratio_by_requested_app el user_id", user_id, "con app_id", requested_app)
+                return True
+        return False
+    
+    def increase_request_ratio(self, user_id, params=None):
+        if params is None:
+            params = {}
+        multiplier = eval(params.get('multiplier'))
+        self.users[user_id]['requestRatio'] = self.users[user_id]['requestRatio'] * multiplier
+        return True
+    
+    def decrease_request_ratio_by_requested_app(self, requested_app, params):
+        """Removes a user from the set based on their requested application."""
+        for user_id, user in list(self.users.items()):
+            if user['requestedApp'] == requested_app:
+                self.decrease_request_ratio(user_id, params)
+                print("DESDE user - decrease_request_ratio_by_requested_app el user_id", user_id, "con app_id", requested_app)
+                return True
+        return False
+    
+    def decrease_request_ratio(self, user_id, params=None):
+        if params is None:
+            params = {}
+        multiplier = eval(params.get('multiplier'))
+        self.users[user_id]['requestRatio'] = self.users[user_id]['requestRatio'] * multiplier
         return True
 
     def get_user(self, user_id):
@@ -110,14 +155,12 @@ class UserSet:
 
         create_new_user(config, app_set, infrastructure, user_set, event_set)
     
-def create_new_user(config, appsSet, infrastructure, user_set, event_set):
-
+def create_new_user(config, appsSet, infrastructure, user_set, event_set, app_id = None):
     attributes = config.get('attributes', {})
     user_conf = attributes.get('user', {})
     user_actions_config = user_conf.get('actions', {})
     user_centrality=get_random_from_range(config, 'user', 'centrality')
-
-    rqApp=appsSet.selectRandomAppIdByPopularity(get_random_from_range(config, 'user', 'request_popularity'))
+    rqApp = app_id if app_id is not None else appsSet.selectRandomAppIdByPopularity(get_random_from_range(config, 'user', 'request_popularity'))
     appNm=appsSet.get_application(rqApp)['name']
     userAttributes = user_set.newUserItem(
         name=user_set.getNextUserId(),

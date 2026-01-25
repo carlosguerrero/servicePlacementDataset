@@ -71,31 +71,31 @@ class EventSet:
     
     def update_event(self, event_id, config):
 
-        if self.events[event_id]['action'].startswith('remove'):
-            id_to_remove = self.events[event_id]['object_id']
-            print("DESDE remove: The", self.events[event_id]['type_object'], "with id", id_to_remove, "has been removed")
+        # if self.events[event_id]['action'].startswith('remove'):
+            # id_to_remove = self.events[event_id]['object_id']
+            # print("DESDE remove: The", self.events[event_id]['type_object'], "with id", id_to_remove, "has been removed")
 
-            events_to_delete = [
-                event_id
-                for event_id, value in self.events.items()
-                if value['object_id'] == id_to_remove
-            ]
-            print("Events to delete:", events_to_delete)
+            # events_to_delete = [
+            #     event_id
+            #     for event_id, value in self.events.items()
+            #     if value['object_id'] == id_to_remove
+            # ]
+            # print("Events to delete:", events_to_delete)
 
-            for event_id in events_to_delete:
-                self.remove_event(event_id)
-
-        # elif self.events[event_id]['action'].startswith('move'):
-            # print("DESDE move: The", self.events[event_id]['type_object'], "with id", self.events[event_id]['object_id'], "has been moved")
-            # self.remove_event(event_id)
+            # for event_id in events_to_delete:
+            #     self.remove_event(event_id)
+            # return True
         
-        else:
+        # if not self.events[event_id]['action'].startswith('remove'):
+        if event_id in self.events.keys():
             # We just need to get a new time from config + global_time
             actual_type_object = self.events[event_id]['type_object']
             actual_action = self.events[event_id]['action']
             self.events[event_id]['time'] = get_time(config, actual_type_object, actual_action) + self.global_time
             print("DESDE others: The", self.events[event_id]['action'], "for the type of object", self.events[event_id]['type_object'], "has been updated to time", self.events[event_id]['time'])
 
+        else:
+            print("DESDE eventSet - update_event: El event_id no estaba en la event_list")
         print("Update event list después update:", self)
         print(" ")
 

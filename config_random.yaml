@@ -1,13 +1,13 @@
 setup:
   mode: random
   num_nodes: 10
-  graph_model: 'watts_strogatz' 
+  graph_model: 'watts_strogatz'
 
 model_params:
   k: 4
   p_rewire: 0.1
 
-# Min and max of the random generartions
+# Min and max of the random generations
 attributes:
   node:
     ram: [1.0, 16.0]
@@ -29,10 +29,19 @@ attributes:
     actions: 
       remove_app:
         distribution: 'random.uniform(0, 300)'
-        action_params: None
-      move_app:
+        action_params: 
+          user_set: None,
+          event_set: None
+      increase_popularity:
         distribution: 'random.uniform(0, 300)'
-        action_params: None
+        action_params:
+          multiplier: 'random.uniform(1, 3)'
+          user_set: None,
+      decrease_popularity: 
+        distribution: 'random.uniform(0, 300)'
+        action_params:
+          multiplier: 'random.uniform(0, 1)'
+          user_set: None,
     
   user:
     num_users: 2
@@ -42,15 +51,24 @@ attributes:
     actions:
       remove_user:
         distribution: 'random.uniform(0, 300)'
-        action_params: None
+        action_params:
+          event_set: None
       move_user:
         distribution: 'random.uniform(0, 300)'
         action_params: 
           infrastructure: None
-      change_request_ratio:
+      # change_request_ratio:
+      #   distribution: 'random.uniform(0, 300)'
+      #   action_params:
+      #     config: None
+      increase_request_ratio:
         distribution: 'random.uniform(0, 300)'
         action_params:
-          config: None
+          multiplier: 'random.uniform(1, 3)'
+      decrease_request_ratio: 
+        distribution: 'random.uniform(0, 300)'
+        action_params:
+          multiplier: 'random.uniform(0, 1)'
 
   new_object:
     new_user: 
@@ -61,3 +79,13 @@ attributes:
         user_set: None,
         infrastructure: None,
         event_set: None
+
+    new_app: 
+      distribution: 'random.uniform(0, 300)'
+      action_params:
+        config: None,
+        app_set: None,
+        user_set: None,
+        infrastructure: None,
+        event_set: None,
+        num_new_users: 'random.randint(1, 5)'

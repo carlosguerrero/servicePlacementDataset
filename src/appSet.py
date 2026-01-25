@@ -10,6 +10,8 @@ import uuid
 
 # BORRAr from utils import get_random_from_range, selectRandomAction
 from .utils.auxiliar_functions import get_random_from_range, selectRandomAction
+from .eventSet import EventSet, generate_events
+from .userSet import create_new_user
 
 class ApplicationSet:
     def __init__(self):
@@ -89,13 +91,50 @@ class ApplicationSet:
         self.applications[app_id] = appAttributes
         return app_id
 
-    def remove_application(self, app_id, users):
+    def remove_app(self, app_id, params):
         """Removes an application from the set based on its ID."""
+        if params is None:
+            params = {}
+        users = params.get('user_set')
+        event_set = params.get('event_set')
+
         if app_id in self.applications:
             del self.applications[app_id]
-            users.remove_user_by_requested_app(app_id)  # Remove users requesting this app
+            print("DESDE appSet - remove_app:", app_id, "has been removed")
+            users.remove_user_by_requested_app(app_id, params)  # Remove users requesting this app
+            
+            events_to_delete = [
+                event_id
+                for event_id, value in event_set.events.items()
+                if value['object_id'] == app_id
+            ]
+            print("Events to delete:", events_to_delete)
+
+            for event_id in events_to_delete:
+                event_set.remove_event(event_id)
+
             return True
         return False
+    
+    def increase_popularity(self, app_id, params):
+        if params is None:
+            params = {}
+        multiplier = eval(params.get('multiplier'))
+        self.applications[app_id]['popularity'] = self.applications[app_id]['popularity'] * multiplier
+
+        users = params.get('user_set')
+        users.increase_request_ratio_by_requested_app(app_id, params)
+        return True
+    
+    def decrease_popularity(self, app_id, params): 
+        if params is None:
+            params = {}
+        multiplier = eval(params.get('multiplier'))
+        self.applications[app_id]['popularity'] = self.applications[app_id]['popularity'] * multiplier
+
+        users = params.get('user_set')
+        users.decrease_request_ratio_by_requested_app(app_id, params)
+        return True
 
     def get_application(self, app_id):
         """Retrieves an application by its ID from the set."""
@@ -112,8 +151,48 @@ class ApplicationSet:
     def __repr__(self):
         """Official string representation for developers (useful for debugging)."""
         return f"ApplicationSet(applications={self.applications})"
+    
+    def new_app(self, app_id, params):
+        """Creates a new user with random attributes based on the configuration."""
+        config = params.get('config')
+        app_set = params.get('app_set')
+        infrastructure = params.get('infrastructure')
+        user_set = params.get('user_set')
+        event_set = params.get('event_set')
+        num_new_users = eval(params.get('num_new_users'))
 
-def generate_random_apps(config):
+        # Se crea igual, no?
+        # create_new_app(config, app_set, event_set)
+        create_new_app(config, app_set, event_set)
+
+        created_app_id = list(app_set.applications)[-1]
+
+        print("La app con id", created_app_id, "se ha creado")
+        print("Vamos a crear nuevos usuarios", num_new_users)
+        for i in range(num_new_users):
+            create_new_user(config, app_set, infrastructure, user_set, event_set, created_app_id)
+
+def create_new_app(config, application_set, event_set):
+    attributes = config.get('attributes', {})
+    app_conf = attributes.get('app', {})
+    app_actions_config =app_conf.get('actions', {})
+
+    appAttributes=application_set.newAppItem(
+            name=application_set.getNextAppId(),
+            popularity=get_random_from_range(config, 'app', 'popularity'),  # Random popularity between 0.1 and 1.0
+            cpu=get_random_from_range(config, 'app', 'cpu'),  # Random CPU requirement between 0.1 and 4.0 cores
+            ram=get_random_from_range(config, 'app', 'ram'),  # Random RAM requirement between 0.5 and 8.0 GB
+            disk=get_random_from_range(config, 'app', 'disk'),  # Random disk space requirement between 10 and 100 GB
+            time=get_random_from_range(config, 'app', 'time'),
+            actions=app_actions_config ) 
+    
+    application_set.add_application(appAttributes)
+    generate_events(appAttributes, 'app', event_set)
+
+
+
+
+def generate_random_apps(config, event_set):
     """
     Generates a list of random applications with random resource requirements.
 
@@ -131,19 +210,20 @@ def generate_random_apps(config):
 
     attributes = config.get('attributes', {})
     app_conf = attributes.get('app', {})
-    app_actions_config = app_conf.get('actions', {})
+    # app_actions_config = app_conf.get('actions', {})
     num_apps = app_conf.get('num_apps', 1)
 
     for i in range(num_apps):
-       appAttributes=application_set.newAppItem(
-            name=application_set.getNextAppId(),
-            popularity=get_random_from_range(config, 'app', 'popularity'),  # Random popularity between 0.1 and 1.0
-            cpu=get_random_from_range(config, 'app', 'cpu'),  # Random CPU requirement between 0.1 and 4.0 cores
-            ram=get_random_from_range(config, 'app', 'ram'),  # Random RAM requirement between 0.5 and 8.0 GB
-            disk=get_random_from_range(config, 'app', 'disk'),  # Random disk space requirement between 10 and 100 GB
-            time=get_random_from_range(config, 'app', 'time'),
-            actions=app_actions_config ) 
-       application_set.add_application(appAttributes)
+    #    appAttributes=application_set.newAppItem(
+    #         name=application_set.getNextAppId(),
+    #         popularity=get_random_from_range(config, 'app', 'popularity'),  # Random popularity between 0.1 and 1.0
+    #         cpu=get_random_from_range(config, 'app', 'cpu'),  # Random CPU requirement between 0.1 and 4.0 cores
+    #         ram=get_random_from_range(config, 'app', 'ram'),  # Random RAM requirement between 0.5 and 8.0 GB
+    #         disk=get_random_from_range(config, 'app', 'disk'),  # Random disk space requirement between 10 and 100 GB
+    #         time=get_random_from_range(config, 'app', 'time'),
+    #         actions=app_actions_config ) 
+    #    application_set.add_application(appAttributes)
+        create_new_app(config, application_set, event_set)
     return application_set
 
 if __name__ == "__main__":
