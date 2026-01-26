@@ -106,6 +106,26 @@ def generate_infrastructure(config):
 
     return graph
 
+def disable_node(graph, node_id):
+    """
+    Sets the 'enable' attribute of a specific node to False.
+    """
+    if node_id in graph.nodes:
+        graph.nodes[node_id]['enable'] = False
+        print(f"Node {node_id} has been disabled.")
+    else:
+        print(f"Node {node_id} not found in the graph.")
+
+def revive_node(graph, node_id):
+    """
+    Sets the 'enable' attribute of a specific node to False.
+    """
+    if node_id in graph.nodes:
+        graph.nodes[node_id]['enable'] = False
+        print(f"Node {node_id} has been disabled.")
+    else:
+        print(f"Node {node_id} not found in the graph.")
+
 def solve_application_placement(graph, application_set, user_set):
     """Solves the application placement problem using ILP."""
     applications = application_set.get_all_apps()
@@ -184,6 +204,95 @@ def solve_application_placement(graph, application_set, user_set):
     else:
         print(f"No Optimal Solution Found. Status: {LpStatus[prob.status]}")
         return None, None
+
+# REVISAR, pero sera la BUENA
+def solve_application_placement2(graph, application_set, user_set):
+    # CONSTANT for "Very High Number" (Penalty for disconnection)
+    # This ensures the solver avoids these paths or returns a high cost if forced.
+    PENALTY_DELAY = 1_000_000 
+
+    applications = application_set.get_all_apps()
+    users = user_set.get_all_users()
+
+    # 1. Filter: Identify only Active Nodes
+    active_nodes = [n for n, attrs in graph.nodes(data=True) if attrs.get('enable', True)]
+
+    # If no nodes are active, we cannot solve anything. Return "High Number".
+    if not active_nodes:
+        print("All nodes are disabled. Returning high penalty.")
+        return None, PENALTY_DELAY
+
+    # 2. Create a Subgraph
+    # This creates a view of the graph with ONLY active nodes.
+    # Edges connected to disabled nodes are automatically hidden in this view.
+    active_subgraph = graph.subgraph(active_nodes)
+
+    # 3. Recalculate Shortest Paths on the Subgraph
+    try:
+        # This will only calculate paths that exist strictly using active nodes.
+        all_pairs_shortest_paths = dict(nx.all_pairs_dijkstra_path_length(active_subgraph, weight='delay'))
+    except Exception as e:
+        print(f"Graph calculation error: {e}")
+        return None, PENALTY_DELAY
+
+    # 4. Decision Variable: Only create variables for ACTIVE nodes
+    x_an = LpVariable.dicts("Place", [(app_id, node) for app_id in applications for node in active_nodes], cat='Binary')
+
+    prob = LpProblem("Application_Placement", LpMinimize)
+    objective_terms = []
+
+    # 5. Build Objective with Penalty Handling
+    for user_id, user_data in users.items():
+        requested_app_id = user_data['requestedApp']
+        user_home_node = user_data['connectedTo']
+
+        # Ensure user is also on an active node, otherwise they can't request
+        if requested_app_id and user_home_node in active_nodes:
+            for node_app_placed in active_nodes:
+                # Retrieve delay. If 'node_app_placed' is not reachable from 'user_home_node',
+                # .get() will fail to find the inner key.
+                # We default to PENALTY_DELAY to represent "Disconnected".
+                paths_from_user = all_pairs_shortest_paths.get(user_home_node, {})
+                delay_value = paths_from_user.get(node_app_placed, PENALTY_DELAY)
+                
+                # Add to objective
+                objective_terms.append(delay_value * user_data['requestRatio'] * x_an[requested_app_id, node_app_placed])
+        
+    prob += lpSum(objective_terms), "Total Weighted Latency"
+
+    # Constraint 1: App must be on exactly one ACTIVE node
+    for app_id in applications:
+        prob += lpSum(x_an[app_id, node] for node in active_nodes) == 1, f"PlacementConstraint_{app_id}"
+
+    # Constraint 2: RAM capacity of ACTIVE nodes
+    for node in active_nodes:
+        prob += lpSum(applications[app_id]['ram'] * x_an[app_id, node] for app_id in applications) <= graph.nodes[node]['ram'], f"RAMConstraint_{node}"
+
+    # Solve
+    prob.solve(PULP_CBC_CMD(msg=0))
+
+    if LpStatus[prob.status] == "Optimal":
+        # Check if the "Optimal" solution was forced to use a Penalty path
+        # If the objective value is massive, it implies the graph was disconnected
+        current_objective = value(prob.objective)
+        
+        if current_objective >= PENALTY_DELAY:
+            print("Solution found but graph is effectively disconnected (Penalty used).")
+            # You can decide to return None or the high value here depending on preference
+            return None, current_objective
+
+        print("\nOptimal Application Placement Found on Active Nodes:")
+        placement = {}
+        for app_id, app_data in applications.items():
+            for node in active_nodes:
+                if value(x_an[app_id, node]) == 1:
+                    placement[app_data['name']] = node
+                    break
+        return placement, current_objective
+    else:
+        print(f"No Optimal Solution Found. Status: {LpStatus[prob.status]}")
+        # Return high number as requested
+        return None, PENALTY_DELAY
 
 def update_system_state(events_list, config, app_set, user_set, infrastructure):
     first_event = events_list.get_first_event()
