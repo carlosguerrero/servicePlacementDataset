@@ -6,7 +6,7 @@ from pulp import *
 import pickle
 import copy
 
-from src import EventSet, generate_events, init_new_object, ApplicationSet, generate_random_apps, UserSet, generate_random_users
+from src import EventSet, generate_events, init_new_object, ApplicationSet, generate_random_apps, UserSet, generate_random_users, InfrastructureGraph, _generate_random_graph, _generate_manual_graph, generate_infrastructure
 from src.utils.auxiliar_functions import get_random_from_range
 
 def load_config(config_path):
@@ -14,119 +14,101 @@ def load_config(config_path):
     with open(config_path, 'r') as file:
         return yaml.safe_load(file)
 
-def _generate_random_graph(config):
-    """Internal function to handle the 'random' generation mode."""
-    setup = config.get('setup', {})
-    model_params = config.get('model_params', {})
+# BORRAR
+# def _generate_random_graph(config):
+#     """Internal function to handle the 'random' generation mode."""
+#     setup = config.get('setup', {})
+#     model_params = config.get('model_params', {})
     
-    model_name = setup.get('graph_model', 'erdos_renyi') # set to default if it's empty
-    num_nodes = setup.get('num_nodes', 10)
+#     model_name = setup.get('graph_model', 'erdos_renyi') # set to default if it's empty
+#     num_nodes = setup.get('num_nodes', 10)
     
-    print(f"  [Random Mode] Generating {model_name} graph with {num_nodes} nodes...")
+#     print(f"  [Random Mode] Generating {model_name} graph with {num_nodes} nodes...")
     
-    # 1. Generate Topology
-    if model_name == 'erdos_renyi':
-        p = model_params.get('p', 0.1)
-        graph = nx.erdos_renyi_graph(num_nodes, p)
-    elif model_name == 'barabasi_albert':
-        m = model_params.get('m', 2)
-        if m >= num_nodes: m = 1
-        graph = nx.barabasi_albert_graph(num_nodes, m)
-    elif model_name == 'watts_strogatz':
-        k = model_params.get('k', 4)
-        p = model_params.get('p_rewire', 0.1)
-        if k >= num_nodes: k = num_nodes - 1
-        graph = nx.watts_strogatz_graph(num_nodes, k, p)
-    elif model_name == 'balanced_tree':
-        r = model_params.get('r', 2) 
-        h = model_params.get('h', 3)
-        graph = nx.balanced_tree(r, h)
-    else:
-        print(f"Graph model '{model_name}' not recognized.")
-        return None
+#     # 1. Generate Topology
+#     if model_name == 'erdos_renyi':
+#         p = model_params.get('p', 0.1)
+#         graph = nx.erdos_renyi_graph(num_nodes, p)
+#     elif model_name == 'barabasi_albert':
+#         m = model_params.get('m', 2)
+#         if m >= num_nodes: m = 1
+#         graph = nx.barabasi_albert_graph(num_nodes, m)
+#     elif model_name == 'watts_strogatz':
+#         k = model_params.get('k', 4)
+#         p = model_params.get('p_rewire', 0.1)
+#         if k >= num_nodes: k = num_nodes - 1
+#         graph = nx.watts_strogatz_graph(num_nodes, k, p)
+#     elif model_name == 'balanced_tree':
+#         r = model_params.get('r', 2) 
+#         h = model_params.get('h', 3)
+#         graph = nx.balanced_tree(r, h)
+#     else:
+#         print(f"Graph model '{model_name}' not recognized.")
+#         return None
 
-    # 2. Assign Random Ram
-    for node in graph.nodes():
-        graph.nodes[node]['ram'] = get_random_from_range(config, 'node', 'ram')
-        graph.nodes[node]['enable'] = True
+#     # 2. Assign Random Ram
+#     for node in graph.nodes():
+#         graph.nodes[node]['ram'] = get_random_from_range(config, 'node', 'ram')
+#         graph.nodes[node]['enable'] = True
 
-    # 3. Assign Random Edge Delays
-    for u, v in graph.edges():
-        graph.edges[u, v]['delay'] = get_random_from_range(config, 'edge', 'delay')
+#     # 3. Assign Random Edge Delays
+#     for u, v in graph.edges():
+#         graph.edges[u, v]['delay'] = get_random_from_range(config, 'edge', 'delay')
 
-    return graph
+#     return graph
 
 # BORRAR: por ahora lo dejo estar
-def _generate_manual_graph(config):
-    """Internal function to handle the 'manual' generation mode."""
-    print("  [Manual Mode] Building graph from defined topology...")
-    graph = nx.Graph()
+# def _generate_manual_graph(config):
+#     """Internal function to handle the 'manual' generation mode."""
+#     print("  [Manual Mode] Building graph from defined topology...")
+#     graph = nx.Graph()
     
-    topology = config.get('topology', {})
+#     topology = config.get('topology', {})
     
-    # 1. Add Nodes with specific attributes
-    for node_data in topology.get('nodes', []):
-        # We pop 'id' so it isn't stored as an attribute inside the node dict itself
-        # but used as the key in the graph
-        data_copy = node_data.copy()
-        node_id = data_copy.pop('id') 
-        graph.add_node(node_id, **data_copy)
+#     # 1. Add Nodes with specific attributes
+#     for node_data in topology.get('nodes', []):
+#         # We pop 'id' so it isn't stored as an attribute inside the node dict itself
+#         # but used as the key in the graph
+#         data_copy = node_data.copy()
+#         node_id = data_copy.pop('id') 
+#         graph.add_node(node_id, **data_copy)
         
-    # 2. Add Edges with specific attributes
-    for edge_data in topology.get('edges', []):
-        data_copy = edge_data.copy()
-        u = data_copy.pop('source')
-        v = data_copy.pop('target')
-        graph.add_edge(u, v, **data_copy)
+#     # 2. Add Edges with specific attributes
+#     for edge_data in topology.get('edges', []):
+#         data_copy = edge_data.copy()
+#         u = data_copy.pop('source')
+#         v = data_copy.pop('target')
+#         graph.add_edge(u, v, **data_copy)
         
-    return graph
+#     return graph
 
-def generate_infrastructure(config):
-    """
-    Main entry point. Switches between manual and random generation
-    based on the 'mode' setting in YAML.
-    """
-    setup = config.get('setup', {})
-    mode = setup.get('mode', 'random')
+# def generate_infrastructure(config):
+#     """
+#     Main entry point. Switches between manual and random generation
+#     based on the 'mode' setting in YAML.
+#     """
+#     setup = config.get('setup', {})
+#     mode = setup.get('mode', 'random')
     
-    if mode == 'manual':
-        graph = _generate_manual_graph(config)
-    else:
-        graph = _generate_random_graph(config)
+#     if mode == 'manual':
+#         graph = _generate_manual_graph(config)
+#     else:
+#         graph = _generate_random_graph(config)
 
-    # --- Common Post-Processing ---
-    # We calculate centrality for BOTH modes (unless you want to manually define it too)
-    if graph and graph.number_of_nodes() > 0:
-        try:
-            betweenness_centrality = nx.betweenness_centrality(graph)
-            for node, centrality in betweenness_centrality.items():
-                graph.nodes[node]['betweenness_centrality'] = round(centrality, 4)
-        except Exception as e:
-            print(f"Could not calculate centrality: {e}")
+#     # --- Common Post-Processing ---
+#     # We calculate centrality for BOTH modes (unless you want to manually define it too)
+#     if graph and graph.number_of_nodes() > 0:
+#         try:
+#             betweenness_centrality = nx.betweenness_centrality(graph)
+#             for node, centrality in betweenness_centrality.items():
+#                 graph.nodes[node]['betweenness_centrality'] = round(centrality, 4)
+#         except Exception as e:
+#             print(f"Could not calculate centrality: {e}")
 
-    return graph
+#     return graph
 
-def disable_node(graph, node_id):
-    """
-    Sets the 'enable' attribute of a specific node to False.
-    """
-    if node_id in graph.nodes:
-        graph.nodes[node_id]['enable'] = False
-        print(f"Node {node_id} has been disabled.")
-    else:
-        print(f"Node {node_id} not found in the graph.")
-
-def revive_node(graph, node_id):
-    """
-    Sets the 'enable' attribute of a specific node to False.
-    """
-    if node_id in graph.nodes:
-        graph.nodes[node_id]['enable'] = False
-        print(f"Node {node_id} has been disabled.")
-    else:
-        print(f"Node {node_id} not found in the graph.")
-
-def solve_application_placement(graph, application_set, user_set):
+# BORRAR: versión original de Carlos
+def solve_application_placement_carlos(graph, application_set, user_set):
     """Solves the application placement problem using ILP."""
     applications = application_set.get_all_apps()
     nodes = list(graph.nodes())
@@ -205,83 +187,103 @@ def solve_application_placement(graph, application_set, user_set):
         print(f"No Optimal Solution Found. Status: {LpStatus[prob.status]}")
         return None, None
 
-# REVISAR, pero sera la BUENA
-def solve_application_placement2(graph, application_set, user_set):
-    # CONSTANT for "Very High Number" (Penalty for disconnection)
-    # This ensures the solver avoids these paths or returns a high cost if forced.
+# BORRAR
+# def disable_node(graph, node_id):
+#     if node_id in graph.nodes:
+#         graph.nodes[node_id]['enable'] = False
+#         print(f"Node {node_id} has been disabled.")
+
+#         update_shortest_paths(graph)
+#     else:
+#         print(f"Node {node_id} not found in the graph.")
+
+# def revive_node(graph, node_id):
+#     if node_id in graph.nodes:
+#         graph.nodes[node_id]['enable'] = True
+#         print(f"Node {node_id} has been revived.")
+
+#         update_shortest_paths(graph)
+#     else:
+#         print(f"Node {node_id} not found in the graph.")
+
+# def update_shortest_paths(graph):
+#     """
+#     Recalculates shortest paths based on currently ACTIVE nodes 
+#     and stores them in the graph's metadata.
+#     """
+#     active_nodes = [n for n, attrs in graph.nodes(data=True) if attrs.get('enable', True)]
+
+#     if not active_nodes:
+#         graph.graph['shortest_paths'] = {}
+#         return
+
+#     active_subgraph = graph.subgraph(active_nodes)
+
+#     try:
+#         # We store the dictionary of shortest paths in graph.graph
+#         graph.graph['shortest_paths'] = dict(nx.all_pairs_dijkstra_path_length(active_subgraph, weight='delay'))
+#         print("GRAPH: shortest paths updated") 
+#     except Exception as e:
+#         print(f"  [Error] Path calculation failed: {e}")
+#         graph.graph['shortest_paths'] = {}
+
+def solve_application_placement(graph, application_set, user_set):
     PENALTY_DELAY = 1_000_000 
+
+    # --- NEW: Lazy Load / Cache Access ---
+    # If the cache doesn't exist yet, calculate it now.
+    if 'shortest_paths' not in graph.graph:
+        print("  [Info] Initializing shortest paths cache...")
+        update_shortest_paths(graph)
+    
+    # Retrieve pre-calculated paths
+    all_pairs_shortest_paths = graph.graph['shortest_paths']
+    # -------------------------------------
 
     applications = application_set.get_all_apps()
     users = user_set.get_all_users()
-
-    # 1. Filter: Identify only Active Nodes
+    
+    # Filter active nodes for constraints
     active_nodes = [n for n, attrs in graph.nodes(data=True) if attrs.get('enable', True)]
 
-    # If no nodes are active, we cannot solve anything. Return "High Number".
     if not active_nodes:
-        print("All nodes are disabled. Returning high penalty.")
         return None, PENALTY_DELAY
 
-    # 2. Create a Subgraph
-    # This creates a view of the graph with ONLY active nodes.
-    # Edges connected to disabled nodes are automatically hidden in this view.
-    active_subgraph = graph.subgraph(active_nodes)
-
-    # 3. Recalculate Shortest Paths on the Subgraph
-    try:
-        # This will only calculate paths that exist strictly using active nodes.
-        all_pairs_shortest_paths = dict(nx.all_pairs_dijkstra_path_length(active_subgraph, weight='delay'))
-    except Exception as e:
-        print(f"Graph calculation error: {e}")
-        return None, PENALTY_DELAY
-
-    # 4. Decision Variable: Only create variables for ACTIVE nodes
+    # Decision Variable
     x_an = LpVariable.dicts("Place", [(app_id, node) for app_id in applications for node in active_nodes], cat='Binary')
 
     prob = LpProblem("Application_Placement", LpMinimize)
     objective_terms = []
 
-    # 5. Build Objective with Penalty Handling
     for user_id, user_data in users.items():
         requested_app_id = user_data['requestedApp']
         user_home_node = user_data['connectedTo']
 
-        # Ensure user is also on an active node, otherwise they can't request
         if requested_app_id and user_home_node in active_nodes:
             for node_app_placed in active_nodes:
-                # Retrieve delay. If 'node_app_placed' is not reachable from 'user_home_node',
-                # .get() will fail to find the inner key.
-                # We default to PENALTY_DELAY to represent "Disconnected".
+                # OPTIMIZATION: Direct lookup in the cached dictionary
                 paths_from_user = all_pairs_shortest_paths.get(user_home_node, {})
                 delay_value = paths_from_user.get(node_app_placed, PENALTY_DELAY)
                 
-                # Add to objective
                 objective_terms.append(delay_value * user_data['requestRatio'] * x_an[requested_app_id, node_app_placed])
         
     prob += lpSum(objective_terms), "Total Weighted Latency"
 
-    # Constraint 1: App must be on exactly one ACTIVE node
+    # Constraint 1: Placement
     for app_id in applications:
         prob += lpSum(x_an[app_id, node] for node in active_nodes) == 1, f"PlacementConstraint_{app_id}"
 
-    # Constraint 2: RAM capacity of ACTIVE nodes
+    # Constraint 2: RAM
     for node in active_nodes:
         prob += lpSum(applications[app_id]['ram'] * x_an[app_id, node] for app_id in applications) <= graph.nodes[node]['ram'], f"RAMConstraint_{node}"
 
-    # Solve
     prob.solve(PULP_CBC_CMD(msg=0))
 
     if LpStatus[prob.status] == "Optimal":
-        # Check if the "Optimal" solution was forced to use a Penalty path
-        # If the objective value is massive, it implies the graph was disconnected
         current_objective = value(prob.objective)
-        
         if current_objective >= PENALTY_DELAY:
-            print("Solution found but graph is effectively disconnected (Penalty used).")
-            # You can decide to return None or the high value here depending on preference
             return None, current_objective
 
-        print("\nOptimal Application Placement Found on Active Nodes:")
         placement = {}
         for app_id, app_data in applications.items():
             for node in active_nodes:
@@ -290,8 +292,6 @@ def solve_application_placement2(graph, application_set, user_set):
                     break
         return placement, current_objective
     else:
-        print(f"No Optimal Solution Found. Status: {LpStatus[prob.status]}")
-        # Return high number as requested
         return None, PENALTY_DELAY
 
 def update_system_state(events_list, config, app_set, user_set, infrastructure):
@@ -354,7 +354,6 @@ def main():
     # RANDOM GENERATION OF GRAPH
     generated_infrastructure = generate_infrastructure(config)
     print(f"Nodes: {generated_infrastructure.number_of_nodes()}")
-    print(f"Edges: {generated_infrastructure.number_of_edges()}")
 
     generated_events = EventSet()
 

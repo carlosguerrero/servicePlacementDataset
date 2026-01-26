@@ -10,14 +10,23 @@ model_params:
 # Min and max of the random generations
 attributes:
   node:
-    ram: [1.0, 16.0]
+    ram: 'random.uniform(1, 16)'
     actions:
-      remove_node:
+      disable_node:
         distribution: 'random.uniform(0, 300)'
         action_params: None
   
   edge:
-    delay: [0.1, 5.0]
+    delay: 'random.uniform(0.1, 5.0)'
+
+  infrastructure:
+    actions:
+      disable_random_node:
+        distribution: 'random.uniform(0, 300)'
+        action_params: None
+      # enable_node:
+      #   distribution: 'random.uniform(0, 300)'
+      #   action_params: None
   
   app:
     num_apps: 3
@@ -57,10 +66,6 @@ attributes:
         distribution: 'random.uniform(0, 300)'
         action_params: 
           infrastructure: None
-      # change_request_ratio:
-      #   distribution: 'random.uniform(0, 300)'
-      #   action_params:
-      #     config: None
       increase_request_ratio:
         distribution: 'random.uniform(0, 300)'
         action_params:
@@ -89,3 +94,5 @@ attributes:
         infrastructure: None,
         event_set: None,
         num_new_users: 'random.randint(1, 5)'
+    
+    # new_disabled_node:

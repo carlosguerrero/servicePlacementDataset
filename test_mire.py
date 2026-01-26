@@ -16,7 +16,7 @@ import pickle
 import copy
 
 from src import EventSet, generate_events, init_new_object, ApplicationSet, generate_random_apps, UserSet, generate_random_users
-from main import generate_infrastructure, load_config
+from main import generate_infrastructure, load_config, update_shortest_paths
 
 
 
@@ -29,6 +29,7 @@ if __name__ == "__main__":
 
     # RANDOM GENERATION OF GRAPH
     generated_infrastructure = generate_infrastructure(config)
+    update_shortest_paths(generated_infrastructure)
     print(f"Nodes: {generated_infrastructure.number_of_nodes()}")
     print(f"Edges: {generated_infrastructure.number_of_edges()}")
 
@@ -43,11 +44,3 @@ if __name__ == "__main__":
     init_new_object(config, generated_events)
 
     print("\nEvents in the set:", generated_events)
-
-
-
-    
-    
-
-
-

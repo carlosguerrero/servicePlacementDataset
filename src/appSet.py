@@ -189,9 +189,6 @@ def create_new_app(config, application_set, event_set):
     application_set.add_application(appAttributes)
     generate_events(appAttributes, 'app', event_set)
 
-
-
-
 def generate_random_apps(config, event_set):
     """
     Generates a list of random applications with random resource requirements.
@@ -203,26 +200,13 @@ def generate_random_apps(config, event_set):
     Returns:
         list: A list of dictionaries representing the generated applications.
     """
-
-
     application_set = ApplicationSet()
-    # Create some applications in the set
 
     attributes = config.get('attributes', {})
     app_conf = attributes.get('app', {})
-    # app_actions_config = app_conf.get('actions', {})
     num_apps = app_conf.get('num_apps', 1)
 
     for i in range(num_apps):
-    #    appAttributes=application_set.newAppItem(
-    #         name=application_set.getNextAppId(),
-    #         popularity=get_random_from_range(config, 'app', 'popularity'),  # Random popularity between 0.1 and 1.0
-    #         cpu=get_random_from_range(config, 'app', 'cpu'),  # Random CPU requirement between 0.1 and 4.0 cores
-    #         ram=get_random_from_range(config, 'app', 'ram'),  # Random RAM requirement between 0.5 and 8.0 GB
-    #         disk=get_random_from_range(config, 'app', 'disk'),  # Random disk space requirement between 10 and 100 GB
-    #         time=get_random_from_range(config, 'app', 'time'),
-    #         actions=app_actions_config ) 
-    #    application_set.add_application(appAttributes)
         create_new_app(config, application_set, event_set)
     return application_set
 
