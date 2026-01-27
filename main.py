@@ -294,22 +294,22 @@ def solve_application_placement(graph, application_set, user_set):
     else:
         return None, PENALTY_DELAY
 
-def update_system_state(events_list, config, app_set, user_set, infrastructure):
+def update_system_state(events_list, config, app_set, user_set, graph):
     first_event = events_list.get_first_event()
     set_map = {
         'user': user_set,
         'app': app_set,
-        'infrastructure': infrastructure 
+        'graph': graph
     }
 
     events_list.global_time = first_event['time']
     
-    # Identify which set we need to update based on 'type_object': user, app, infrastructure
+    # Identify which set we need to update based on 'type_object': user, app, graph
     target_object = set_map.get(first_event['type_object'])
     if not target_object:
         raise ValueError(f"Unknown object type: {first_event['type_object']}")
 
-    events_list.update_event_params(first_event['id'], config, app_set, user_set, infrastructure)
+    events_list.update_event_params(first_event['id'], config, app_set, user_set, graph)
     params = first_event['action_params']
     if params == 'None':
         params = None
@@ -326,7 +326,7 @@ def update_system_state(events_list, config, app_set, user_set, infrastructure):
     action_method = getattr(target_object, first_event['action'])
     action_method(first_event['object_id'], params)
 
-    events_list.update_event(first_event['id'], config)
+    events_list.update_event_time(first_event['id'], config)
     
 def generate_scenario(events_list, config, app_set, user_set, infrastructure):
     max_iterations = 1
@@ -351,11 +351,11 @@ def main():
     config_random = "config_random.yaml"
     config = load_config(config_random)
 
-    # RANDOM GENERATION OF GRAPH
-    generated_infrastructure = generate_infrastructure(config)
-    print(f"Nodes: {generated_infrastructure.number_of_nodes()}")
-
     generated_events = EventSet()
+
+    # RANDOM GENERATION OF GRAPH
+    generated_infrastructure = generate_infrastructure(config, generated_events)
+    print(f"Nodes: {generated_infrastructure.number_of_nodes()}")
 
     generated_apps = generate_random_apps(config, generated_events)
     print(f"Apps: {generated_apps}")

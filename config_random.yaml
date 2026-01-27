@@ -11,10 +11,6 @@ model_params:
 attributes:
   node:
     ram: 'random.uniform(1, 16)'
-    actions:
-      disable_node:
-        distribution: 'random.uniform(0, 300)'
-        action_params: None
   
   edge:
     delay: 'random.uniform(0.1, 5.0)'
@@ -23,10 +19,9 @@ attributes:
     actions:
       disable_random_node:
         distribution: 'random.uniform(0, 300)'
-        action_params: None
-      # enable_node:
-      #   distribution: 'random.uniform(0, 300)'
-      #   action_params: None
+        action_params: 
+          event_set: None
+          distribution_to_enable_node: 'random.uniform(0, 100)'
   
   app:
     num_apps: 3

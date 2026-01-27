@@ -1,10 +1,13 @@
 import networkx as nx
 import random
+from .eventSet import generate_events
 
 class InfrastructureGraph(nx.Graph):
-    def __init__(self, incoming_graph_data=None, **attr):
+    def __init__(self, incoming_graph_data=None, actions=None, **attr):
         # Initialize the standard NetworkX graph
         super().__init__(incoming_graph_data, **attr)
+
+        self.actions = actions if actions is not None else {}
         
         if 'shortest_paths' not in self.graph:
             self.update_shortest_paths()
@@ -59,9 +62,22 @@ class InfrastructureGraph(nx.Graph):
 
         self.disable_node(selected_node)
 
+        # We need to add "revive_node" to the event list for this selected_node
+        event_set = params.get('event_set')
+        distribution_to_enable_node = eval(params.get('distribution_to_enable_node'))
+
+        eventAttributes = event_set.newEventItem(
+            object_id=selected_node,
+            type_object='graph',
+            time=distribution_to_enable_node + event_set.global_time,
+            action='revive_node',
+            action_params=None
+        )
+        event_set.add_event(eventAttributes)
+
+
     def disable_node(self, node_id, params=None):
         """Disables a node and automatically updates paths."""
-        # params=None is added to ensure compatibility with your event loop calling signature
         if node_id in self.nodes:
             self.nodes[node_id]['enable'] = False
             print(f"Node {node_id} has been disabled.")
@@ -78,7 +94,7 @@ class InfrastructureGraph(nx.Graph):
         else:
             print(f"Node {node_id} not found in the graph.")
 
-def _generate_random_graph(config):
+def _generate_random_graph(config, event_set):
     """Internal function to handle the 'random' generation mode."""
     setup = config.get('setup', {})
     model_params = config.get('model_params', {})
@@ -107,8 +123,10 @@ def _generate_random_graph(config):
     else:
         print(f"Graph model '{model_name}' not recognized.")
         return None
+
+    actions_list = config['attributes']['infrastructure'].get('actions', {})
     
-    graph = InfrastructureGraph(temp_graph)
+    graph = InfrastructureGraph(temp_graph, actions=actions_list)
 
     for node in graph.nodes():
         graph.nodes[node]['ram'] = eval(config['attributes']['node']['ram'])
@@ -118,6 +136,8 @@ def _generate_random_graph(config):
         graph.edges[u, v]['delay'] = eval(config['attributes']['edge']['delay'])
 
     graph.update_shortest_paths()
+
+    generate_events(graph, 'graph', event_set)
     
     return graph
 
@@ -145,7 +165,7 @@ def _generate_manual_graph(config):
         
     return graph
 
-def generate_infrastructure(config):
+def generate_infrastructure(config, event_set):
     """
     Main entry point. Switches between manual and random generation
     based on the 'mode' setting in YAML.
@@ -156,7 +176,7 @@ def generate_infrastructure(config):
     if mode == 'manual':
         graph = _generate_manual_graph(config)
     else:
-        graph = _generate_random_graph(config)
+        graph = _generate_random_graph(config, event_set)
 
     # --- Common Post-Processing ---
     # We calculate centrality for BOTH modes (unless you want to manually define it too)
@@ -167,5 +187,5 @@ def generate_infrastructure(config):
                 graph.nodes[node]['betweenness_centrality'] = round(centrality, 4)
         except Exception as e:
             print(f"Could not calculate centrality: {e}")
-
+    
     return graph

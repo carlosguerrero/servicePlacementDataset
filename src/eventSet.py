@@ -36,20 +36,6 @@ class EventSet:
             return True
         return False
 
-    # BORRAR
-    # def update_event_params(self, event_id, config, app_set, user_set, infrastructure):
-    #     if self.events[event_id]['action'].startswith('move'):
-    #         print("DESDE move: The", self.events[event_id]['type_object'], "with id", self.events[event_id]['object_id'], "has been removed")
-    #         self.events[event_id]['action_params']['infrastructure'] = infrastructure
-    #     elif self.events[event_id]['action'].startswith('new'):
-    #         print("DESDE new: A new", self.events[event_id]['type_object'], "will be created")
-    #         self.events[event_id]['action_params']['config'] = config
-    #         self.events[event_id]['action_params']['app_set'] = app_set
-    #         self.events[event_id]['action_params']['user_set'] = user_set
-    #         self.events[event_id]['action_params']['infrastructure'] = infrastructure
-    #     print("Update event list después update:", self.events)
-    #     print(" ")
-
     def update_event_params(self, event_id, config, app_set, user_set, infrastructure):
         event = self.events[event_id]
         params = event.get('action_params')
@@ -68,37 +54,32 @@ class EventSet:
         for key, obj_value in params_map.items():
             if key in params:
                 params[key] = obj_value
-    
-    def update_event(self, event_id, config):
 
-        # if self.events[event_id]['action'].startswith('remove'):
-            # id_to_remove = self.events[event_id]['object_id']
-            # print("DESDE remove: The", self.events[event_id]['type_object'], "with id", id_to_remove, "has been removed")
+    def remove_events_by_object_id(self, object_id):
+        events_to_delete = [
+            event_id
+            for event_id, value in self.events.items()
+            if value['object_id'] == object_id
+        ]
 
-            # events_to_delete = [
-            #     event_id
-            #     for event_id, value in self.events.items()
-            #     if value['object_id'] == id_to_remove
-            # ]
-            # print("Events to delete:", events_to_delete)
-
-            # for event_id in events_to_delete:
-            #     self.remove_event(event_id)
-            # return True
+        for event_id in events_to_delete:
+            self.remove_event(event_id)
         
-        # if not self.events[event_id]['action'].startswith('remove'):
+        print("DESDE event - remove_events_by_object_id:", object_id, "has been removed")
+        print("Number of events that have been deleted:", len(events_to_delete))
+    
+    def update_event_time(self, event_id, config):
         if event_id in self.events.keys():
             # We just need to get a new time from config + global_time
             actual_type_object = self.events[event_id]['type_object']
             actual_action = self.events[event_id]['action']
             self.events[event_id]['time'] = get_time(config, actual_type_object, actual_action) + self.global_time
-            print("DESDE others: The", self.events[event_id]['action'], "for the type of object", self.events[event_id]['type_object'], "has been updated to time", self.events[event_id]['time'])
+            print("DESDE event - update_event_time: The", self.events[event_id]['action'], "for the type of object", self.events[event_id]['type_object'], "has been updated to time", self.events[event_id]['time'])
 
         else:
             print("DESDE eventSet - update_event: El event_id no estaba en la event_list")
         print("Update event list después update:", self)
         print(" ")
-
 
     def __str__(self):
         """Returns a string representation of the EventSet (the events list) without action_params."""
@@ -109,7 +90,8 @@ class EventSet:
         return str(events_to_print)
         # return str(self.events)
 
-def generate_events(object, type_object, event_set):
+# BORRAR
+def generate_events2(object, type_object, event_set):
     """type_object: 'user' or 'app'
     Later will be also be node"""
     for action in object['actions']:
@@ -119,6 +101,34 @@ def generate_events(object, type_object, event_set):
             time = round(eval(object['actions'][action]['distribution']), 2) + event_set.global_time, 
             action = action,
             action_params = object['actions'][action]['action_params']
+        )
+        event_set.add_event(eventAttributes)
+
+    return event_set
+
+def generate_events(object, type_object, event_set):
+    """
+    type_object: 'user', 'app', or 'graph'
+    """
+    if type_object == 'graph':
+        # For the graph
+        obj_id = "000" 
+        actions_dict = object.actions  # Accessing self.actions from the class
+    else:
+        # For users/apps 
+        obj_id = object['id']
+        actions_dict = object['actions']
+
+    for action_name, action_details in actions_dict.items():
+        distribution_str = action_details.get('distribution', '0')
+        delay_val = eval(str(distribution_str))
+        
+        eventAttributes = event_set.newEventItem(
+            object_id=obj_id,
+            type_object=type_object,
+            time=round(delay_val, 2) + event_set.global_time,
+            action=action_name,
+            action_params=action_details.get('action_params', {})
         )
         event_set.add_event(eventAttributes)
 

@@ -1,9 +1,3 @@
-# import sys
-# import os
-# current_dir = os.path.dirname(os.path.abspath(__file__))
-# parent_dir = os.path.dirname(current_dir)
-# sys.path.append(parent_dir)
-########################################
 import random
 import uuid
 from .utils.auxiliar_functions import get_random_from_range, selectRandomGraphNodeByCentrality, selectRandomAction, selectAdjacentNodeWhenMoving
@@ -66,17 +60,7 @@ class UserSet:
 
         if user_id in self.users:
             del self.users[user_id]
-
-            print("DESDE user - remove_user:", user_id, "has been removed")
-            events_to_delete = [
-                event_id
-                for event_id, value in event_set.events.items()
-                if value['object_id'] == user_id
-            ]
-            print("Events to delete:", events_to_delete)
-
-            for event_id in events_to_delete:
-                event_set.remove_event(event_id)
+            event_set.remove_events_by_object_id(user_id)
 
             return True
         return False

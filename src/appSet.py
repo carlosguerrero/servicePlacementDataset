@@ -1,10 +1,3 @@
-# import sys
-# import os
-# current_dir = os.path.dirname(os.path.abspath(__file__))
-# parent_dir = os.path.dirname(current_dir)
-# sys.path.append(parent_dir)
-########################################
-
 import random
 import uuid
 
@@ -102,16 +95,18 @@ class ApplicationSet:
             del self.applications[app_id]
             print("DESDE appSet - remove_app:", app_id, "has been removed")
             users.remove_user_by_requested_app(app_id, params)  # Remove users requesting this app
-            
-            events_to_delete = [
-                event_id
-                for event_id, value in event_set.events.items()
-                if value['object_id'] == app_id
-            ]
-            print("Events to delete:", events_to_delete)
+            event_set.remove_events_by_object_id(app_id)
 
-            for event_id in events_to_delete:
-                event_set.remove_event(event_id)
+            # BORRAR: 
+            # events_to_delete = [
+            #     event_id
+            #     for event_id, value in event_set.events.items()
+            #     if value['object_id'] == app_id
+            # ]
+            # print("Events to delete:", events_to_delete)
+
+            # for event_id in events_to_delete:
+            #     event_set.remove_event(event_id)
 
             return True
         return False
