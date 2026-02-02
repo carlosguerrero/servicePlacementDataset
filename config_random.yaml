@@ -9,12 +9,6 @@ model_params:
 
 # Min and max of the random generations
 attributes:
-  node:
-    ram: 'random.uniform(1, 16)'
-  
-  edge:
-    delay: 'random.uniform(0.1, 5.0)'
-
   graph:
     actions:
       disable_random_node:
@@ -22,9 +16,12 @@ attributes:
         action_params: 
           event_set: None
           distribution_to_enable_node: 'random.uniform(0, 100)'
-      # revive_node:
-      #   distribution: 'random.uniform(0, 300)'
-      #   action_params: None
+
+    node:
+      ram: 'random.uniform(1, 16)'
+
+    edge:
+      delay: 'random.uniform(0.1, 5.0)'
   
   app:
     num_apps: 3

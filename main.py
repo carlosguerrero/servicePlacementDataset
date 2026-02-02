@@ -4,10 +4,11 @@ import uuid
 import networkx as nx
 from pulp import *
 import pickle
-import copy
+import os
+from datetime import datetime
 
 from src import EventSet, generate_events, init_new_object, ApplicationSet, generate_random_apps, UserSet, generate_random_users, generate_infrastructure
-from src.utils.auxiliar_functions import get_random_from_range
+from src.utils.auxiliar_functions import get_random_from_range, create_simulation_folder
 
 def load_config(config_path):
     """Loads the YAML configuration file."""
@@ -191,12 +192,21 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict):
     events_list.update_event_time(first_event['id'], config)
     
 def generate_scenario(events_list, config, app_set, user_set, graph_dict):
-    max_iterations = 1
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    while events_list.events and max_iterations < 20: # and global_time < 300
-        print("ITERATION", max_iterations)
+    base_dir = "Simulations"
+    folder_name = f"Sim_{timestamp}"
+    full_path = os.path.join(base_dir, folder_name)
+
+    # Calculate first scenario and save it in the iteration_0
+    optimal_placement, total_latency = solve_application_placement(graph_dict, app_set, user_set)
+    print("SOLUTION ILP of application placement:", optimal_placement)
+
+    i = 0
+    while events_list.events and i < 10: # and global_time < 300
+        print("ITERATION", i)
         update_system_state(events_list, config, app_set, user_set, graph_dict)
-        max_iterations += 1
+        i += 1
 
     pass
 
@@ -204,7 +214,6 @@ def main():
     random.seed(42)
 
     # MANUAL GENERATION OF GRAPH: config_manual = "config_manual.yaml"
-
     config_random = "config_random.yaml"
     config = load_config(config_random)
 
@@ -227,7 +236,6 @@ def main():
     # SOLVE PROBLEM
     if generated_apps and generated_users and generated_infrastructure:
         optimal_placement, total_latency = solve_application_placement(generated_infrastructure, generated_apps, generated_users)
-
         if optimal_placement:
             print("Application Placement:", optimal_placement)
             print("Total Latency:", total_latency)
@@ -237,9 +245,7 @@ def main():
             # return optimal_placement
         else:
             print("No feasible solution found for application placement.")
-
     all_results = []
-
     current_result = {
         "infrastructure": generated_infrastructure,
         "apps": generated_apps,
@@ -249,7 +255,6 @@ def main():
         "placement": optimal_placement,
         "total_latency": total_latency
     }
-    
     all_results.append(current_result)
     
     # WORKING ON ITERATIONS
@@ -260,7 +265,6 @@ def main():
     
     with open('simulation_results.pkl', 'wb') as f:  # 'wb' means Write Binary
         pickle.dump(all_results, f)
-
     print("Objects saved to simulation_results.pkl")
 
 

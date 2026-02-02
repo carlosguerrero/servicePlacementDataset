@@ -113,7 +113,7 @@ class InfrastructureSet:
         if params is None: params = {}
         event_set = params.get('event_set')
         node_id = params.get('node_id')
-        associated_event_id = params.get('associated_event_id')
+        associated_event_id = params.get('associated_event_id') # The event_id where this revival is "activated"
 
         item = self.infrastructures.get(infra_id)
         if item and node_id in item['graph'].nodes:
@@ -125,7 +125,6 @@ class InfrastructureSet:
         
         event_set.remove_event(associated_event_id)
 
-# BORRAR
 def _generate_random_graph(config, event_set):
     """Internal function to handle the 'random' generation mode."""
     setup = config.get('setup', {})
@@ -158,11 +157,11 @@ def _generate_random_graph(config, event_set):
 
     # Apply Attributes
     for node in temp_graph.nodes():
-        temp_graph.nodes[node]['ram'] = eval(config['attributes']['node']['ram'])
+        temp_graph.nodes[node]['ram'] = eval(config['attributes']['graph']['node']['ram'])
         temp_graph.nodes[node]['enable'] = True
 
     for u, v in temp_graph.edges():
-        temp_graph.edges[u, v]['delay'] = eval(config['attributes']['edge']['delay'])
+        temp_graph.edges[u, v]['delay'] = eval(config['attributes']['graph']['edge']['delay'])
 
     graph_set = InfrastructureSet()
     actions_list = config['attributes']['graph'].get('actions', {})
