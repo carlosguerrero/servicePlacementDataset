@@ -2,42 +2,66 @@ import networkx as nx
 import random
 from .eventSet import generate_events
 
-class InfrastructureGraph(nx.Graph):
-    def __init__(self, incoming_graph_data=None, actions=None, **attr):
-        # Initialize the standard NetworkX graph
-        super().__init__(incoming_graph_data, **attr)
+class InfrastructureSet:
+    def __init__(self):
+        # Format: {'000': {'id': '000', 'graph': nx_graph, 'shortest_paths': dict, 'actions': dict}}
+        self.infrastructures = {} 
 
-        self.actions = actions if actions is not None else {}
+    def get_main_graph(self):
+        """Helper to get the actual NetworkX object (useful for the Solver in main.py)"""
+        return self.infrastructures.get('000', {}).get('graph')
+
+    def init_infrastructure(self, nx_graph, actions=None):
+        """
+        Wraps the NetworkX graph into the standard dictionary format 
+        and adds it to the set.
+        """
+        obj_id = "000"  
+        actions = actions if actions is not None else {}
         
-        if 'shortest_paths' not in self.graph:
-            self.update_shortest_paths()
+        shortest_paths = self._calculate_shortest_paths(nx_graph)
 
-    def update_shortest_paths(self):
-        """Recalculates shortest paths for active nodes and stores in metadata."""
-        # Filter active nodes directly from self
-        active_nodes = [n for n, attrs in self.nodes(data=True) if attrs.get('enable', True)]
+        # Create the dictionary item
+        infra_item = {
+            'id': obj_id,
+            'graph': nx_graph,
+            'shortest_paths': shortest_paths,
+            'actions': actions
+        }
+
+        self.infrastructures[obj_id] = infra_item
+        return infra_item
+
+    def _calculate_shortest_paths(self, graph):
+        """Internal helper to calculate paths on a specific graph instance."""
+        # Filter active nodes
+        active_nodes = [n for n, attrs in graph.nodes(data=True) if attrs.get('enable', True)]
 
         if not active_nodes:
-            self.graph['shortest_paths'] = {}
-            return
+            return {}
 
-        # Create a subgraph view of only active nodes
-        active_subgraph = self.subgraph(active_nodes)
-
+        active_subgraph = graph.subgraph(active_nodes)
         try:
-            self.graph['shortest_paths'] = dict(nx.all_pairs_dijkstra_path_length(active_subgraph, weight='delay'))
-            # print("  [Graph] Shortest paths cache updated.") 
+            return dict(nx.all_pairs_dijkstra_path_length(active_subgraph, weight='delay'))
         except Exception as e:
             print(f"  [Error] Path calculation failed: {e}")
-            self.graph['shortest_paths'] = {}
+            return {}
 
-    def disable_random_node(self, node_id, params=None):
-        """
-        Selects a random active node to disable, biased towards peripheral nodes
-        (lower betweenness centrality = higher chance of being disabled).
-        """
+    def update_shortest_paths(self, infra_id="000"):
+        """Recalculates shortest paths for the specific infrastructure item."""
+        item = self.infrastructures.get(infra_id)
+        if item:
+            item['shortest_paths'] = self._calculate_shortest_paths(item['graph'])
+
+    def disable_random_node(self, infra_id, params=None):
+        """Selects and disables a random node in the specified graph."""
+        item = self.infrastructures.get(infra_id)
+        if not item: return
+
+        graph = item['graph']
+        
         active_candidates = [
-            (n, attrs) for n, attrs in self.nodes(data=True) 
+            (n, attrs) for n, attrs in graph.nodes(data=True) 
             if attrs.get('enable', True)
         ]
 
@@ -46,60 +70,62 @@ class InfrastructureGraph(nx.Graph):
             return
 
         epsilon = 1e-6
-        weights = []
-        node_ids = []
-
-        for node_id, attrs in active_candidates:
-            centrality = attrs.get('betweenness_centrality', 0)
-            
-            w = 1.0 / (centrality + epsilon)
-            
-            weights.append(w)
-            node_ids.append(node_id)
+        weights = [1.0 / (attrs.get('betweenness_centrality', 0) + epsilon) for _, attrs in active_candidates]
+        node_ids = [n for n, _ in active_candidates]
 
         selected_node = random.choices(node_ids, weights=weights, k=1)[0]
-        print(f"  [Event] Randomly selected node {selected_node} (Centrality: {self.nodes[selected_node].get('betweenness_centrality')})")
+        print(f"  [Event] Randomly selected node {selected_node}")
 
-        self.disable_node(selected_node)
+        # Call disable_node passing the infrastructure ID
+        self.disable_node(infra_id, {'node_id': selected_node})
 
-        # We need to add "revive_node" to the event list for this selected_node
+        # Schedule Revival
         event_set = params.get('event_set')
-        distribution_to_enable_node = eval(params.get('distribution_to_enable_node'))
+        distribution_to_enable_node = eval(params.get('distribution_to_enable_node', '10'))
 
         eventAttributes = event_set.newEventItem(
-            object_id=selected_node,
+            object_id=infra_id, # The event targets the Graph Object '000'
             type_object='graph',
             time=distribution_to_enable_node + event_set.global_time,
             action='revive_node',
-            action_params=None
+            action_params={'node_id': selected_node}
         )
         event_set.add_event(eventAttributes)
 
-
-    def disable_node(self, node_id, params=None):
-        """Disables a node and automatically updates paths."""
-        if node_id in self.nodes:
-            self.nodes[node_id]['enable'] = False
+    def disable_node(self, infra_id, params=None):
+        """Disables a node in the graph and updates paths."""
+        if params is None: params = {}
+        node_id = params.get('node_id') or infra_id # Handle if passed directly or in params
+        
+        # We assume operations target the main graph '000' if infra_id is the object_id
+        item = self.infrastructures.get(infra_id) 
+        if item and node_id in item['graph'].nodes:
+            item['graph'].nodes[node_id]['enable'] = False
             print(f"Node {node_id} has been disabled.")
-            self.update_shortest_paths()
+            self.update_shortest_paths(infra_id)
         else:
-            print(f"Node {node_id} not found in the graph.")
+            print(f"Node {node_id} not found in graph {infra_id}.")
 
-    def revive_node(self, node_id, params=None):
-        """Revives a node and automatically updates paths."""
-        if node_id in self.nodes:
-            self.nodes[node_id]['enable'] = True
+    def revive_node(self, infra_id, params=None):
+        """Revives a node in the graph and updates paths."""
+        if params is None: params = {}
+        node_id = params.get('node_id')
+
+        item = self.infrastructures.get(infra_id)
+        if item and node_id in item['graph'].nodes:
+            item['graph'].nodes[node_id]['enable'] = True
             print(f"Node {node_id} has been revived.")
-            self.update_shortest_paths()
+            self.update_shortest_paths(infra_id)
         else:
-            print(f"Node {node_id} not found in the graph.")
+            print(f"Node {node_id} not found in graph {infra_id}.")
 
+# BORRAR
 def _generate_random_graph(config, event_set):
     """Internal function to handle the 'random' generation mode."""
     setup = config.get('setup', {})
     model_params = config.get('model_params', {})
     
-    model_name = setup.get('graph_model', 'erdos_renyi') # set to default if it's empty
+    model_name = setup.get('graph_model', 'erdos_renyi')
     num_nodes = setup.get('num_nodes', 10)
     
     print(f"  [Random Mode] Generating {model_name} graph with {num_nodes} nodes...")
@@ -124,22 +150,23 @@ def _generate_random_graph(config, event_set):
         print(f"Graph model '{model_name}' not recognized.")
         return None
 
+    # Apply Attributes
+    for node in temp_graph.nodes():
+        temp_graph.nodes[node]['ram'] = eval(config['attributes']['node']['ram'])
+        temp_graph.nodes[node]['enable'] = True
+
+    for u, v in temp_graph.edges():
+        temp_graph.edges[u, v]['delay'] = eval(config['attributes']['edge']['delay'])
+
+    graph_set = InfrastructureSet()
     actions_list = config['attributes']['infrastructure'].get('actions', {})
     
-    graph = InfrastructureGraph(temp_graph, actions=actions_list)
+    # This creates the dictionary item {'000': {graph:..., actions:...}}
+    graph_item = graph_set.init_infrastructure(temp_graph, actions=actions_list)
 
-    for node in graph.nodes():
-        graph.nodes[node]['ram'] = eval(config['attributes']['node']['ram'])
-        graph.nodes[node]['enable'] = True
-
-    for u, v in graph.edges():
-        graph.edges[u, v]['delay'] = eval(config['attributes']['edge']['delay'])
-
-    graph.update_shortest_paths()
-
-    generate_events(graph, 'graph', event_set)
+    generate_events(graph_item, 'graph', event_set)
     
-    return graph
+    return graph_set
 
 # BORRAR: por ahora lo dejo estar
 def _generate_manual_graph(config):
@@ -165,6 +192,12 @@ def _generate_manual_graph(config):
         
     return graph
 
+# BORRAR
+def generate_infrastructure2(config, event_set):
+    # Same logic, but returns infra_set
+    # Note: You will need to update your _generate_manual_graph similarly
+    return _generate_random_graph(config, event_set)
+
 def generate_infrastructure(config, event_set):
     """
     Main entry point. Switches between manual and random generation
@@ -174,12 +207,12 @@ def generate_infrastructure(config, event_set):
     mode = setup.get('mode', 'random')
     
     if mode == 'manual':
-        graph = _generate_manual_graph(config)
+        # graph = _generate_manual_graph(config)
+        pass
     else:
-        graph = _generate_random_graph(config, event_set)
+        graph_dict = _generate_random_graph(config, event_set)
+        graph = graph_dict.get_main_graph()
 
-    # --- Common Post-Processing ---
-    # We calculate centrality for BOTH modes (unless you want to manually define it too)
     if graph and graph.number_of_nodes() > 0:
         try:
             betweenness_centrality = nx.betweenness_centrality(graph)
@@ -188,4 +221,4 @@ def generate_infrastructure(config, event_set):
         except Exception as e:
             print(f"Could not calculate centrality: {e}")
     
-    return graph
+    return graph_dict

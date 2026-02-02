@@ -36,7 +36,7 @@ class EventSet:
             return True
         return False
 
-    def update_event_params(self, event_id, config, app_set, user_set, infrastructure):
+    def update_event_params(self, event_id, config, app_set, user_set, graph_dict):
         event = self.events[event_id]
         params = event.get('action_params')
 
@@ -44,7 +44,7 @@ class EventSet:
             return
 
         params_map = {
-            'infrastructure': infrastructure,
+            'graph_dict': graph_dict,
             'config': config,
             'app_set': app_set,
             'user_set': user_set,
@@ -106,18 +106,13 @@ def generate_events2(object, type_object, event_set):
 
     return event_set
 
-def generate_events(object, type_object, event_set):
+def generate_events(object_item, type_object, event_set):
     """
-    type_object: 'user', 'app', or 'graph'
+    object_item: A dictionary containing {'id': ..., 'actions': ...} 
+                 (Works for User items, App items, and the new Infrastructure items)
     """
-    if type_object == 'graph':
-        # For the graph
-        obj_id = "000" 
-        actions_dict = object.actions  # Accessing self.actions from the class
-    else:
-        # For users/apps 
-        obj_id = object['id']
-        actions_dict = object['actions']
+    obj_id = object_item['id']
+    actions_dict = object_item['actions']
 
     for action_name, action_details in actions_dict.items():
         distribution_str = action_details.get('distribution', '0')
@@ -133,6 +128,35 @@ def generate_events(object, type_object, event_set):
         event_set.add_event(eventAttributes)
 
     return event_set
+
+# BORRAR
+# def generate_events(object, type_object, event_set):
+#     """
+#     type_object: 'user', 'app', or 'graph'
+#     """
+#     if type_object == 'graph':
+#         # For the graph
+#         obj_id = "000" 
+#         actions_dict = object.actions  # Accessing self.actions from the class
+#     else:
+#         # For users/apps 
+#         obj_id = object['id']
+#         actions_dict = object['actions']
+
+#     for action_name, action_details in actions_dict.items():
+#         distribution_str = action_details.get('distribution', '0')
+#         delay_val = eval(str(distribution_str))
+        
+#         eventAttributes = event_set.newEventItem(
+#             object_id=obj_id,
+#             type_object=type_object,
+#             time=round(delay_val, 2) + event_set.global_time,
+#             action=action_name,
+#             action_params=action_details.get('action_params', {})
+#         )
+#         event_set.add_event(eventAttributes)
+
+#     return event_set
 
 def init_new_object(config, event_set):
     """type_object: 'user' or 'app'

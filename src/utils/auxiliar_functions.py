@@ -22,7 +22,7 @@ def selectRandomAction(type_object, probabilities):
     else:
         return "No type_object recognized"
 
-def selectRandomGraphNodeByCentrality(graph, centrality, node=None):  
+def selectRandomGraphNodeByCentrality(graph_dict, centrality, node=None):  
     """
     Selects a random node from the graph based on its betweenness centrality.
 
@@ -33,12 +33,12 @@ def selectRandomGraphNodeByCentrality(graph, centrality, node=None):
     Returns:
         str: The ID of the selected node.
     """
-    nodes_dict = dict(graph.nodes(data=True))
+    actual_graph = graph_dict.get_main_graph() 
+    nodes_dict = dict(actual_graph.nodes(data=True))
     nodes_copy = copy.deepcopy(nodes_dict)
     if node in nodes_copy:
         del nodes_copy[node]
 
-    # BORRAR: selected_nodes = [node for node, data in graph.nodes(data=True) if data['betweenness_centrality'] <= centrality]
     selected_nodes = [node for node, data in nodes_copy.items() if data['betweenness_centrality'] <= centrality]
     if selected_nodes:
         return random.choice(selected_nodes)

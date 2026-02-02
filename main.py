@@ -6,106 +6,13 @@ from pulp import *
 import pickle
 import copy
 
-from src import EventSet, generate_events, init_new_object, ApplicationSet, generate_random_apps, UserSet, generate_random_users, InfrastructureGraph, _generate_random_graph, _generate_manual_graph, generate_infrastructure
+from src import EventSet, generate_events, init_new_object, ApplicationSet, generate_random_apps, UserSet, generate_random_users, generate_infrastructure
 from src.utils.auxiliar_functions import get_random_from_range
 
 def load_config(config_path):
     """Loads the YAML configuration file."""
     with open(config_path, 'r') as file:
         return yaml.safe_load(file)
-
-# BORRAR
-# def _generate_random_graph(config):
-#     """Internal function to handle the 'random' generation mode."""
-#     setup = config.get('setup', {})
-#     model_params = config.get('model_params', {})
-    
-#     model_name = setup.get('graph_model', 'erdos_renyi') # set to default if it's empty
-#     num_nodes = setup.get('num_nodes', 10)
-    
-#     print(f"  [Random Mode] Generating {model_name} graph with {num_nodes} nodes...")
-    
-#     # 1. Generate Topology
-#     if model_name == 'erdos_renyi':
-#         p = model_params.get('p', 0.1)
-#         graph = nx.erdos_renyi_graph(num_nodes, p)
-#     elif model_name == 'barabasi_albert':
-#         m = model_params.get('m', 2)
-#         if m >= num_nodes: m = 1
-#         graph = nx.barabasi_albert_graph(num_nodes, m)
-#     elif model_name == 'watts_strogatz':
-#         k = model_params.get('k', 4)
-#         p = model_params.get('p_rewire', 0.1)
-#         if k >= num_nodes: k = num_nodes - 1
-#         graph = nx.watts_strogatz_graph(num_nodes, k, p)
-#     elif model_name == 'balanced_tree':
-#         r = model_params.get('r', 2) 
-#         h = model_params.get('h', 3)
-#         graph = nx.balanced_tree(r, h)
-#     else:
-#         print(f"Graph model '{model_name}' not recognized.")
-#         return None
-
-#     # 2. Assign Random Ram
-#     for node in graph.nodes():
-#         graph.nodes[node]['ram'] = get_random_from_range(config, 'node', 'ram')
-#         graph.nodes[node]['enable'] = True
-
-#     # 3. Assign Random Edge Delays
-#     for u, v in graph.edges():
-#         graph.edges[u, v]['delay'] = get_random_from_range(config, 'edge', 'delay')
-
-#     return graph
-
-# BORRAR: por ahora lo dejo estar
-# def _generate_manual_graph(config):
-#     """Internal function to handle the 'manual' generation mode."""
-#     print("  [Manual Mode] Building graph from defined topology...")
-#     graph = nx.Graph()
-    
-#     topology = config.get('topology', {})
-    
-#     # 1. Add Nodes with specific attributes
-#     for node_data in topology.get('nodes', []):
-#         # We pop 'id' so it isn't stored as an attribute inside the node dict itself
-#         # but used as the key in the graph
-#         data_copy = node_data.copy()
-#         node_id = data_copy.pop('id') 
-#         graph.add_node(node_id, **data_copy)
-        
-#     # 2. Add Edges with specific attributes
-#     for edge_data in topology.get('edges', []):
-#         data_copy = edge_data.copy()
-#         u = data_copy.pop('source')
-#         v = data_copy.pop('target')
-#         graph.add_edge(u, v, **data_copy)
-        
-#     return graph
-
-# def generate_infrastructure(config):
-#     """
-#     Main entry point. Switches between manual and random generation
-#     based on the 'mode' setting in YAML.
-#     """
-#     setup = config.get('setup', {})
-#     mode = setup.get('mode', 'random')
-    
-#     if mode == 'manual':
-#         graph = _generate_manual_graph(config)
-#     else:
-#         graph = _generate_random_graph(config)
-
-#     # --- Common Post-Processing ---
-#     # We calculate centrality for BOTH modes (unless you want to manually define it too)
-#     if graph and graph.number_of_nodes() > 0:
-#         try:
-#             betweenness_centrality = nx.betweenness_centrality(graph)
-#             for node, centrality in betweenness_centrality.items():
-#                 graph.nodes[node]['betweenness_centrality'] = round(centrality, 4)
-#         except Exception as e:
-#             print(f"Could not calculate centrality: {e}")
-
-#     return graph
 
 # BORRAR: versión original de Carlos
 def solve_application_placement_carlos(graph, application_set, user_set):
@@ -187,63 +94,20 @@ def solve_application_placement_carlos(graph, application_set, user_set):
         print(f"No Optimal Solution Found. Status: {LpStatus[prob.status]}")
         return None, None
 
-# BORRAR
-# def disable_node(graph, node_id):
-#     if node_id in graph.nodes:
-#         graph.nodes[node_id]['enable'] = False
-#         print(f"Node {node_id} has been disabled.")
-
-#         update_shortest_paths(graph)
-#     else:
-#         print(f"Node {node_id} not found in the graph.")
-
-# def revive_node(graph, node_id):
-#     if node_id in graph.nodes:
-#         graph.nodes[node_id]['enable'] = True
-#         print(f"Node {node_id} has been revived.")
-
-#         update_shortest_paths(graph)
-#     else:
-#         print(f"Node {node_id} not found in the graph.")
-
-# def update_shortest_paths(graph):
-#     """
-#     Recalculates shortest paths based on currently ACTIVE nodes 
-#     and stores them in the graph's metadata.
-#     """
-#     active_nodes = [n for n, attrs in graph.nodes(data=True) if attrs.get('enable', True)]
-
-#     if not active_nodes:
-#         graph.graph['shortest_paths'] = {}
-#         return
-
-#     active_subgraph = graph.subgraph(active_nodes)
-
-#     try:
-#         # We store the dictionary of shortest paths in graph.graph
-#         graph.graph['shortest_paths'] = dict(nx.all_pairs_dijkstra_path_length(active_subgraph, weight='delay'))
-#         print("GRAPH: shortest paths updated") 
-#     except Exception as e:
-#         print(f"  [Error] Path calculation failed: {e}")
-#         graph.graph['shortest_paths'] = {}
-
-def solve_application_placement(graph, application_set, user_set):
+def solve_application_placement(graph_dict, application_set, user_set):
     PENALTY_DELAY = 1_000_000 
+    graph = graph_dict.get_main_graph() 
 
-    # --- NEW: Lazy Load / Cache Access ---
-    # If the cache doesn't exist yet, calculate it now.
-    if 'shortest_paths' not in graph.graph:
-        print("  [Info] Initializing shortest paths cache...")
-        update_shortest_paths(graph)
-    
-    # Retrieve pre-calculated paths
-    all_pairs_shortest_paths = graph.graph['shortest_paths']
-    # -------------------------------------
+    if graph is None:
+        print("Error: Main graph not found in InfrastructureSet.")
+        return None, PENALTY_DELAY
+
+    graph_item = graph_dict.infrastructures.get('000', {})
+    all_pairs_shortest_paths = graph_item.get('shortest_paths', {})
 
     applications = application_set.get_all_apps()
     users = user_set.get_all_users()
     
-    # Filter active nodes for constraints
     active_nodes = [n for n, attrs in graph.nodes(data=True) if attrs.get('enable', True)]
 
     if not active_nodes:
@@ -294,12 +158,12 @@ def solve_application_placement(graph, application_set, user_set):
     else:
         return None, PENALTY_DELAY
 
-def update_system_state(events_list, config, app_set, user_set, graph):
+def update_system_state(events_list, config, app_set, user_set, graph_dict):
     first_event = events_list.get_first_event()
     set_map = {
         'user': user_set,
         'app': app_set,
-        'graph': graph
+        'graph_dict': graph_dict
     }
 
     events_list.global_time = first_event['time']
@@ -309,7 +173,7 @@ def update_system_state(events_list, config, app_set, user_set, graph):
     if not target_object:
         raise ValueError(f"Unknown object type: {first_event['type_object']}")
 
-    events_list.update_event_params(first_event['id'], config, app_set, user_set, graph)
+    events_list.update_event_params(first_event['id'], config, app_set, user_set, graph_dict)
     params = first_event['action_params']
     if params == 'None':
         params = None
@@ -328,16 +192,16 @@ def update_system_state(events_list, config, app_set, user_set, graph):
 
     events_list.update_event_time(first_event['id'], config)
     
-def generate_scenario(events_list, config, app_set, user_set, infrastructure):
+def generate_scenario(events_list, config, app_set, user_set, graph_dict):
     max_iterations = 1
 
-    while events_list.events and max_iterations < 20: # and global_time < 300
+    while events_list.events and max_iterations < 10: # and global_time < 300
         print("ITERATION", max_iterations)
         # 2 Get first event
         # 3 Update everything (user_set/app_set and events_list)
         # 3.2 Update global_time!!
         # 4 Save new scenario and solutions
-        update_system_state(events_list, config, app_set, user_set, infrastructure)
+        update_system_state(events_list, config, app_set, user_set, graph_dict)
 
         max_iterations += 1
 
@@ -354,8 +218,12 @@ def main():
     generated_events = EventSet()
 
     # RANDOM GENERATION OF GRAPH
+    # BORRAR
+    # generated_infrastructure = generate_infrastructure(config, generated_events)
+    # print(f"Nodes: {generated_infrastructure.number_of_nodes()}")
+
     generated_infrastructure = generate_infrastructure(config, generated_events)
-    print(f"Nodes: {generated_infrastructure.number_of_nodes()}")
+    actual_graph = generated_infrastructure.get_main_graph() 
 
     generated_apps = generate_random_apps(config, generated_events)
     print(f"Apps: {generated_apps}")
@@ -375,7 +243,7 @@ def main():
             print("Application Placement:", optimal_placement)
             print("Total Latency:", total_latency)
             print("\nUpdated Node Information with Application Placement:")
-            for node, feat in generated_infrastructure.nodes(data=True):
+            for node, feat in actual_graph.nodes(data=True):
                 print(f"Node {node}: RAM Total={feat.get('ram')}, RAM Used={feat.get('ram_used')}, Running Apps={[generated_apps.get_application(app_id)['name'] for app_id in feat.get('running_applications', [])]}")
             # return optimal_placement
         else:
@@ -395,8 +263,6 @@ def main():
     
     all_results.append(current_result)
     
-
-
     # WORKING ON ITERATIONS
     print("\n---- EVENTS ----")
 
