@@ -44,7 +44,7 @@ def selectRandomGraphNodeByCentrality(graph_dict, centrality, node=None):
         return random.choice(selected_nodes)
     return None
 
-def selectAdjacentNodeWhenMoving(graph, node_id, centrality, active=True):  
+def selectAdjacentNodeWhenMoving(graph_dict, node_id, centrality, active=True):  
     """
     This function selects a node from the nodes that have an edge
     attached to the given "node" as argument
@@ -53,12 +53,14 @@ def selectAdjacentNodeWhenMoving(graph, node_id, centrality, active=True):
     The node needs to be chosen randomly but we have weights favoring the 
     betweenness centrality (the lowest betweenness centrality gets the highest weight)
     """
-    adjacent_nodes = graph.neighbors(node_id)
+    actual_graph = graph_dict.get_main_graph() 
+
+    adjacent_nodes = actual_graph.neighbors(node_id)
 
     adjacent_nodes_info = {
         n: {
-            'betweenness_centrality': graph.nodes[n].get('betweenness_centrality', 0),
-            'enable': graph.nodes[n].get('enable', True)
+            'betweenness_centrality': actual_graph.nodes[n].get('betweenness_centrality', 0),
+            'enable': actual_graph.nodes[n].get('enable', True)
         }
         for n in adjacent_nodes
     }

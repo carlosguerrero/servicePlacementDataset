@@ -163,7 +163,7 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict):
     set_map = {
         'user': user_set,
         'app': app_set,
-        'graph_dict': graph_dict
+        'graph': graph_dict
     }
 
     events_list.global_time = first_event['time']
@@ -175,8 +175,6 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict):
 
     events_list.update_event_params(first_event['id'], config, app_set, user_set, graph_dict)
     params = first_event['action_params']
-    if params == 'None':
-        params = None
     
     # Ensure event_set is always included in params for actions that need it
     if params is None:
@@ -195,14 +193,9 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict):
 def generate_scenario(events_list, config, app_set, user_set, graph_dict):
     max_iterations = 1
 
-    while events_list.events and max_iterations < 10: # and global_time < 300
+    while events_list.events and max_iterations < 20: # and global_time < 300
         print("ITERATION", max_iterations)
-        # 2 Get first event
-        # 3 Update everything (user_set/app_set and events_list)
-        # 3.2 Update global_time!!
-        # 4 Save new scenario and solutions
         update_system_state(events_list, config, app_set, user_set, graph_dict)
-
         max_iterations += 1
 
     pass
@@ -218,10 +211,6 @@ def main():
     generated_events = EventSet()
 
     # RANDOM GENERATION OF GRAPH
-    # BORRAR
-    # generated_infrastructure = generate_infrastructure(config, generated_events)
-    # print(f"Nodes: {generated_infrastructure.number_of_nodes()}")
-
     generated_infrastructure = generate_infrastructure(config, generated_events)
     actual_graph = generated_infrastructure.get_main_graph() 
 

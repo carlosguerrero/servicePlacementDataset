@@ -88,9 +88,11 @@ class InfrastructureSet:
             type_object='graph',
             time=distribution_to_enable_node + event_set.global_time,
             action='revive_node',
-            action_params={'node_id': selected_node}
+            action_params={'node_id': selected_node, 'event_set': None, 'associated_event_id': None}
         )
-        event_set.add_event(eventAttributes)
+        associated_event_id = event_set.add_event(eventAttributes)
+        event_set.events[associated_event_id]['action_params']['associated_event_id'] = associated_event_id
+
 
     def disable_node(self, infra_id, params=None):
         """Disables a node in the graph and updates paths."""
@@ -109,7 +111,9 @@ class InfrastructureSet:
     def revive_node(self, infra_id, params=None):
         """Revives a node in the graph and updates paths."""
         if params is None: params = {}
+        event_set = params.get('event_set')
         node_id = params.get('node_id')
+        associated_event_id = params.get('associated_event_id')
 
         item = self.infrastructures.get(infra_id)
         if item and node_id in item['graph'].nodes:
@@ -118,6 +122,8 @@ class InfrastructureSet:
             self.update_shortest_paths(infra_id)
         else:
             print(f"Node {node_id} not found in graph {infra_id}.")
+        
+        event_set.remove_event(associated_event_id)
 
 # BORRAR
 def _generate_random_graph(config, event_set):
@@ -159,7 +165,7 @@ def _generate_random_graph(config, event_set):
         temp_graph.edges[u, v]['delay'] = eval(config['attributes']['edge']['delay'])
 
     graph_set = InfrastructureSet()
-    actions_list = config['attributes']['infrastructure'].get('actions', {})
+    actions_list = config['attributes']['graph'].get('actions', {})
     
     # This creates the dictionary item {'000': {graph:..., actions:...}}
     graph_item = graph_set.init_infrastructure(temp_graph, actions=actions_list)
@@ -191,12 +197,6 @@ def _generate_manual_graph(config):
         graph.add_edge(u, v, **data_copy)
         
     return graph
-
-# BORRAR
-def generate_infrastructure2(config, event_set):
-    # Same logic, but returns infra_set
-    # Note: You will need to update your _generate_manual_graph similarly
-    return _generate_random_graph(config, event_set)
 
 def generate_infrastructure(config, event_set):
     """

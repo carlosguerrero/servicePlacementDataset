@@ -61,7 +61,6 @@ class UserSet:
         if user_id in self.users:
             del self.users[user_id]
             event_set.remove_events_by_object_id(user_id)
-
             return True
         return False
     
