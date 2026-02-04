@@ -8,7 +8,8 @@ import os
 from datetime import datetime
 
 from src import EventSet, generate_events, init_new_object, ApplicationSet, generate_random_apps, UserSet, generate_random_users, generate_infrastructure
-from src.utils.auxiliar_functions import get_random_from_range, create_simulation_folder
+from src import create_simulation_folder, save_simulation_step, prepare_simulation_data
+from src.utils.auxiliar_functions import get_random_from_range
 
 def load_config(config_path):
     """Loads the YAML configuration file."""
@@ -159,7 +160,7 @@ def solve_application_placement(graph_dict, application_set, user_set):
     else:
         return None, PENALTY_DELAY
 
-def update_system_state(events_list, config, app_set, user_set, graph_dict):
+def update_system_state(events_list, config, app_set, user_set, graph_dict, iteration, sim_folder):
     first_event = events_list.get_first_event()
     set_map = {
         'user': user_set,
@@ -183,8 +184,15 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict):
     if isinstance(params, dict):
         params['event_set'] = events_list
 
+
     print("Processing event:", first_event['action'])
     print("Time event:", first_event['time'])
+
+    data = prepare_simulation_data({
+        'action': first_event,  
+        'global_time': events_list.global_time,  
+    })
+    save_simulation_step(sim_folder, iteration, data)
 
     action_method = getattr(target_object, first_event['action'])
     action_method(first_event['object_id'], params)
@@ -192,20 +200,27 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict):
     events_list.update_event_time(first_event['id'], config)
     
 def generate_scenario(events_list, config, app_set, user_set, graph_dict):
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    sim_folder = create_simulation_folder()
 
-    base_dir = "Simulations"
-    folder_name = f"Sim_{timestamp}"
-    full_path = os.path.join(base_dir, folder_name)
+    
 
     # Calculate first scenario and save it in the iteration_0
     optimal_placement, total_latency = solve_application_placement(graph_dict, app_set, user_set)
     print("SOLUTION ILP of application placement:", optimal_placement)
 
-    i = 0
-    while events_list.events and i < 10: # and global_time < 300
+    data = prepare_simulation_data({
+        'graph': graph_dict.get_main_graph(),
+        'users': user_set,
+        'apps': app_set, 
+        'placement': optimal_placement
+    })
+    save_simulation_step(sim_folder, 0, data)
+
+    total_iterations = 5
+    i = 1
+    while events_list.events and i < total_iterations: # and global_time < 300
         print("ITERATION", i)
-        update_system_state(events_list, config, app_set, user_set, graph_dict)
+        update_system_state(events_list, config, app_set, user_set, graph_dict, i, sim_folder)
         i += 1
 
     pass
