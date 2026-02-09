@@ -161,16 +161,25 @@ def solve_application_placement(graph_dict, application_set, user_set):
         return None, PENALTY_DELAY
 
 def update_system_state(events_list, config, app_set, user_set, graph_dict, iteration, sim_folder):
+
     first_event = events_list.get_first_event()
+    events_list.global_time = first_event['time']
+
+    data = prepare_simulation_data({
+        'graph': graph_dict.get_main_graph(),
+        'users': user_set,
+        'apps': app_set, 
+        'action': first_event,  
+        'global_time': events_list.global_time
+    })
+    save_simulation_step(sim_folder, iteration, data)
+    
+    # Identify which set we need to update based on 'type_object': user, app, graph
     set_map = {
         'user': user_set,
         'app': app_set,
         'graph': graph_dict
     }
-
-    events_list.global_time = first_event['time']
-    
-    # Identify which set we need to update based on 'type_object': user, app, graph
     target_object = set_map.get(first_event['type_object'])
     if not target_object:
         raise ValueError(f"Unknown object type: {first_event['type_object']}")
@@ -188,16 +197,16 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict, iter
     print("Processing event:", first_event['action'])
     print("Time event:", first_event['time'])
 
-    data = prepare_simulation_data({
-        'action': first_event,  
-        'global_time': events_list.global_time,  
-    })
-    save_simulation_step(sim_folder, iteration, data)
+    # data = prepare_simulation_data({
+    #     'action': first_event,  
+    #     'global_time': events_list.global_time,  
+    # })
+    # save_simulation_step(sim_folder, iteration, data)
 
     action_method = getattr(target_object, first_event['action'])
     action_method(first_event['object_id'], params)
 
-    events_list.update_event_time(first_event['id'], config)
+    events_list.update_event_time(first_event['id'], config) # and change the params to None
     
 def generate_scenario(events_list, config, app_set, user_set, graph_dict):
     sim_folder = create_simulation_folder()
@@ -212,7 +221,8 @@ def generate_scenario(events_list, config, app_set, user_set, graph_dict):
         'graph': graph_dict.get_main_graph(),
         'users': user_set,
         'apps': app_set, 
-        'placement': optimal_placement
+        'placement': optimal_placement, 
+        'total_latency': total_latency
     })
     save_simulation_step(sim_folder, 0, data)
 

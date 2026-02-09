@@ -40,12 +40,12 @@ attributes:
         distribution: 'random.uniform(0, 300)'
         action_params:
           multiplier: 'random.uniform(1, 3)'
-          user_set: None,
+          user_set: None
       decrease_popularity: 
         distribution: 'random.uniform(0, 300)'
         action_params:
           multiplier: 'random.uniform(0, 1)'
-          user_set: None,
+          user_set: None
     
   user:
     num_users: 2

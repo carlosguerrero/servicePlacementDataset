@@ -88,18 +88,3 @@ def selectAdjacentNodeWhenMoving(graph_dict, node_id, centrality, active=True):
     selection = random.choices(nodes, weights=weights, k=1)
 
     return selection[0]
-
-def create_simulation_folder():
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-    base_dir = "Simulations"
-    folder_name = f"Sim_{timestamp}"
-    full_path = os.path.join(base_dir, folder_name)
-    
-    try:
-        os.makedirs(full_path, exist_ok=True)
-        print(f"Successfully created: {full_path}")
-        return full_path
-    except OSError as e:
-        print(f"Error creating directory: {e}")
-        return None
