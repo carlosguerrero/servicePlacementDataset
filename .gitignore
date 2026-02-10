@@ -5,3 +5,5 @@
 .LSOverride
 
 Simulations/
+__pycache__/
+*.pyc
