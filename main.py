@@ -167,8 +167,11 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict, iter
 
     data = prepare_simulation_data({
         'graph': graph_dict.get_main_graph(),
+        'graph_phase': 'before',
         'users': user_set,
+        'users_phase': 'before',
         'apps': app_set, 
+        'apps_phase': 'before',
         'action': first_event,  
         'global_time': events_list.global_time
     })
@@ -219,8 +222,11 @@ def generate_scenario(events_list, config, app_set, user_set, graph_dict):
 
     data = prepare_simulation_data({
         'graph': graph_dict.get_main_graph(),
+        'graph_phase': 'before',
         'users': user_set,
+        'users_phase': 'before',
         'apps': app_set, 
+        'apps_phase': 'before',
         'placement': optimal_placement, 
         'total_latency': total_latency
     })

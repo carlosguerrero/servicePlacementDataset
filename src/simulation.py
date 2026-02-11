@@ -25,33 +25,64 @@ def create_simulation_folder():
         print(f"Error creating directory: {e}")
         return None
 
+
+
 def save_simulation_step(folder_path, iteration, data):
     """
-    Appends simulation data to a .json file in JSON format.
-    If the file exists, it appends; if not, it creates it.
+    Writes JSON simulation data and optionally saves a NetworkX graph to GML.
+
+    Behavior:
+    - If `data` contains keys `_graph_obj` and/or `_graph_phase`, the function
+      will use `_graph_obj` as the graph to save as GML and `_graph_phase` as
+      the phase tag.
+    - The optional `graph_phase` argument overrides any `_graph_phase` in
+      `data`.
     """
-    filename = f"Simulation{iteration}.json"
-    file_path = os.path.join(folder_path, filename)
-    
+    # Extract any attached raw graph object and phase from the prepared data
+    graph_obj = None
+    graph_phase_from_data = None
+
+    if isinstance(data, dict):
+        graph_obj = data.pop('graph', None)
+        graph_phase_from_data = data.pop('graph_phase', None)
+
     try:
-        # 'a' mode opens for appending. Creates the file if it doesn't exist.
+        filename = f"Simulation{iteration}.json"
+        file_path = os.path.join(folder_path, filename)
         with open(file_path, 'a') as f:
             json_string = json.dumps(data)
             f.write(json_string + "\n")
-            
         print(f"Appended data to: {filename}")
-        
     except Exception as e:
         print(f"Error saving step {iteration}: {e}")
 
-def prepare_graph_data(graph):
+    if graph_obj is not None:
+        phase_suffix = graph_phase_from_data if graph_phase_from_data is not None else 'before'
+        gml_name = f"Simulation{iteration}_graph_{phase_suffix}.gml"
+        gml_path = os.path.join(folder_path, gml_name)
+        try:
+            nx.write_gml(graph_obj, gml_path)
+            print(f"Saved graph GML: {gml_name}")
+        except Exception as e:
+            print(f"Error saving graph GML for step {iteration}: {e}")
+
+def prepare_graph_data(graph, phase='before'):
     """
-    Prepares NetworkX graph data for JSON serialization.
-    Returns a dict with nodes, edges, and attributes.
+    Prepares NetworkX graph data for JSON serialization and tags it with a phase.
+
+    Args:
+        graph: a NetworkX graph object (or None).
+        phase: 'before' or 'after' indicating when the graph was captured.
+
+    Returns:
+        A tuple (graph_serializable, graph_obj, phase) where `graph_serializable`
+        is suitable for JSON (or {}) and `graph_obj` is the original graph
+        (or None) which can be passed to `save_simulation_step` to write a GML file.
     """
     if graph is None:
-        return {}
-    return nx.node_link_data(graph)
+        return None, phase
+    return graph, phase
+    # BORRAR: return nx.node_link_data(graph), graph, phase
 
 def prepare_users_data(user_set):
     """
@@ -68,7 +99,7 @@ def prepare_apps_data(app_set):
     Assumes app_set.get_all_apps() returns a dict.
     """
     if app_set is None:
-        return {}
+        return {}, None
     return app_set.get_all_apps()
 
 def prepare_action_data(action, global_time=None):
@@ -110,17 +141,25 @@ def prepare_simulation_data(data_sources):
     data_sources should be a dict with keys like 'graph', 'users', 'apps', 'action', 'placement', 'total_latency', 'global_time'
     and values as the corresponding objects. 'global_time' is optional and used with 'action'.
     This allows flexible inclusion of only the desired data types.
+    
+    For 'users' and 'apps', the keys in the output will be dynamically named based on their phase:
+    e.g., 'users_before', 'users_after', 'apps_before', 'apps_after'.
     """
     prepared_data = {}
     
     if 'graph' in data_sources:
-        prepared_data['graph'] = prepare_graph_data(data_sources['graph'])
+        graph_phase = data_sources.get('graph_phase', 'before')
+        prepared_data['graph'], prepared_data['graph_phase'] = prepare_graph_data(data_sources['graph'], graph_phase)
     
     if 'users' in data_sources:
-        prepared_data['users'] = prepare_users_data(data_sources['users'])
+        users_phase = data_sources.get('users_phase', 'before')
+        users_data = prepare_users_data(data_sources['users'], phase=users_phase)
+        prepared_data[f'users_{users_phase}'] = users_data
     
     if 'apps' in data_sources:
-        prepared_data['apps'] = prepare_apps_data(data_sources['apps'])
+        apps_phase = data_sources.get('apps_phase', 'before')
+        apps_data = prepare_apps_data(data_sources['apps'], phase=apps_phase)
+        prepared_data[f'apps_{apps_phase}'] = apps_data
     
     if 'action' in data_sources:
         global_time = data_sources.get('global_time')
