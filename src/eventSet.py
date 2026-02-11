@@ -36,8 +36,13 @@ class EventSet:
         return False
 
     def update_event_params(self, event_id, config, app_set, user_set, graph_dict):
+        print("ENTRAMOS EN UPDATE EVENT PARAMS: apps_antes", app_set)
+
         event = self.events[event_id]
         params = event.get('action_params')
+
+        print("PARAMS:", params)
+        print(type(params))
 
         if not isinstance(params, dict):
             return
@@ -49,6 +54,8 @@ class EventSet:
             'user_set': user_set,
             'event_set': self.events
         }
+
+        print("\nSALIMOS DE UPDATE EVENT PARAMS: apps_antes", app_set)
 
         for key, obj_value in params_map.items():
             if key in params:
@@ -106,7 +113,7 @@ def generate_events(object_item, type_object, event_set):
             type_object=type_object,
             time=round(delay_val, 2) + event_set.global_time,
             action=action_name,
-            action_params=action_details.get('action_params', {})
+            action_params=copy.deepcopy(action_details.get('action_params', {}))  # Use deepcopy
         )
         event_set.add_event(eventAttributes)
 

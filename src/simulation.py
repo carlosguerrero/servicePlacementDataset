@@ -27,10 +27,10 @@ def create_simulation_folder():
 
 def save_simulation_step(folder_path, iteration, data):
     """
-    Appends simulation data to a .txt file in JSON format.
+    Appends simulation data to a .json file in JSON format.
     If the file exists, it appends; if not, it creates it.
     """
-    filename = f"Simulation{iteration}.txt"
+    filename = f"Simulation{iteration}.json"
     file_path = os.path.join(folder_path, filename)
     
     try:
@@ -133,36 +133,3 @@ def prepare_simulation_data(data_sources):
         prepared_data['total_latency'] = prepare_total_latency_data(data_sources['total_latency'])
     
     return prepared_data
-
-# --- Example Usage Logic ---
-
-def run_simulation():
-    # 1. Setup the folder structure once before the loop starts
-    sim_folder = create_simulation_folder()
-    
-    if not sim_folder:
-        return # Stop if folder creation failed
-
-    # 2. Run the Simulation Loop
-    total_iterations = 5
-    
-    for i in range(total_iterations):
-        # --- Your Simulation Logic Here ---
-        # Creating dummy data to represent simulation state
-        current_state = {
-            "step": i,
-            "temperature": 20 + (i * 1.5),
-            "pressure": random.uniform(100, 105),
-            "particles": [
-                {"id": 1, "x": random.random(), "y": random.random()},
-                {"id": 2, "x": random.random(), "y": random.random()}
-            ]
-        }
-        # ----------------------------------
-
-        # 3. Save the specific step
-        save_simulation_step(sim_folder, i, current_state)
-
-# Execute the example
-if __name__ == "__main__":
-    run_simulation()

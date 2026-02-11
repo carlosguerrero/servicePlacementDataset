@@ -183,10 +183,10 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict, iter
     target_object = set_map.get(first_event['type_object'])
     if not target_object:
         raise ValueError(f"Unknown object type: {first_event['type_object']}")
-
+    
     events_list.update_event_params(first_event['id'], config, app_set, user_set, graph_dict)
     params = first_event['action_params']
-    
+
     # Ensure event_set is always included in params for actions that need it
     if params is None:
         params = {}
@@ -226,7 +226,7 @@ def generate_scenario(events_list, config, app_set, user_set, graph_dict):
     })
     save_simulation_step(sim_folder, 0, data)
 
-    total_iterations = 5
+    total_iterations = 3
     i = 1
     while events_list.events and i < total_iterations: # and global_time < 300
         print("ITERATION", i)
