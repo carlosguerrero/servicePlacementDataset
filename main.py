@@ -190,26 +190,27 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict, iter
     events_list.update_event_params(first_event['id'], config, app_set, user_set, graph_dict)
     params = first_event['action_params']
 
-    # Ensure event_set is always included in params for actions that need it
-    if params is None:
-        params = {}
-    if isinstance(params, dict):
-        params['event_set'] = events_list
-
-
     print("Processing event:", first_event['action'])
     print("Time event:", first_event['time'])
-
-    # data = prepare_simulation_data({
-    #     'action': first_event,  
-    #     'global_time': events_list.global_time,  
-    # })
-    # save_simulation_step(sim_folder, iteration, data)
-
     action_method = getattr(target_object, first_event['action'])
     action_method(first_event['object_id'], params)
 
-    events_list.update_event_time(first_event['id'], config) # and change the params to None
+    events_list.update_event_time_and_none_params(first_event['id'], config)
+
+    optimal_placement, total_latency = solve_application_placement(graph_dict, app_set, user_set)
+    # print("SOLUTION ILP of application placement:", optimal_placement)
+
+    data = prepare_simulation_data({
+        'placement': optimal_placement, 
+        'total_latency': total_latency,
+        'graph': graph_dict.get_main_graph(),
+        'graph_phase': 'after',
+        'users': user_set,
+        'users_phase': 'after',
+        'apps': app_set, 
+        'apps_phase': 'after'
+    })
+    save_simulation_step(sim_folder, iteration, data)
     
 def generate_scenario(events_list, config, app_set, user_set, graph_dict):
     sim_folder = create_simulation_folder()

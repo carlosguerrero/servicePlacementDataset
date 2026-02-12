@@ -74,7 +74,8 @@ class EventSet:
         print("DESDE event - remove_events_by_object_id:", object_id, "has been removed")
         print("Number of events that have been deleted:", len(events_to_delete))
     
-    def update_event_time(self, event_id, config):
+    def update_event_time_and_none_params(self, event_id, config):
+        # Update time
         if event_id in self.events.keys():
             # We just need to get a new time from config + global_time
             actual_type_object = self.events[event_id]['type_object']
@@ -86,6 +87,28 @@ class EventSet:
             print("DESDE eventSet - update_event: El event_id no estaba en la event_list")
         print("Update event list después update:", self)
         print(" ")
+
+        # Change parameters of the event back to None
+        event = self.events[event_id]
+        params = event.get('action_params')
+
+        print("PARAMS:", params)
+        print(type(params))
+
+        if not isinstance(params, dict):
+            return
+
+        params_map = {
+            'infrastructure': None,
+            'config': None,
+            'app_set': None,
+            'user_set': None,
+            'event_set': None
+        }
+
+        for key, obj_value in params_map.items():
+            if key in params:
+                params[key] = obj_value
 
     def __str__(self):
         """Returns a string representation of the EventSet (the events list) without action_params."""

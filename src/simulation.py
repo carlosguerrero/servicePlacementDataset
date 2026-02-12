@@ -3,8 +3,6 @@ import json
 from datetime import datetime
 import networkx as nx  
 
-import random # Imported just to generate data for the example
-
 def create_simulation_folder():
     """
     Creates a base 'Simulations' directory and a timestamped subdirectory.
@@ -14,7 +12,6 @@ def create_simulation_folder():
     base_dir = "Simulations"
     folder_name = f"Sim_{timestamp}"
     
-    # Create the full path: Simulations/Sim_20231027_103000
     full_path = os.path.join(base_dir, folder_name)
     
     try:
@@ -25,9 +22,67 @@ def create_simulation_folder():
         print(f"Error creating directory: {e}")
         return None
 
-
+import os
+import json
+import networkx as nx
 
 def save_simulation_step(folder_path, iteration, data):
+    """
+    Updates a JSON simulation file by merging new data into the existing JSON object.
+    Also optionally saves a NetworkX graph to GML.
+
+    Behavior:
+    - If `data` contains keys `_graph_obj` and/or `_graph_phase`, the function
+      will use `_graph_obj` as the graph to save as GML and `_graph_phase` as
+      the phase tag.
+    - The optional `graph_phase` argument overrides any `_graph_phase` in
+      `data`.
+    """
+    graph_obj = None
+    graph_phase_from_data = None
+
+    if isinstance(data, dict):
+        graph_obj = data.pop('graph', None)
+        graph_phase_from_data = data.pop('graph_phase', None)
+
+    filename = f"Simulation{iteration}.json"
+    file_path = os.path.join(folder_path, filename)
+
+    existing_data = {}
+    if os.path.exists(file_path):
+        try:
+            with open(file_path, 'r') as f:
+                existing_data = json.load(f)
+        except json.JSONDecodeError:
+            # If file exists but is empty or corrupted, start with empty dict
+            existing_data = {}
+
+    if isinstance(data, dict):
+        existing_data.update(data)
+    else:
+        print(f"Warning: Data for step {iteration} is not a dictionary. Overwriting file.")
+        existing_data = data
+
+    try:
+        # Open in 'w' (write) mode to overwrite the file with the merged content
+        with open(file_path, 'w') as f:
+            json.dump(existing_data, f, indent=4) 
+        print(f"Updated data in: {filename}")
+    except Exception as e:
+        print(f"Error saving step {iteration}: {e}")
+
+    if graph_obj is not None:
+        phase_suffix = graph_phase_from_data if graph_phase_from_data is not None else 'before'
+        gml_name = f"Simulation{iteration}_graph_{phase_suffix}.gml"
+        gml_path = os.path.join(folder_path, gml_name)
+        try:
+            nx.write_gml(graph_obj, gml_path)
+            print(f"Saved graph GML: {gml_name}")
+        except Exception as e:
+            print(f"Error saving graph GML for step {iteration}: {e}")
+
+# BORRAR
+def save_simulation_step2(folder_path, iteration, data):
     """
     Writes JSON simulation data and optionally saves a NetworkX graph to GML.
 
@@ -38,7 +93,6 @@ def save_simulation_step(folder_path, iteration, data):
     - The optional `graph_phase` argument overrides any `_graph_phase` in
       `data`.
     """
-    # Extract any attached raw graph object and phase from the prepared data
     graph_obj = None
     graph_phase_from_data = None
 
@@ -153,12 +207,12 @@ def prepare_simulation_data(data_sources):
     
     if 'users' in data_sources:
         users_phase = data_sources.get('users_phase', 'before')
-        users_data = prepare_users_data(data_sources['users'], phase=users_phase)
+        users_data = prepare_users_data(data_sources['users'])
         prepared_data[f'users_{users_phase}'] = users_data
     
     if 'apps' in data_sources:
         apps_phase = data_sources.get('apps_phase', 'before')
-        apps_data = prepare_apps_data(data_sources['apps'], phase=apps_phase)
+        apps_data = prepare_apps_data(data_sources['apps'])
         prepared_data[f'apps_{apps_phase}'] = apps_data
     
     if 'action' in data_sources:
