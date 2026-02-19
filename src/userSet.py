@@ -61,7 +61,9 @@ class UserSet:
         if user_id in self.users:
             del self.users[user_id]
             event_set.remove_events_by_object_id(user_id)
-            return True
+
+            message = f"User {user_id} has been removed."
+            return message
         return False
     
     def move_user(self, user_id, params=None):
@@ -87,32 +89,38 @@ class UserSet:
         for user_id, user in list(self.users.items()):
             if user['requestedApp'] == requested_app:
                 self.increase_request_ratio(user_id, params)
-                print("DESDE user - increase_request_ratio_by_requested_app el user_id", user_id, "con app_id", requested_app)
-                return True
+
+                message = f"Request ratio of user {user_id} increased due to requested app {requested_app}"
+                return message
         return False
     
     def increase_request_ratio(self, user_id, params=None):
         if params is None:
             params = {}
         multiplier = eval(params.get('multiplier'))
+        old_request_ratio = self.users[user_id]['requestRatio']
         self.users[user_id]['requestRatio'] = self.users[user_id]['requestRatio'] * multiplier
-        return True
+
+        message = f"Request ratio of user {user_id} increased from {old_request_ratio} to {self.users[user_id]['requestRatio']}"
+        return message
     
     def decrease_request_ratio_by_requested_app(self, requested_app, params):
         """Removes a user from the set based on their requested application."""
         for user_id, user in list(self.users.items()):
             if user['requestedApp'] == requested_app:
                 self.decrease_request_ratio(user_id, params)
-                print("DESDE user - decrease_request_ratio_by_requested_app el user_id", user_id, "con app_id", requested_app)
                 return True
         return False
     
     def decrease_request_ratio(self, user_id, params=None):
         if params is None:
             params = {}
+        old_request_ratio = self.users[user_id]['requestRatio']
         multiplier = eval(params.get('multiplier'))
         self.users[user_id]['requestRatio'] = self.users[user_id]['requestRatio'] * multiplier
-        return True
+
+        message = f"Request ratio of user {user_id} decreased from {old_request_ratio} to {self.users[user_id]['requestRatio']}"
+        return message
 
     def get_user(self, user_id):
         """Retrieves a user by their ID from the set."""
@@ -139,6 +147,9 @@ class UserSet:
         event_set = params.get('event_set')
 
         create_new_user(config, app_set, infrastructure, user_set, event_set)
+
+        message = f"User {user_id} has been created."
+        return message
     
 def create_new_user(config, appsSet, infrastructure, user_set, event_set, app_id = None):
     attributes = config.get('attributes', {})

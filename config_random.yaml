@@ -16,7 +16,13 @@ attributes:
         action_params: 
           event_set: None
           distribution_to_enable_node: 'random.uniform(0, 100)'
-
+      
+      disable_random_edge:
+        distribution: 'random.uniform(0, 300)'
+        action_params: 
+          event_set: None
+          distribution_to_enable_edge: 'random.uniform(0, 100)'
+          
     node:
       ram: 'random.uniform(1, 16)'
 

@@ -188,7 +188,6 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict, iter
     events_list.update_event_params(first_event['id'], config, app_set, user_set, graph_dict)
     params = first_event['action_params']
 
-    print("Processing event:", first_event['action'])
     print("Time event:", first_event['time'])
     action_method = getattr(target_object, first_event['action'])
     message = action_method(first_event['object_id'], params)
@@ -196,7 +195,8 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict, iter
     # If the action returned a human-readable message, save it in the event
     if isinstance(message, str):
         first_event['message'] = message
-    events_list.update_event_time_and_none_params(first_event['id'], config)
+        print("Processing event:", message)
+    
 
     optimal_placement, total_latency = solve_application_placement(graph_dict, app_set, user_set)
     # print("SOLUTION ILP of application placement:", optimal_placement)
@@ -214,6 +214,8 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict, iter
         'apps_phase': 'after'
     })
     save_simulation_step(sim_folder, iteration, data)
+
+    events_list.update_event_time_and_none_params(first_event['id'], config)
     
 def generate_scenario(events_list, config, app_set, user_set, graph_dict):
     sim_folder = create_simulation_folder()

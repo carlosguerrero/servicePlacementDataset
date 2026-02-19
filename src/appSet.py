@@ -119,11 +119,15 @@ class ApplicationSet:
         if params is None:
             params = {}
         multiplier = eval(params.get('multiplier'))
+        old_popularity = self.applications[app_id]['popularity']
+
         self.applications[app_id]['popularity'] = self.applications[app_id]['popularity'] * multiplier
 
         users = params.get('user_set')
         users.decrease_request_ratio_by_requested_app(app_id, params)
-        return True
+
+        message = f"Popularity of app {app_id} decreased from {old_popularity} to {self.applications[app_id]['popularity']}"
+        return message
 
     def get_application(self, app_id):
         """Retrieves an application by its ID from the set."""
@@ -160,6 +164,9 @@ class ApplicationSet:
         print("Vamos a crear nuevos usuarios", num_new_users)
         for i in range(num_new_users):
             create_new_user(config, app_set, infrastructure, user_set, event_set, created_app_id)
+
+        message = f"Application {created_app_id} has been created, along with {num_new_users} new users requesting this app."
+        return message
 
 def create_new_app(config, application_set, event_set):
     attributes = config.get('attributes', {})

@@ -2,7 +2,7 @@ import networkx as nx
 import random
 from .eventSet import generate_events
 
-class InfrastructureSet:
+class InfrastructureSet: 
     def __init__(self):
         # Format: {'000': {'id': '000', 'graph': nx_graph, 'shortest_paths': dict, 'actions': dict}}
         self.infrastructures = {} 
@@ -93,6 +93,9 @@ class InfrastructureSet:
         associated_event_id = event_set.add_event(eventAttributes)
         event_set.events[associated_event_id]['action_params']['associated_event_id'] = associated_event_id
 
+        message = f"Node {selected_node} has been disabled. Scheduled revival in {distribution_to_enable_node} time units."
+        return message
+
 
     def disable_node(self, infra_id, params=None):
         """Disables a node in the graph and updates paths."""
@@ -103,7 +106,6 @@ class InfrastructureSet:
         item = self.infrastructures.get(infra_id) 
         if item and node_id in item['graph'].nodes:
             item['graph'].nodes[node_id]['enable'] = False
-            print(f"Node {node_id} has been disabled.")
             self.update_shortest_paths(infra_id)
         else:
             print(f"Node {node_id} not found in graph {infra_id}.")
@@ -118,12 +120,82 @@ class InfrastructureSet:
         item = self.infrastructures.get(infra_id)
         if item and node_id in item['graph'].nodes:
             item['graph'].nodes[node_id]['enable'] = True
-            print(f"Node {node_id} has been revived.")
             self.update_shortest_paths(infra_id)
         else:
             print(f"Node {node_id} not found in graph {infra_id}.")
         
         event_set.remove_event(associated_event_id)
+
+        message = f"Node {node_id} has been revived."
+        return message
+    
+    def disable_random_edge(self, infra_id, params=None):
+        """Selects and disables a random edge in the specified graph."""
+        item = self.infrastructures.get(infra_id)
+        if not item:
+            return
+
+        graph = item['graph']
+        # Only consider enabled edges
+        active_edges = [
+            (u, v) for u, v, attrs in graph.edges(data=True)
+            if attrs.get('enable', True)
+        ]
+        if not active_edges:
+            print("  [Warning] No active edges available to disable.")
+            return
+
+        selected_edge = random.choice(active_edges)
+        print(f"  [Event] Randomly selected edge {selected_edge}")
+
+        self.disable_edge(infra_id, {'edge': selected_edge})
+
+        # Schedule Revival
+        event_set = params.get('event_set')
+        distribution_to_enable_edge = eval(params.get('distribution_to_enable_edge', '10'))
+
+        eventAttributes = event_set.newEventItem(
+            object_id=infra_id,
+            type_object='graph',
+            time=distribution_to_enable_edge + event_set.global_time,
+            action='revive_edge',
+            action_params={'edge': selected_edge, 'event_set': None, 'associated_event_id': None}
+        )
+        associated_event_id = event_set.add_event(eventAttributes)
+        event_set.events[associated_event_id]['action_params']['associated_event_id'] = associated_event_id
+
+        message = f"Edge {selected_edge} has been disabled. Scheduled revival in {distribution_to_enable_edge} time units."
+        return message
+
+    def disable_edge(self, infra_id, params=None):
+        """Disables an edge in the graph and updates paths."""
+        if params is None:
+            params = {}
+        edge = params.get('edge')
+        item = self.infrastructures.get(infra_id)
+        if item and edge and item['graph'].has_edge(*edge):
+            item['graph'].edges[edge]['enable'] = False
+            self.update_shortest_paths(infra_id)
+        else:
+            print(f"Edge {edge} not found in graph {infra_id}.")
+
+    def revive_edge(self, infra_id, params=None):
+        """Revives an edge in the graph and updates paths."""
+        if params is None:
+            params = {}
+        event_set = params.get('event_set')
+        edge = params.get('edge')
+        associated_event_id = params.get('associated_event_id')
+        item = self.infrastructures.get(infra_id)
+        if item and edge and item['graph'].has_edge(*edge):
+            item['graph'].edges[edge]['enable'] = True
+            self.update_shortest_paths(infra_id)
+        else:
+            print(f"Edge {edge} not found in graph {infra_id}.")
+        if event_set and associated_event_id:
+            event_set.remove_event(associated_event_id)
+        message = f"Edge {edge} has been revived."
+        return message
 
 def _generate_random_graph(config, event_set):
     """Internal function to handle the 'random' generation mode."""
