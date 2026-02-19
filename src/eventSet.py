@@ -20,7 +20,8 @@ class EventSet:
             'object_id': object_id,
             'time': time,
             'action': action,
-            'action_params': action_params
+            'action_params': action_params,
+            'message': None
         }
     
     def add_event(self, eventAttributes):
@@ -36,13 +37,8 @@ class EventSet:
         return False
 
     def update_event_params(self, event_id, config, app_set, user_set, graph_dict):
-        print("ENTRAMOS EN UPDATE EVENT PARAMS: apps_antes", app_set)
-
         event = self.events[event_id]
         params = event.get('action_params')
-
-        print("PARAMS:", params)
-        print(type(params))
 
         if not isinstance(params, dict):
             return
@@ -54,8 +50,6 @@ class EventSet:
             'user_set': user_set,
             'event_set': self.events
         }
-
-        print("\nSALIMOS DE UPDATE EVENT PARAMS: apps_antes", app_set)
 
         for key, obj_value in params_map.items():
             if key in params:
@@ -91,9 +85,6 @@ class EventSet:
         # Change parameters of the event back to None
         event = self.events[event_id]
         params = event.get('action_params')
-
-        print("PARAMS:", params)
-        print(type(params))
 
         if not isinstance(params, dict):
             return

@@ -97,18 +97,23 @@ class ApplicationSet:
             users.remove_user_by_requested_app(app_id, params)  # Remove users requesting this app
             event_set.remove_events_by_object_id(app_id)
 
-            return True
+            message = f"Application {app_id} has been removed, along with its associated users and events."
+            return message
         return False
     
     def increase_popularity(self, app_id, params):
         if params is None:
             params = {}
         multiplier = eval(params.get('multiplier'))
+        old_popularity = self.applications[app_id]['popularity']
+
         self.applications[app_id]['popularity'] = self.applications[app_id]['popularity'] * multiplier
 
         users = params.get('user_set')
         users.increase_request_ratio_by_requested_app(app_id, params)
-        return True
+
+        message = f"Popularity of app {app_id} increased from {old_popularity} to {self.applications[app_id]['popularity']}"
+        return message
     
     def decrease_popularity(self, app_id, params): 
         if params is None:

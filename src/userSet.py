@@ -76,7 +76,9 @@ class UserSet:
         if user_id in self.users and infrastructure is not None:
             current_node = self.users[user_id]['connectedTo']
             self.users[user_id]['connectedTo'] = selectAdjacentNodeWhenMoving(infrastructure, current_node, user_centrality)
-            return True
+
+            message = f"User {user_id} moved from node {current_node} to node {self.users[user_id]['connectedTo']}"
+            return message
             
         return False
     

@@ -171,9 +171,7 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict, iter
         'users': user_set,
         'users_phase': 'before',
         'apps': app_set, 
-        'apps_phase': 'before',
-        'action': first_event,  
-        'global_time': events_list.global_time
+        'apps_phase': 'before'
     })
     save_simulation_step(sim_folder, iteration, data)
     
@@ -193,29 +191,32 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict, iter
     print("Processing event:", first_event['action'])
     print("Time event:", first_event['time'])
     action_method = getattr(target_object, first_event['action'])
-    action_method(first_event['object_id'], params)
+    message = action_method(first_event['object_id'], params)
 
+    # If the action returned a human-readable message, save it in the event
+    if isinstance(message, str):
+        first_event['message'] = message
     events_list.update_event_time_and_none_params(first_event['id'], config)
 
     optimal_placement, total_latency = solve_application_placement(graph_dict, app_set, user_set)
     # print("SOLUTION ILP of application placement:", optimal_placement)
 
     data = prepare_simulation_data({
-        'placement': optimal_placement, 
+        'global_time': events_list.global_time,
+        'action': first_event,
+        'placement': optimal_placement,
         'total_latency': total_latency,
         'graph': graph_dict.get_main_graph(),
         'graph_phase': 'after',
         'users': user_set,
         'users_phase': 'after',
-        'apps': app_set, 
+        'apps': app_set,
         'apps_phase': 'after'
     })
     save_simulation_step(sim_folder, iteration, data)
     
 def generate_scenario(events_list, config, app_set, user_set, graph_dict):
     sim_folder = create_simulation_folder()
-
-    
 
     # Calculate first scenario and save it in the iteration_0
     optimal_placement, total_latency = solve_application_placement(graph_dict, app_set, user_set)
@@ -236,7 +237,7 @@ def generate_scenario(events_list, config, app_set, user_set, graph_dict):
     total_iterations = 3
     i = 1
     while events_list.events and i < total_iterations: # and global_time < 300
-        print("ITERATION", i)
+        print("\nITERATION", i)
         update_system_state(events_list, config, app_set, user_set, graph_dict, i, sim_folder)
         i += 1
 
@@ -277,27 +278,10 @@ def main():
             # return optimal_placement
         else:
             print("No feasible solution found for application placement.")
-    all_results = []
-    current_result = {
-        "infrastructure": generated_infrastructure,
-        "apps": generated_apps,
-        "users": generated_users,
-        "iteration_id": 0,
-        "event": "START",
-        "placement": optimal_placement,
-        "total_latency": total_latency
-    }
-    all_results.append(current_result)
     
     # WORKING ON ITERATIONS
     print("\n---- EVENTS ----")
-
     generate_scenario(generated_events, config, generated_apps, generated_users, generated_infrastructure)
-
-    
-    with open('simulation_results.pkl', 'wb') as f:  # 'wb' means Write Binary
-        pickle.dump(all_results, f)
-    print("Objects saved to simulation_results.pkl")
 
 
 if __name__ == "__main__":
