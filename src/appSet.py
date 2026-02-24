@@ -160,8 +160,6 @@ class ApplicationSet:
 
         created_app_id = list(app_set.applications)[-1]
 
-        print("La app con id", created_app_id, "se ha creado")
-        print("Vamos a crear nuevos usuarios", num_new_users)
         for i in range(num_new_users):
             create_new_user(config, app_set, infrastructure, user_set, event_set, created_app_id)
 
