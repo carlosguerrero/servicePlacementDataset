@@ -188,7 +188,7 @@ def generate_random_users(config, appsSet, infrastructure, event_set):
     user_conf = attributes.get('user', {})
     num_users = user_conf.get('num_users', 2)
 
-    # Create some users in the set
+    # Create some users in the set.
     for i in range(num_users):
         create_new_user(config, appsSet, infrastructure, user_set, event_set)
 
