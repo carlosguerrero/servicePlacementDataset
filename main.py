@@ -6,6 +6,7 @@ from pulp import *
 import pickle
 import os
 from datetime import datetime
+import sys
 
 from src import EventSet, generate_events, init_new_object, ApplicationSet, generate_random_apps, UserSet, generate_random_users, generate_infrastructure
 from src import create_simulation_folder, save_simulation_step, prepare_simulation_data
@@ -151,10 +152,18 @@ def solve_application_placement(graph_dict, application_set, user_set):
             return None, current_objective
 
         placement = {}
+        # Initialize node attributes for tracking ram_used and running_applications
+        for node in active_nodes:
+            graph.nodes[node]['ram_used'] = 0.0
+            graph.nodes[node]['running_applications'] = []
+        
+        # Populate placement and update node attributes
         for app_id, app_data in applications.items():
             for node in active_nodes:
                 if value(x_an[app_id, node]) == 1:
                     placement[app_data['name']] = node
+                    graph.nodes[node]['ram_used'] += app_data['ram']
+                    graph.nodes[node]['running_applications'].append(app_id)
                     break
         return placement, current_objective
     else:
@@ -197,14 +206,35 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict, iter
         first_event['message'] = message
         print("Processing event:", message)
     
+    # Stop the program in case apps, users, active nodes or active edges is empty
+    if not app_set.get_all_apps():
+        print("STOPPING THE SIMULATION:  No applications available after processing the event. Stopping the simulation.")
+        sys.exit()
+    if not user_set.get_all_users():
+        print("STOPPING THE SIMULATION:  No users available after processing the event.")
+        sys.exit()
+    # BORRAR: tengo que añadir lo de active_nodes
+    # active_nodes = graph_dict.get_active_nodes()
+    # if not active_nodes:
+    #     print("No active nodes in the graph after processing the event. Stopping the simulation.")
+    #     sys.exit()
+    # active_edges = graph_dict.get_active_edges()
+    # if not active_edges:
+    #     print("No active edges in the graph after processing the event. Stopping the simulation.")
+    #     sys.exit()
 
     optimal_placement, total_latency = solve_application_placement(graph_dict, app_set, user_set)
-    # print("SOLUTION ILP of application placement:", optimal_placement)
+
+    node_information_and_placement_message = ""
+    for node, feat in graph_dict.get_main_graph().nodes(data=True):
+        # print(f"Node {node}: RAM Total={feat.get('ram')}, RAM Used={feat.get('ram_used')}, Running Apps={[app_set.get_application(app_id)['name'] for app_id in feat.get('running_applications', [])]}")
+        node_information_and_placement_message += f"Node {node}: RAM Total={feat.get('ram')}, RAM Used={feat.get('ram_used')}, Running Apps={[app_set.get_application(app_id)['name'] for app_id in feat.get('running_applications', [])]}\n"
 
     data = prepare_simulation_data({
         'global_time': events_list.global_time,
         'action': first_event,
         'placement': optimal_placement,
+        'node_information': node_information_and_placement_message,
         'total_latency': total_latency,
         'graph': graph_dict.get_main_graph(),
         'graph_phase': 'after',
@@ -236,7 +266,7 @@ def generate_scenario(events_list, config, app_set, user_set, graph_dict):
     })
     save_simulation_step(sim_folder, 0, data)
 
-    total_iterations = 3
+    total_iterations = 20
     i = 1
     while events_list.events and i < total_iterations: # and global_time < 300
         print("\nITERATION", i)
@@ -277,7 +307,6 @@ def main():
             print("\nUpdated Node Information with Application Placement:")
             for node, feat in actual_graph.nodes(data=True):
                 print(f"Node {node}: RAM Total={feat.get('ram')}, RAM Used={feat.get('ram_used')}, Running Apps={[generated_apps.get_application(app_id)['name'] for app_id in feat.get('running_applications', [])]}")
-            # return optimal_placement
         else:
             print("No feasible solution found for application placement.")
     

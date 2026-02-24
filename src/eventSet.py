@@ -48,7 +48,8 @@ class EventSet:
             'config': config,
             'app_set': app_set,
             'user_set': user_set,
-            'event_set': self.events
+            'event_set': self
+            # 'event_set': self.events
         }
 
         for key, obj_value in params_map.items():
@@ -64,21 +65,18 @@ class EventSet:
 
         for event_id in events_to_delete:
             self.remove_event(event_id)
-        
-        print("DESDE event - remove_events_by_object_id:", object_id, "has been removed")
-        print("Number of events that have been deleted:", len(events_to_delete))
     
     def update_event_time_and_none_params(self, event_id, config):
         # Update time
-        if event_id in self.events.keys():
-            # We just need to get a new time from config + global_time
-            actual_type_object = self.events[event_id]['type_object']
-            actual_action = self.events[event_id]['action']
-            self.events[event_id]['time'] = get_time(config, actual_type_object, actual_action) + self.global_time
-            print("DESDE event - update_event_time: The", self.events[event_id]['action'], "for the type of object", self.events[event_id]['type_object'], "has been updated to time", self.events[event_id]['time'])
+        if event_id not in self.events.keys():
+            print("The event was deleted from event_list")
+            return
+        
+        # We just need to get a new time from config + global_time
+        actual_type_object = self.events[event_id]['type_object']
+        actual_action = self.events[event_id]['action']
+        self.events[event_id]['time'] = get_time(config, actual_type_object, actual_action) + self.global_time
 
-        else:
-            print("DESDE eventSet - update_event: El event_id no estaba en la event_list")
         print("Update event list después update:", self)
         print(" ")
 

@@ -22,10 +22,6 @@ def create_simulation_folder():
         print(f"Error creating directory: {e}")
         return None
 
-import os
-import json
-import networkx as nx
-
 def save_simulation_step(folder_path, iteration, data):
     """
     Updates a JSON simulation file by merging new data into the existing JSON object.
@@ -68,45 +64,6 @@ def save_simulation_step(folder_path, iteration, data):
         with open(file_path, 'w') as f:
             json.dump(existing_data, f, indent=4) 
         print(f"Updated data in: {filename}")
-    except Exception as e:
-        print(f"Error saving step {iteration}: {e}")
-
-    if graph_obj is not None:
-        phase_suffix = graph_phase_from_data if graph_phase_from_data is not None else 'before'
-        gml_name = f"Simulation{iteration}_graph_{phase_suffix}.gml"
-        gml_path = os.path.join(folder_path, gml_name)
-        try:
-            nx.write_gml(graph_obj, gml_path)
-            print(f"Saved graph GML: {gml_name}")
-        except Exception as e:
-            print(f"Error saving graph GML for step {iteration}: {e}")
-
-# BORRAR
-def save_simulation_step2(folder_path, iteration, data):
-    """
-    Writes JSON simulation data and optionally saves a NetworkX graph to GML.
-
-    Behavior:
-    - If `data` contains keys `_graph_obj` and/or `_graph_phase`, the function
-      will use `_graph_obj` as the graph to save as GML and `_graph_phase` as
-      the phase tag.
-    - The optional `graph_phase` argument overrides any `_graph_phase` in
-      `data`.
-    """
-    graph_obj = None
-    graph_phase_from_data = None
-
-    if isinstance(data, dict):
-        graph_obj = data.pop('graph', None)
-        graph_phase_from_data = data.pop('graph_phase', None)
-
-    try:
-        filename = f"Simulation{iteration}.json"
-        file_path = os.path.join(folder_path, filename)
-        with open(file_path, 'a') as f:
-            json_string = json.dumps(data)
-            f.write(json_string + "\n")
-        print(f"Appended data to: {filename}")
     except Exception as e:
         print(f"Error saving step {iteration}: {e}")
 
@@ -180,6 +137,15 @@ def prepare_placement_data(placement):
         return {}
     return placement
 
+def prepare_node_information_and_placement_data(node_information):
+    """
+    Prepares node information and placement data for JSON serialization.
+    Assumes node_information is a dict (e.g., {'node_name': {'ram': 100, 'ram_used': 50, 'running_applications': [...]}}).
+    """
+    if node_information is None:
+        return {}
+    return node_information
+
 def prepare_total_latency_data(total_latency):
     """
     Prepares total latency data for JSON serialization.
@@ -221,6 +187,9 @@ def prepare_simulation_data(data_sources):
     
     if 'placement' in data_sources:
         prepared_data['placement'] = prepare_placement_data(data_sources['placement'])
+
+    if 'node_information' in data_sources:
+        prepared_data['node_information'] = prepare_node_information_and_placement_data(data_sources['node_information'])
 
     if 'total_latency' in data_sources:
         prepared_data['total_latency'] = prepare_total_latency_data(data_sources['total_latency'])

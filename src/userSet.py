@@ -44,12 +44,16 @@ class UserSet:
 
     def remove_user_by_requested_app(self, requested_app, params):
         """Removes a user from the set based on their requested application."""
+        list_of_deleted_users = []
+
         for user_id, user in list(self.users.items()):
             if user['requestedApp'] == requested_app:
                 # del self.users[user_id]
                 self.remove_user(user_id, params)
-                return True
-        return False
+                list_of_deleted_users.append(user_id)
+            
+        message = f"Users {list_of_deleted_users} have been removed due to requested app {requested_app}"
+        return message
     
     def remove_user(self, user_id, params):
         """Removes a user from the set based on its ID from the user_set and the event_set"""

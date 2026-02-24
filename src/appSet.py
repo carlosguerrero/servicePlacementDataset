@@ -93,11 +93,10 @@ class ApplicationSet:
 
         if app_id in self.applications:
             del self.applications[app_id]
-            print("DESDE appSet - remove_app:", app_id, "has been removed")
-            users.remove_user_by_requested_app(app_id, params)  # Remove users requesting this app
+            message2 = users.remove_user_by_requested_app(app_id, params)  # Remove users requesting this app
             event_set.remove_events_by_object_id(app_id)
 
-            message = f"Application {app_id} has been removed, along with its associated users and events."
+            message = f"Application {app_id} has been removed, along with its associated events. {message2}"
             return message
         return False
     
