@@ -159,14 +159,14 @@ def create_new_user(config, appsSet, infrastructure, user_set, event_set, app_id
     attributes = config.get('attributes', {})
     user_conf = attributes.get('user', {})
     user_actions_config = user_conf.get('actions', {})
-    user_centrality=get_random_from_range(config, 'user', 'centrality')
-    rqApp = app_id if app_id is not None else appsSet.selectRandomAppIdByPopularity(get_random_from_range(config, 'user', 'request_popularity'))
+    user_centrality=eval(user_conf.get('centrality'))
+    rqApp = app_id if app_id is not None else appsSet.selectRandomAppIdByPopularity(eval(user_conf.get('request_popularity')))
     appNm=appsSet.get_application(rqApp)['name']
     userAttributes = user_set.newUserItem(
         name=user_set.getNextUserId(),
         requestedApp=rqApp,  # Randomly select an application based on popularity
         appName=appNm,
-        requestRatio=get_random_from_range(config, 'user', 'request_ratio'),
+        requestRatio=eval(user_conf.get('request_ratio')),  
         connectedTo=selectRandomGraphNodeByCentrality(infrastructure, user_centrality),  # Randomly select a node from the graph
         centrality=user_centrality,
         actions=user_actions_config

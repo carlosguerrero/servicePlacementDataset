@@ -169,6 +169,36 @@ def solve_application_placement(graph_dict, application_set, user_set):
     else:
         return None, PENALTY_DELAY
 
+def difference_in_placement(old_placement, new_placement, old_latency, new_latency):
+    """
+    Compares old and new application placements and prints information about moved apps.
+    old_placement and new_placement are dicts: {app_name: node_id}
+    """
+    if old_placement is None or new_placement is None or old_placement == new_placement:
+        return "APPLICATION PLACEMENT: No changes made."
+    
+    moved_apps = []
+    
+    # Check for apps that moved or were removed
+    for app_name, old_node in old_placement.items():
+        new_node = new_placement.get(app_name)
+        if new_node is None:
+            moved_apps.append(f"  - App '{app_name}' was removed (was on node {old_node})")
+        elif old_node != new_node:
+            moved_apps.append(f"  - App '{app_name}' moved from node {old_node} to node {new_node}")
+    
+    # Check for newly placed apps
+    for app_name, new_node in new_placement.items():
+        if app_name not in old_placement:
+            moved_apps.append(f"  - App '{app_name}' was newly placed on node {new_node}")
+    
+    if moved_apps:
+        message = "APPLICATION PLACEMENT CHANGES:\n" + "\n".join(moved_apps)
+        message += f"\nLatency changed from {old_latency:.2f} to {new_latency:.2f}"
+        return message
+    else:
+        return "APPLICATION PLACEMENT: No changes made."
+
 def update_system_state(events_list, config, app_set, user_set, graph_dict, iteration, sim_folder):
 
     first_event = events_list.get_first_event()
@@ -208,27 +238,27 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict, iter
     
     # Stop the program in case apps, users, active nodes or active edges is empty
     if not app_set.get_all_apps():
-        print("STOPPING THE SIMULATION:  No applications available after processing the event. Stopping the simulation.")
+        print("\nSTOPPING THE SIMULATION:  No applications available after processing the event.")
         sys.exit()
     if not user_set.get_all_users():
-        print("STOPPING THE SIMULATION:  No users available after processing the event.")
+        print("\nSTOPPING THE SIMULATION:  No users available after processing the event.")
         sys.exit()
-    # BORRAR: tengo que añadir lo de active_nodes
-    # active_nodes = graph_dict.get_active_nodes()
-    # if not active_nodes:
-    #     print("No active nodes in the graph after processing the event. Stopping the simulation.")
-    #     sys.exit()
-    # active_edges = graph_dict.get_active_edges()
-    # if not active_edges:
-    #     print("No active edges in the graph after processing the event. Stopping the simulation.")
-    #     sys.exit()
+    active_nodes = graph_dict.get_active_nodes()
+    if not active_nodes:
+        print("\nSTOPPING THE SIMULATION:  No active nodes in the graph after processing the event.")
+        sys.exit()
+    active_edges = graph_dict.get_active_edges()
+    if not active_edges:
+        print("\nSTOPPING THE SIMULATION:  No active edges in the graph after processing the event.")
+        sys.exit()
 
     optimal_placement, total_latency = solve_application_placement(graph_dict, app_set, user_set)
 
-    node_information_and_placement_message = ""
+    node_information_and_placement_message = {}
     for node, feat in graph_dict.get_main_graph().nodes(data=True):
         # print(f"Node {node}: RAM Total={feat.get('ram')}, RAM Used={feat.get('ram_used')}, Running Apps={[app_set.get_application(app_id)['name'] for app_id in feat.get('running_applications', [])]}")
-        node_information_and_placement_message += f"Node {node}: RAM Total={feat.get('ram')}, RAM Used={feat.get('ram_used')}, Running Apps={[app_set.get_application(app_id)['name'] for app_id in feat.get('running_applications', [])]}\n"
+        node_key = f"Node_{node}"
+        node_information_and_placement_message[node_key] = f"RAM Total={feat.get('ram')}, RAM Used={feat.get('ram_used')}, Running Apps={[app_set.get_application(app_id)['name'] for app_id in feat.get('running_applications', [])]}"
 
     data = prepare_simulation_data({
         'global_time': events_list.global_time,
@@ -246,6 +276,8 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict, iter
     save_simulation_step(sim_folder, iteration, data)
 
     events_list.update_event_time_and_none_params(first_event['id'], config)
+
+    return optimal_placement, total_latency
     
 def generate_scenario(events_list, config, app_set, user_set, graph_dict):
     sim_folder = create_simulation_folder()
@@ -268,12 +300,18 @@ def generate_scenario(events_list, config, app_set, user_set, graph_dict):
 
     total_iterations = 20
     i = 1
+    old_opt_placement, old_total_latency = None, None
     while events_list.events and i < total_iterations: # and global_time < 300
         print("\nITERATION", i)
-        update_system_state(events_list, config, app_set, user_set, graph_dict, i, sim_folder)
-        i += 1
+        actual_opt_placement, actual_total_latency = update_system_state(events_list, config, app_set, user_set, graph_dict, i, sim_folder)
+        # function to check if the new placement is different from the old one, and if the total latency has changed significantly (e.g., more than 10% difference)
+        
+        diff_message = difference_in_placement(old_opt_placement, actual_opt_placement, old_total_latency, actual_total_latency)
+        print(diff_message)
 
-    pass
+            
+        old_opt_placement, old_total_latency = actual_opt_placement, actual_total_latency
+        i += 1
 
 def main():
     random.seed(42)

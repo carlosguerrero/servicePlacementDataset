@@ -63,7 +63,7 @@ def save_simulation_step(folder_path, iteration, data):
         # Open in 'w' (write) mode to overwrite the file with the merged content
         with open(file_path, 'w') as f:
             json.dump(existing_data, f, indent=4) 
-        print(f"Updated data in: {filename}")
+        # print(f"Updated data in: {filename}")
     except Exception as e:
         print(f"Error saving step {iteration}: {e}")
 
@@ -73,7 +73,7 @@ def save_simulation_step(folder_path, iteration, data):
         gml_path = os.path.join(folder_path, gml_name)
         try:
             nx.write_gml(graph_obj, gml_path)
-            print(f"Saved graph GML: {gml_name}")
+            # print(f"Saved graph GML: {gml_name}")
         except Exception as e:
             print(f"Error saving graph GML for step {iteration}: {e}")
 
@@ -93,7 +93,6 @@ def prepare_graph_data(graph, phase='before'):
     if graph is None:
         return None, phase
     return graph, phase
-    # BORRAR: return nx.node_link_data(graph), graph, phase
 
 def prepare_users_data(user_set):
     """

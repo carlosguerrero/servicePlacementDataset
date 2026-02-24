@@ -7,7 +7,6 @@ model_params:
   k: 4
   p_rewire: 0.1
 
-# Min and max of the random generations
 attributes:
   graph:
     actions:
@@ -31,11 +30,11 @@ attributes:
   
   app:
     num_apps: 3
-    popularity: [0.1, 1.0]
-    cpu: [0.1, 4.0]
-    ram: [0.5, 8.0]
-    disk: [10, 100]
-    time: [0, 300]
+    popularity: 'random.uniform(0.1, 1.0)'
+    cpu: 'random.uniform(0.1, 4.0)'
+    ram: 'random.uniform(0.5, 8.0)'
+    disk: 'random.uniform(10, 100)'
+    time: 'random.uniform(0, 300)'
     actions: 
       remove_app:
         distribution: 'random.uniform(0, 300)'
@@ -55,9 +54,9 @@ attributes:
     
   user:
     num_users: 2
-    request_ratio: [0.1, 1.0]
-    request_popularity: [0.1, 1.0]
-    centrality: [0.1, 1.0]
+    request_ratio: 'random.uniform(0.1, 1.0)'
+    request_popularity: 'random.uniform(0.1, 1.0)'
+    centrality: 'random.uniform(0.1, 1.0)'
     actions:
       remove_user:
         distribution: 'random.uniform(0, 300)'
@@ -95,5 +94,3 @@ attributes:
         infrastructure: None,
         event_set: None,
         num_new_users: 'random.randint(1, 5)'
-    
-    # new_disabled_node:

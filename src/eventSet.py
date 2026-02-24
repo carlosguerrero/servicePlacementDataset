@@ -76,9 +76,9 @@ class EventSet:
         actual_type_object = self.events[event_id]['type_object']
         actual_action = self.events[event_id]['action']
         self.events[event_id]['time'] = get_time(config, actual_type_object, actual_action) + self.global_time
-
-        print("Update event list después update:", self)
-        print(" ")
+        
+        print(f"Updated time for event {event_id}: {self.events[event_id]['time']}")
+        # print("Update event list después update:", self)
 
         # Change parameters of the event back to None
         event = self.events[event_id]

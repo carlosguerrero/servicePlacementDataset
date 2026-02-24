@@ -172,11 +172,11 @@ def create_new_app(config, application_set, event_set):
 
     appAttributes=application_set.newAppItem(
             name=application_set.getNextAppId(),
-            popularity=get_random_from_range(config, 'app', 'popularity'),  # Random popularity between 0.1 and 1.0
-            cpu=get_random_from_range(config, 'app', 'cpu'),  # Random CPU requirement between 0.1 and 4.0 cores
-            ram=get_random_from_range(config, 'app', 'ram'),  # Random RAM requirement between 0.5 and 8.0 GB
-            disk=get_random_from_range(config, 'app', 'disk'),  # Random disk space requirement between 10 and 100 GB
-            time=get_random_from_range(config, 'app', 'time'),
+            popularity=eval(app_conf.get('popularity')), 
+            cpu=eval(app_conf.get('cpu')),  
+            ram=eval(app_conf.get('ram')), 
+            disk=eval(app_conf.get('disk')),  
+            time=eval(app_conf.get('time')),
             actions=app_actions_config ) 
     
     application_set.add_application(appAttributes)

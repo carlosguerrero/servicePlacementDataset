@@ -53,6 +53,38 @@ class InfrastructureSet:
         if item:
             item['shortest_paths'] = self._calculate_shortest_paths(item['graph'])
 
+    def get_active_nodes(self, infra_id="000"):
+        """
+        Returns a list of active node IDs (nodes with 'enable' == True).
+        If infra_id is not found or has no graph, returns an empty list.
+        """
+        item = self.infrastructures.get(infra_id)
+        if not item:
+            return []
+        
+        graph = item['graph']
+        active_nodes = [
+            n for n, attrs in graph.nodes(data=True) 
+            if attrs.get('enable', True)
+        ]
+        return active_nodes
+
+    def get_active_edges(self, infra_id="000"):
+        """
+        Returns a list of active edge tuples (edges with 'enable' == True).
+        If infra_id is not found or has no graph, returns an empty list.
+        """
+        item = self.infrastructures.get(infra_id)
+        if not item:
+            return []
+        
+        graph = item['graph']
+        active_edges = [
+            (u, v) for u, v, attrs in graph.edges(data=True)
+            if attrs.get('enable', True)
+        ]
+        return active_edges
+
     def disable_random_node(self, infra_id, params=None):
         """Selects and disables a random node in the specified graph."""
         item = self.infrastructures.get(infra_id)
@@ -74,7 +106,6 @@ class InfrastructureSet:
         node_ids = [n for n, _ in active_candidates]
 
         selected_node = random.choices(node_ids, weights=weights, k=1)[0]
-        print(f"  [Event] Randomly selected node {selected_node}")
 
         # Call disable_node passing the infrastructure ID
         self.disable_node(infra_id, {'node_id': selected_node})
