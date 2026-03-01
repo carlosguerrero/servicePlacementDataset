@@ -7,6 +7,7 @@ import pickle
 import os
 from datetime import datetime
 import sys
+import matplotlib.pyplot as plt
 
 from src import EventSet, generate_events, init_new_object, ApplicationSet, generate_random_apps, UserSet, generate_random_users, generate_infrastructure
 from src import create_simulation_folder, save_simulation_step, prepare_simulation_data
@@ -174,30 +175,47 @@ def difference_in_placement(old_placement, new_placement, old_latency, new_laten
     Compares old and new application placements and prints information about moved apps.
     old_placement and new_placement are dicts: {app_name: node_id}
     """
-    if old_placement is None or new_placement is None or old_placement == new_placement:
-        return "APPLICATION PLACEMENT: No changes made."
-    
+    results_dictionary = {}
     moved_apps = []
+
+    if old_placement is None or new_placement is None or old_placement == new_placement:
+        results_dictionary["NO_CHANGES"] = "No changes made."
+        print("APPLICATION PLACEMENT: No changes made.")
+        return results_dictionary
     
+    i = 1
     # Check for apps that moved or were removed
     for app_name, old_node in old_placement.items():
         new_node = new_placement.get(app_name)
         if new_node is None:
             moved_apps.append(f"  - App '{app_name}' was removed (was on node {old_node})")
+            change_key = f"Change_{i}"
+            results_dictionary[change_key] = f"App '{app_name}' was removed (was on node {old_node})"
+            i += 1
         elif old_node != new_node:
             moved_apps.append(f"  - App '{app_name}' moved from node {old_node} to node {new_node}")
+            change_key = f"Change_{i}"
+            results_dictionary[change_key] = f"App '{app_name}' moved from node {old_node} to node {new_node}"
+            i += 1
     
     # Check for newly placed apps
     for app_name, new_node in new_placement.items():
         if app_name not in old_placement:
             moved_apps.append(f"  - App '{app_name}' was newly placed on node {new_node}")
+            change_key = f"Change_{i}"
+            results_dictionary[change_key] = f"App '{app_name}' was newly placed on node {new_node}"
+            i += 1
     
     if moved_apps:
         message = "APPLICATION PLACEMENT CHANGES:\n" + "\n".join(moved_apps)
         message += f"\nLatency changed from {old_latency:.2f} to {new_latency:.2f}"
-        return message
+        results_dictionary["LATENCY"] = f"Changed from {old_latency:.2f} to {new_latency:.2f}"
+        print(message)
+        return results_dictionary
     else:
-        return "APPLICATION PLACEMENT: No changes made."
+        results_dictionary["NO_CHANGES"] = "No changes made."
+        print("APPLICATION PLACEMENT: No changes made.")
+        return results_dictionary
 
 def update_system_state(events_list, config, app_set, user_set, graph_dict, iteration, sim_folder):
 
@@ -282,6 +300,9 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict, iter
 def generate_scenario(events_list, config, app_set, user_set, graph_dict):
     sim_folder = create_simulation_folder()
 
+    # Track user count per simulation
+    user_counts = []
+
     # Calculate first scenario and save it in the iteration_0
     optimal_placement, total_latency = solve_application_placement(graph_dict, app_set, user_set)
     print("SOLUTION ILP of application placement:", optimal_placement)
@@ -297,6 +318,7 @@ def generate_scenario(events_list, config, app_set, user_set, graph_dict):
         'total_latency': total_latency
     })
     save_simulation_step(sim_folder, 0, data)
+    user_counts.append(len(user_set.get_all_users()))
 
     total_iterations = 20
     i = 1
@@ -304,14 +326,24 @@ def generate_scenario(events_list, config, app_set, user_set, graph_dict):
     while events_list.events and i < total_iterations: # and global_time < 300
         print("\nITERATION", i)
         actual_opt_placement, actual_total_latency = update_system_state(events_list, config, app_set, user_set, graph_dict, i, sim_folder)
-        # function to check if the new placement is different from the old one, and if the total latency has changed significantly (e.g., more than 10% difference)
-        
         diff_message = difference_in_placement(old_opt_placement, actual_opt_placement, old_total_latency, actual_total_latency)
-        print(diff_message)
-
-            
+        data = prepare_simulation_data({'diff_message': diff_message})
+        save_simulation_step(sim_folder, i, data)
+        user_counts.append(len(user_set.get_all_users()))
         old_opt_placement, old_total_latency = actual_opt_placement, actual_total_latency
         i += 1
+
+    # Plot and save evolution of users
+    plt.figure(figsize=(8,5))
+    plt.plot(range(len(user_counts)), user_counts, marker='o')
+    plt.xlabel('Simulation Iteration')
+    plt.ylabel('Number of Users')
+    plt.title('Evolution of Users per Simulation')
+    plt.grid(True)
+    plt.tight_layout()
+    output_path = os.path.join(sim_folder, "evolution_users.png")
+    plt.savefig(output_path)
+    plt.close()
 
 def main():
     random.seed(42)

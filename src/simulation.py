@@ -145,6 +145,14 @@ def prepare_node_information_and_placement_data(node_information):
         return {}
     return node_information
 
+def prepare_difference_in_solutions_data(diff_message):
+    """
+    Returns the changes in between two consecutives solutions of the ILP problem.
+    """
+    if diff_message is None:
+        return ""
+    return diff_message
+
 def prepare_total_latency_data(total_latency):
     """
     Prepares total latency data for JSON serialization.
@@ -189,6 +197,9 @@ def prepare_simulation_data(data_sources):
 
     if 'node_information' in data_sources:
         prepared_data['node_information'] = prepare_node_information_and_placement_data(data_sources['node_information'])
+
+    if 'diff_message' in data_sources:
+        prepared_data['diff_message'] = prepare_placement_data(data_sources['diff_message'])
 
     if 'total_latency' in data_sources:
         prepared_data['total_latency'] = prepare_total_latency_data(data_sources['total_latency'])
