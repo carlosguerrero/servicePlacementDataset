@@ -3,7 +3,7 @@ import numpy as np
 import random
 from .eventSet import generate_events
 
-random_network = random.Random(44)
+random_network_seed_default = 44
 random_network2 = np.random.default_rng(44)
 
 class InfrastructureSet: 
@@ -109,7 +109,8 @@ class InfrastructureSet:
         weights = [1.0 / (attrs.get('betweenness_centrality', 0) + epsilon) for _, attrs in active_candidates]
         node_ids = [n for n, _ in active_candidates]
 
-        selected_node = random_network.choices(node_ids, weights=weights, k=1)[0]
+        random_network_seed = params.get('seed')
+        selected_node = random.Random(random_network_seed).choices(node_ids, weights=weights, k=1)[0]
 
         # Call disable_node passing the infrastructure ID
         self.disable_node(infra_id, {'node_id': selected_node})
@@ -232,7 +233,7 @@ class InfrastructureSet:
         message = f"Edge {edge} has been revived."
         return message
 
-def _generate_random_graph(config, event_set):
+def _generate_random_graph(config, event_set, random_network_seed=random_network_seed_default):
     """Internal function to handle the 'random' generation mode."""
     setup = config.get('setup', {})
     model_params = config.get('model_params', {})
@@ -244,16 +245,16 @@ def _generate_random_graph(config, event_set):
 
     if model_name == 'erdos_renyi':
         p = model_params.get('p', 0.1)
-        temp_graph = nx.erdos_renyi_graph(num_nodes, p)
+        temp_graph = nx.erdos_renyi_graph(num_nodes, p, seed=random_network_seed)
     elif model_name == 'barabasi_albert':
         m = model_params.get('m', 2)
         if m >= num_nodes: m = 1
-        temp_graph = nx.barabasi_albert_graph(num_nodes, m)
+        temp_graph = nx.barabasi_albert_graph(num_nodes, m, seed=random_network_seed)
     elif model_name == 'watts_strogatz':
         k = model_params.get('k', 4)
         p = model_params.get('p_rewire', 0.1)
         if k >= num_nodes: k = num_nodes - 1
-        temp_graph = nx.watts_strogatz_graph(num_nodes, k, p)
+        temp_graph = nx.watts_strogatz_graph(num_nodes, k, p, seed=random_network_seed)
     elif model_name == 'balanced_tree':
         r = model_params.get('r', 2) 
         h = model_params.get('h', 3)
@@ -295,7 +296,7 @@ def _generate_random_graph(config, event_set):
 # BORRAR: por ahora lo dejo estar
 def _generate_manual_graph(config):
     print("  [Manual Mode] Building graph from defined topology...")
-    graph = InfrastructureGraph()
+    graph = InfrastructureSet()
     
     topology = config.get('topology', {})
     
@@ -316,7 +317,7 @@ def _generate_manual_graph(config):
         
     return graph
 
-def generate_infrastructure(config, event_set):
+def generate_infrastructure(config, event_set, random_network_seed=random_network_seed_default):
     """
     Generates a random graph using the NetworkX library.
 

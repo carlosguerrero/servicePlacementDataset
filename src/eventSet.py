@@ -3,8 +3,6 @@ import random
 import copy
 import numpy as np
 
-random_event = random.Random(43)
-random_network = np.random.default_rng(44) 
 
 class EventSet:
     def __init__(self):
@@ -112,11 +110,22 @@ class EventSet:
         return str(events_to_print)
         # return str(self.events)
 
-def generate_events(object_item, type_object, event_set):
+def generate_events(object_item, type_object, event_set, seed=None):
     """
     object_item: A dictionary containing {'id': ..., 'actions': ...} 
                  (Works for User items, App items, and the new Infrastructure items)
+    type_object: 'user', 'app', or 'graph' 
+    event_set: The EventSet instance where the generated events will be added.
+    seed: Optional seed for random number generation to ensure reproducibility.
     """
+    
+    if type_object == 'user':
+        random_users_seed = seed if seed is not None else 42
+    elif type_object == 'graph': 
+        random_network_seed = seed if seed is not None else 44
+    elif type_object == 'app':
+        random_apps_seed = seed if seed is not None else 45
+
     obj_id = object_item['id']
     actions_dict = object_item['actions']
 
@@ -135,7 +144,7 @@ def generate_events(object_item, type_object, event_set):
 
     return event_set
 
-def init_new_object(config, event_set):
+def init_new_object(config, event_set, seed=None):
     """type_object: 'user' or 'app'
     Later will be also be node"""
     attributes = config.get('attributes', {})
@@ -144,6 +153,8 @@ def init_new_object(config, event_set):
         eventAttributes = event_set.newEventItem(
             object_id=None,
             type_object=action.removeprefix("new_"),
+            random_users_seed = seed if seed is not None else 42,
+            random_apps_seed = seed if seed is not None else 45,
             time = round(eval(type_conf['distribution']), 2) + event_set.global_time, 
             action = action,
             action_params = type_conf['action_params']

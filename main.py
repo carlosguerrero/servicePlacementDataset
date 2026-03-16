@@ -7,7 +7,6 @@ import pickle
 import os
 from datetime import datetime
 import sys
-import matplotlib.pyplot as plt
 import csv
 import numpy as np
 
@@ -336,6 +335,10 @@ def generate_scenario(events_list, config, app_set, user_set, graph_dict):
 def main():
     # BORRAR: random.seed(42)
     # random_network = np.random.default_rng(44) 
+    random_users_seed = 42 
+    random_events_seed = 43
+    random_network_seed = 44
+    random_apps_seed = 45
 
     # MANUAL GENERATION OF GRAPH: config_manual = "config_manual.yaml"
     config_random = "config_random.yaml"
@@ -344,13 +347,13 @@ def main():
     generated_events = EventSet()
 
     # RANDOM GENERATION OF GRAPH
-    generated_infrastructure = generate_infrastructure(config, generated_events)
+    generated_infrastructure = generate_infrastructure(config, generated_events, random_network_seed=random_network_seed)
     actual_graph = generated_infrastructure.get_main_graph() 
 
     generated_apps = generate_random_apps(config, generated_events)
     print(f"Apps: {generated_apps}")
 
-    generated_users = generate_random_users(config, generated_apps, generated_infrastructure, generated_events)
+    generated_users = generate_random_users(config, generated_apps, generated_infrastructure, generated_events, random_users_seed=random_users_seed)
     print(f"\nUsers: {generated_users}")
 
     init_new_object(config, generated_events)
