@@ -6,6 +6,8 @@ from .utils.auxiliar_functions import get_random_from_range, selectRandomAction
 from .eventSet import EventSet, generate_events
 from .userSet import create_new_user
 
+random_app = random.Random(42)
+
 class ApplicationSet:
     def __init__(self):
         self.applications = {}
@@ -36,19 +38,19 @@ class ApplicationSet:
         normalized_popularity = {app_id: app['popularity'] / total_popularity for app_id, app in self.applications.items()}
 
         # Select a random application based on the normalized popularity
-        selected_app = random.choices(list(normalized_popularity.keys()), weights=normalized_popularity.values(), k=1)[0]
+        selected_app = random_app.choices(list(normalized_popularity.keys()), weights=normalized_popularity.values(), k=1)[0]
         return selected_app
     
     def selectRandomAppIdByPopularity(self, popularity):
         """Selects a random application based on its popularity."""
         selected_apps = [app for app in self.applications.values() if app['popularity'] >= popularity]
         if selected_apps:
-            rndApp = random.choice(selected_apps)
+            rndApp = random_app.choice(selected_apps)
             return rndApp['id']
         # If no applications meet the popularity criteria, return any random application to satisfy requirement of 
         # all the users should have an application to request  
         selected_apps = [app for app in self.applications.values()]
-        rndApp = random.choice(selected_apps)
+        rndApp = random_app.choice(selected_apps)
         return rndApp['id']
 
     def get_application_name_by_id(self, app_id):   

@@ -3,6 +3,25 @@ import json
 from datetime import datetime
 import networkx as nx  
 
+import csv
+import os
+
+def add_and_log_user_count(user_set, i, csv_users):
+    """
+    Writes the latest user count to a CSV after the event has been processed and the system state has been updated.
+    """
+    new_count = len(user_set.get_all_users())
+    file_exists = os.path.isfile(csv_users)
+    
+    with open(csv_users, mode='a', newline='') as file:
+        writer = csv.writer(file)
+        
+        if not file_exists:
+            writer.writerow(['Iteration', 'User Count'])
+        
+        # Write the new row (e.g., Entry 1, 50 users)
+        writer.writerow([i, new_count])
+
 def create_simulation_folder():
     """
     Creates a base 'Simulations' directory and a timestamped subdirectory.

@@ -1,6 +1,10 @@
 import uuid
 import random
 import copy
+import numpy as np
+
+random_event = random.Random(43)
+random_network = np.random.default_rng(44) 
 
 class EventSet:
     def __init__(self):

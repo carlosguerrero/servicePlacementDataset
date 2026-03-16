@@ -1,32 +1,36 @@
 setup:
   mode: random
   num_nodes: 10
-  graph_model: 'watts_strogatz'
+  graph_model: 'barabasi_albert' 
+  # BORRAR: 'watts_strogatz'
 
 model_params:
-  k: 4
-  p_rewire: 0.1
+  m: 2
+  # k: 4
+  # p_rewire: 0.1
 
 attributes:
   graph:
     actions:
       disable_random_node:
-        distribution: 'random.uniform(0, 300)'
+        distribution: 'random_network.uniform(0, 300)'
         action_params: 
           event_set: None
-          distribution_to_enable_node: 'random.uniform(0, 100)'
+          distribution_to_enable_node: 'random_network.uniform(0, 100)'
       
       disable_random_edge:
-        distribution: 'random.uniform(0, 300)'
+        distribution: 'random_network.uniform(0, 300)'
         action_params: 
           event_set: None
-          distribution_to_enable_edge: 'random.uniform(0, 100)'
+          distribution_to_enable_edge: 'random_network .uniform(0, 100)'
           
     node:
-      ram: 'random.uniform(1, 16)'
+      ram: 'random_network2.pareto(1.16, {num_nodes})'
+      min_ram: 8
+      max_ram: 16
 
     edge:
-      delay: 'random.uniform(0.1, 5.0)'
+      delay: 'random_network.uniform(0.1, 5.0)'
   
   app:
     num_apps: 3

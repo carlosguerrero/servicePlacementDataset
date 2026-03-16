@@ -8,9 +8,11 @@ import os
 from datetime import datetime
 import sys
 import matplotlib.pyplot as plt
+import csv
+import numpy as np
 
 from src import EventSet, generate_events, init_new_object, ApplicationSet, generate_random_apps, UserSet, generate_random_users, generate_infrastructure
-from src import create_simulation_folder, save_simulation_step, prepare_simulation_data
+from src import create_simulation_folder, save_simulation_step, prepare_simulation_data, add_and_log_user_count
 from src.utils.auxiliar_functions import get_random_from_range
 
 def load_config(config_path):
@@ -299,9 +301,8 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict, iter
     
 def generate_scenario(events_list, config, app_set, user_set, graph_dict):
     sim_folder = create_simulation_folder()
-
-    # Track user count per simulation
-    user_counts = []
+    csv_users = os.path.join(sim_folder, "user_counts_log.csv")
+    add_and_log_user_count(user_set, 0, csv_users)
 
     # Calculate first scenario and save it in the iteration_0
     optimal_placement, total_latency = solve_application_placement(graph_dict, app_set, user_set)
@@ -318,7 +319,6 @@ def generate_scenario(events_list, config, app_set, user_set, graph_dict):
         'total_latency': total_latency
     })
     save_simulation_step(sim_folder, 0, data)
-    user_counts.append(len(user_set.get_all_users()))
 
     total_iterations = 20
     i = 1
@@ -329,24 +329,13 @@ def generate_scenario(events_list, config, app_set, user_set, graph_dict):
         diff_message = difference_in_placement(old_opt_placement, actual_opt_placement, old_total_latency, actual_total_latency)
         data = prepare_simulation_data({'diff_message': diff_message})
         save_simulation_step(sim_folder, i, data)
-        user_counts.append(len(user_set.get_all_users()))
+        add_and_log_user_count(user_set, i, csv_users)
         old_opt_placement, old_total_latency = actual_opt_placement, actual_total_latency
         i += 1
 
-    # Plot and save evolution of users
-    plt.figure(figsize=(8,5))
-    plt.plot(range(len(user_counts)), user_counts, marker='o')
-    plt.xlabel('Simulation Iteration')
-    plt.ylabel('Number of Users')
-    plt.title('Evolution of Users per Simulation')
-    plt.grid(True)
-    plt.tight_layout()
-    output_path = os.path.join(sim_folder, "evolution_users.png")
-    plt.savefig(output_path)
-    plt.close()
-
 def main():
-    random.seed(42)
+    # BORRAR: random.seed(42)
+    # random_network = np.random.default_rng(44) 
 
     # MANUAL GENERATION OF GRAPH: config_manual = "config_manual.yaml"
     config_random = "config_random.yaml"

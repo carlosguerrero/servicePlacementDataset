@@ -3,6 +3,8 @@ import uuid
 from .utils.auxiliar_functions import get_random_from_range, selectRandomGraphNodeByCentrality, selectRandomAction, selectAdjacentNodeWhenMoving
 from .eventSet import EventSet, generate_events
 
+random_user = random.Random(45)
+
 class UserSet:
     def __init__(self):
         self.users = {}

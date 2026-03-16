@@ -1,6 +1,10 @@
 import networkx as nx
+import numpy as np
 import random
 from .eventSet import generate_events
+
+random_network = random.Random(44)
+random_network2 = np.random.default_rng(44)
 
 class InfrastructureSet: 
     def __init__(self):
@@ -105,7 +109,7 @@ class InfrastructureSet:
         weights = [1.0 / (attrs.get('betweenness_centrality', 0) + epsilon) for _, attrs in active_candidates]
         node_ids = [n for n, _ in active_candidates]
 
-        selected_node = random.choices(node_ids, weights=weights, k=1)[0]
+        selected_node = random_network.choices(node_ids, weights=weights, k=1)[0]
 
         # Call disable_node passing the infrastructure ID
         self.disable_node(infra_id, {'node_id': selected_node})
@@ -176,7 +180,7 @@ class InfrastructureSet:
             print("  [Warning] No active edges available to disable.")
             return
 
-        selected_edge = random.choice(active_edges)
+        selected_edge = random_network.choice(active_edges)
         print(f"  [Event] Randomly selected edge {selected_edge}")
 
         self.disable_edge(infra_id, {'edge': selected_edge})
@@ -233,7 +237,7 @@ def _generate_random_graph(config, event_set):
     setup = config.get('setup', {})
     model_params = config.get('model_params', {})
     
-    model_name = setup.get('graph_model', 'erdos_renyi')
+    model_name = setup.get('graph_model', 'barabasi_albert')
     num_nodes = setup.get('num_nodes', 10)
     
     print(f"  [Random Mode] Generating {model_name} graph with {num_nodes} nodes...")
@@ -258,10 +262,22 @@ def _generate_random_graph(config, event_set):
         print(f"Graph model '{model_name}' not recognized.")
         return None
 
-    # Apply Attributes
-    for node in temp_graph.nodes():
-        temp_graph.nodes[node]['ram'] = eval(config['attributes']['graph']['node']['ram'])
-        temp_graph.nodes[node]['enable'] = True
+    MIN_RAM = config['attributes']['graph']['node'].get('min_ram', 8)
+    MAX_RAM = config['attributes']['graph']['node'].get('max_ram', 16)
+
+    node_degrees = dict(temp_graph.degree())
+    sorted_nodes_by_degree = sorted(node_degrees.items(), key=lambda item: item[1], reverse=True)
+    raw_pareto = eval(config['attributes']['graph']['node']['ram'].format(num_nodes=num_nodes))
+    ram_values = np.clip(raw_pareto * MIN_RAM + MIN_RAM, a_min=MIN_RAM, a_max=MAX_RAM)
+    ram_values = np.round(ram_values, decimals=2).tolist()
+    sorted_ram_values = sorted(ram_values, reverse=True)
+
+    print("Sorted RAM values", sorted_ram_values)
+
+    for i in range(num_nodes):
+        node_id = sorted_nodes_by_degree[i][0]
+        temp_graph.nodes[node_id]['ram'] = sorted_ram_values[i]
+        temp_graph.nodes[node_id]['enable'] = True
 
     for u, v in temp_graph.edges():
         temp_graph.edges[u, v]['delay'] = eval(config['attributes']['graph']['edge']['delay'])
@@ -302,8 +318,23 @@ def _generate_manual_graph(config):
 
 def generate_infrastructure(config, event_set):
     """
+    Generates a random graph using the NetworkX library.
+
     Main entry point. Switches between manual and random generation
     based on the 'mode' setting in YAML.
+        num_nodes (int): The number of nodes the graph will have.
+        model (str, optional): The graph model to use.
+                               Common options: 'erdos_renyi', 'barabasi_albert', 'watts_strogatz'.
+                               Defaults to 'erdos_renyi'.
+        **kwargs: Additional arguments to be passed to the model's generation function.
+                   For example, for 'erdos_renyi', you can pass 'p' (edge probability).
+                   For 'barabasi_albert', you can pass 'm' (number of edges to attach per new node).
+                   For 'watts_strogatz', you can pass 'k' (initial number of neighbors),
+                   'p' (rewiring probability), and 'n' (number of nodes, already passed separately).
+
+    Returns:
+        networkx.Graph: The randomly generated graph.
+                        Returns None if the specified model is not valid.
     """
     setup = config.get('setup', {})
     mode = setup.get('mode', 'random')
