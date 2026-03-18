@@ -41,16 +41,18 @@ class ApplicationSet:
         selected_app = random_app.choices(list(normalized_popularity.keys()), weights=normalized_popularity.values(), k=1)[0]
         return selected_app
     
-    def selectRandomAppIdByPopularity(self, popularity, random_apps_seed=random_apps_seed_default):
+    def selectRandomAppIdByPopularity(self, popularity, sim_set):
         """Selects a random application based on its popularity."""
         selected_apps = [app for app in self.applications.values() if app['popularity'] >= popularity]
         if selected_apps:
-            rndApp = random.Random(random_apps_seed).choice(selected_apps)
+            rndApp = sim_set.parse_distribution('rng.choice(selected_apps)', context='app')
+            # BORRAR: rndApp = sim_set.random.choice(selected_apps)
             return rndApp['id']
         # If no applications meet the popularity criteria, return any random application to satisfy requirement of 
         # all the users should have an application to request  
         selected_apps = [app for app in self.applications.values()]
-        rndApp = random.Random(random_apps_seed).choice(selected_apps)
+        # BORRAR: rndApp = sim_set.random.choice(selected_apps)
+        rndApp = sim_set.parse_distribution('rng.choice(selected_apps)', context='app')
         return rndApp['id']
 
     def get_application_name_by_id(self, app_id):   
@@ -167,24 +169,27 @@ class ApplicationSet:
         message = f"Application {created_app_id} has been created, along with {num_new_users} new users requesting this app."
         return message
 
-def create_new_app(config, application_set, event_set):
+def create_new_app(config, application_set, event_set, sim_set):
     attributes = config.get('attributes', {})
     app_conf = attributes.get('app', {})
     app_actions_config =app_conf.get('actions', {})
 
     appAttributes=application_set.newAppItem(
             name=application_set.getNextAppId(),
-            popularity=eval(app_conf.get('popularity')), 
-            cpu=eval(app_conf.get('cpu')),  
-            ram=eval(app_conf.get('ram')), 
-            disk=eval(app_conf.get('disk')),  
-            time=eval(app_conf.get('time')),
+            popularity=sim_set.parse_distribution(app_conf.get('popularity'), context='app'), 
+            cpu=sim_set.parse_distribution(app_conf.get('cpu'), context='app'),  
+            ram=sim_set.parse_distribution(app_conf.get('ram'), context='app'), 
+            disk=sim_set.parse_distribution(app_conf.get('disk'), context='app'),  
+            time=sim_set.parse_distribution(app_conf.get('time'), context='app'),
             actions=app_actions_config ) 
     
     application_set.add_application(appAttributes)
-    generate_events(appAttributes, 'app', event_set)
+    generate_events(appAttributes, 'app', event_set, sim_set)
 
-def generate_random_apps(config, event_set):
+    # dist_string = config['attributes']['graph']['node']['ram']
+    # raw_pareto = sim_set.parse_distribution(dist_string, context='graph', num_nodes=num_nodes)
+
+def generate_random_apps(config, event_set, sim_set):
     """
     Generates a list of random applications with random resource requirements.
 
@@ -202,7 +207,7 @@ def generate_random_apps(config, event_set):
     num_apps = app_conf.get('num_apps', 1)
 
     for i in range(num_apps):
-        create_new_app(config, application_set, event_set)
+        create_new_app(config, application_set, event_set, sim_set)
     return application_set
 
 if __name__ == "__main__":

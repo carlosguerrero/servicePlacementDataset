@@ -38,7 +38,7 @@ class EventSet:
             return True
         return False
 
-    def update_event_params(self, event_id, config, app_set, user_set, graph_dict):
+    def update_event_params(self, event_id, config, app_set, user_set, graph_dict, sim_set):
         event = self.events[event_id]
         params = event.get('action_params')
 
@@ -50,8 +50,8 @@ class EventSet:
             'config': config,
             'app_set': app_set,
             'user_set': user_set,
-            'event_set': self
-            # 'event_set': self.events
+            'event_set': self,
+            'sim_set': sim_set
         }
 
         for key, obj_value in params_map.items():
@@ -94,7 +94,8 @@ class EventSet:
             'config': None,
             'app_set': None,
             'user_set': None,
-            'event_set': None
+            'event_set': None,
+            'sim_set': None
         }
 
         for key, obj_value in params_map.items():
@@ -110,7 +111,7 @@ class EventSet:
         return str(events_to_print)
         # return str(self.events)
 
-def generate_events(object_item, type_object, event_set, seed=None):
+def generate_events(object_item, type_object, event_set, sim_set):
     """
     object_item: A dictionary containing {'id': ..., 'actions': ...} 
                  (Works for User items, App items, and the new Infrastructure items)
@@ -118,20 +119,13 @@ def generate_events(object_item, type_object, event_set, seed=None):
     event_set: The EventSet instance where the generated events will be added.
     seed: Optional seed for random number generation to ensure reproducibility.
     """
-    
-    if type_object == 'user':
-        random_users_seed = seed if seed is not None else 42
-    elif type_object == 'graph': 
-        random_network_seed = seed if seed is not None else 44
-    elif type_object == 'app':
-        random_apps_seed = seed if seed is not None else 45
 
     obj_id = object_item['id']
     actions_dict = object_item['actions']
 
     for action_name, action_details in actions_dict.items():
         distribution_str = action_details.get('distribution', '0')
-        delay_val = eval(str(distribution_str))
+        delay_val = sim_set.parse_distribution(distribution_str, context=type_object)
         
         eventAttributes = event_set.newEventItem(
             object_id=obj_id,
@@ -144,18 +138,17 @@ def generate_events(object_item, type_object, event_set, seed=None):
 
     return event_set
 
-def init_new_object(config, event_set, seed=None):
+def init_new_object(config, event_set, sim_set):
     """type_object: 'user' or 'app'
     Later will be also be node"""
     attributes = config.get('attributes', {})
     new_object_conf = attributes.get('new_object', {})
     for action, type_conf in new_object_conf.items():
+        type_object=action.removeprefix("new_")
         eventAttributes = event_set.newEventItem(
             object_id=None,
-            type_object=action.removeprefix("new_"),
-            random_users_seed = seed if seed is not None else 42,
-            random_apps_seed = seed if seed is not None else 45,
-            time = round(eval(type_conf['distribution']), 2) + event_set.global_time, 
+            type_object=type_object,
+            time = round(sim_set.parse_distribution(type_conf['distribution'], context=type_object), 2) + event_set.global_time, 
             action = action,
             action_params = type_conf['action_params']
         )

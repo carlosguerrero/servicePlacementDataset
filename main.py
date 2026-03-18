@@ -11,6 +11,7 @@ import csv
 import numpy as np
 
 from src import EventSet, generate_events, init_new_object, ApplicationSet, generate_random_apps, UserSet, generate_random_users, generate_infrastructure
+from src.simulationSet import SimulationSet
 from src import create_simulation_folder, save_simulation_step, prepare_simulation_data, add_and_log_user_count
 from src.utils.auxiliar_functions import get_random_from_range
 
@@ -218,7 +219,7 @@ def difference_in_placement(old_placement, new_placement, old_latency, new_laten
         print("APPLICATION PLACEMENT: No changes made.")
         return results_dictionary
 
-def update_system_state(events_list, config, app_set, user_set, graph_dict, iteration, sim_folder):
+def update_system_state(events_list, config, app_set, user_set, graph_dict, iteration, sim_folder, sim_set):
 
     first_event = events_list.get_first_event()
     events_list.global_time = first_event['time']
@@ -243,7 +244,7 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict, iter
     if not target_object:
         raise ValueError(f"Unknown object type: {first_event['type_object']}")
     
-    events_list.update_event_params(first_event['id'], config, app_set, user_set, graph_dict)
+    events_list.update_event_params(first_event['id'], config, app_set, user_set, graph_dict, sim_set)
     params = first_event['action_params']
 
     print("Time event:", first_event['time'])
@@ -298,7 +299,7 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict, iter
 
     return optimal_placement, total_latency
     
-def generate_scenario(events_list, config, app_set, user_set, graph_dict):
+def generate_scenario(events_list, config, app_set, user_set, graph_dict, sim_set):
     sim_folder = create_simulation_folder()
     csv_users = os.path.join(sim_folder, "user_counts_log.csv")
     add_and_log_user_count(user_set, 0, csv_users)
@@ -324,7 +325,7 @@ def generate_scenario(events_list, config, app_set, user_set, graph_dict):
     old_opt_placement, old_total_latency = None, None
     while events_list.events and i < total_iterations: # and global_time < 300
         print("\nITERATION", i)
-        actual_opt_placement, actual_total_latency = update_system_state(events_list, config, app_set, user_set, graph_dict, i, sim_folder)
+        actual_opt_placement, actual_total_latency = update_system_state(events_list, config, app_set, user_set, graph_dict, i, sim_folder, sim_set)
         diff_message = difference_in_placement(old_opt_placement, actual_opt_placement, old_total_latency, actual_total_latency)
         data = prepare_simulation_data({'diff_message': diff_message})
         save_simulation_step(sim_folder, i, data)
@@ -333,30 +334,25 @@ def generate_scenario(events_list, config, app_set, user_set, graph_dict):
         i += 1
 
 def main():
-    # BORRAR: random.seed(42)
-    # random_network = np.random.default_rng(44) 
-    random_users_seed = 42 
-    random_events_seed = 43
-    random_network_seed = 44
-    random_apps_seed = 45
+    sim_set = SimulationSet(master_seed=42)
 
-    # MANUAL GENERATION OF GRAPH: config_manual = "config_manual.yaml"
+    # If we want MANUAL GENERATION OF GRAPH -> config_manual = "config_manual.yaml"
     config_random = "config_random.yaml"
     config = load_config(config_random)
 
     generated_events = EventSet()
 
     # RANDOM GENERATION OF GRAPH
-    generated_infrastructure = generate_infrastructure(config, generated_events, random_network_seed=random_network_seed)
+    generated_infrastructure = generate_infrastructure(config, generated_events, sim_set)
     actual_graph = generated_infrastructure.get_main_graph() 
 
-    generated_apps = generate_random_apps(config, generated_events)
+    generated_apps = generate_random_apps(config, generated_events, sim_set)
     print(f"Apps: {generated_apps}")
 
-    generated_users = generate_random_users(config, generated_apps, generated_infrastructure, generated_events, random_users_seed=random_users_seed)
+    generated_users = generate_random_users(config, generated_apps, generated_infrastructure, generated_events, sim_set)
     print(f"\nUsers: {generated_users}")
 
-    init_new_object(config, generated_events)
+    init_new_object(config, generated_events, sim_set)
 
     print("\nEvents:", generated_events)
 
@@ -374,7 +370,7 @@ def main():
     
     # WORKING ON ITERATIONS
     print("\n---- EVENTS ----")
-    generate_scenario(generated_events, config, generated_apps, generated_users, generated_infrastructure)
+    generate_scenario(generated_events, config, generated_apps, generated_users, generated_infrastructure, sim_set)
 
 
 if __name__ == "__main__":

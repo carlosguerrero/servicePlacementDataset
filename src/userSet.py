@@ -151,19 +151,19 @@ class UserSet:
         infrastructure = params.get('infrastructure')
         user_set = params.get('user_set')
         event_set = params.get('event_set')
-        random_users_seed = params.get('choose_app_seed', random_users_seed_default)
+        sim_set = params.get('sim_set')
 
-        create_new_user(config, app_set, infrastructure, user_set, event_set, random_users_seed)
+        create_new_user(config, app_set, infrastructure, user_set, event_set, sim_set)
 
         message = f"User {user_id} has been created."
         return message
     
-def create_new_user(config, appsSet, infrastructure, user_set, event_set, app_id = None, random_users_seed = random_users_seed_default):
+def create_new_user(config, appsSet, infrastructure, user_set, event_set, sim_set, app_id = None):
     attributes = config.get('attributes', {})
     user_conf = attributes.get('user', {})
     user_actions_config = user_conf.get('actions', {})
-    user_centrality=eval(user_conf.get('centrality'))
-    rqApp = app_id if app_id is not None else appsSet.selectRandomAppIdByPopularity(eval(user_conf.get('request_popularity')), random_users_seed)
+    user_centrality=sim_set.parse_distribution(user_conf.get('centrality'), context='user')
+    rqApp = app_id if app_id is not None else appsSet.selectRandomAppIdByPopularity(eval(user_conf.get('request_popularity')), sim_set)
     appNm=appsSet.get_application(rqApp)['name']
     userAttributes = user_set.newUserItem(
         name=user_set.getNextUserId(),
@@ -176,9 +176,9 @@ def create_new_user(config, appsSet, infrastructure, user_set, event_set, app_id
     )
     
     user_set.add_user(userAttributes)
-    generate_events(userAttributes, 'user', event_set)
+    generate_events(userAttributes, 'user', event_set, sim_set)
 
-def generate_random_users(config, appsSet, infrastructure, event_set, random_users_seed = random_users_seed_default):
+def generate_random_users(config, appsSet, infrastructure, event_set, sim_set):
     """
     Generates a list of random users with random application requests.
 
@@ -197,6 +197,6 @@ def generate_random_users(config, appsSet, infrastructure, event_set, random_use
 
     # Create some users in the set.
     for i in range(num_users):
-        create_new_user(config, appsSet, infrastructure, user_set, event_set, random_users_seed)
+        create_new_user(config, appsSet, infrastructure, user_set, event_set, sim_set)
 
     return user_set

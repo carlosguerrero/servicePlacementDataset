@@ -233,7 +233,7 @@ class InfrastructureSet:
         message = f"Edge {edge} has been revived."
         return message
 
-def _generate_random_graph(config, event_set, random_network_seed=random_network_seed_default):
+def _generate_random_graph(config, event_set, sim_set):
     """Internal function to handle the 'random' generation mode."""
     setup = config.get('setup', {})
     model_params = config.get('model_params', {})
@@ -243,18 +243,19 @@ def _generate_random_graph(config, event_set, random_network_seed=random_network
     
     print(f"  [Random Mode] Generating {model_name} graph with {num_nodes} nodes...")
 
+    seed_graph_creation = sim_set.parse_distribution(None, context='graph_creation')
     if model_name == 'erdos_renyi':
         p = model_params.get('p', 0.1)
-        temp_graph = nx.erdos_renyi_graph(num_nodes, p, seed=random_network_seed)
+        temp_graph = nx.erdos_renyi_graph(num_nodes, p, seed=seed_graph_creation)
     elif model_name == 'barabasi_albert':
         m = model_params.get('m', 2)
         if m >= num_nodes: m = 1
-        temp_graph = nx.barabasi_albert_graph(num_nodes, m, seed=random_network_seed)
+        temp_graph = nx.barabasi_albert_graph(num_nodes, m, seed=seed_graph_creation)
     elif model_name == 'watts_strogatz':
         k = model_params.get('k', 4)
         p = model_params.get('p_rewire', 0.1)
         if k >= num_nodes: k = num_nodes - 1
-        temp_graph = nx.watts_strogatz_graph(num_nodes, k, p, seed=random_network_seed)
+        temp_graph = nx.watts_strogatz_graph(num_nodes, k, p, seed=seed_graph_creation)
     elif model_name == 'balanced_tree':
         r = model_params.get('r', 2) 
         h = model_params.get('h', 3)
@@ -268,7 +269,9 @@ def _generate_random_graph(config, event_set, random_network_seed=random_network
 
     node_degrees = dict(temp_graph.degree())
     sorted_nodes_by_degree = sorted(node_degrees.items(), key=lambda item: item[1], reverse=True)
-    raw_pareto = eval(config['attributes']['graph']['node']['ram'].format(num_nodes=num_nodes))
+    # BORRAR: raw_pareto = eval(config['attributes']['graph']['node']['ram'].format(num_nodes=num_nodes))
+    dist_string = config['attributes']['graph']['node']['ram']
+    raw_pareto = sim_set.parse_distribution(dist_string, context='graph', num_nodes=num_nodes)
     ram_values = np.clip(raw_pareto * MIN_RAM + MIN_RAM, a_min=MIN_RAM, a_max=MAX_RAM)
     ram_values = np.round(ram_values, decimals=2).tolist()
     sorted_ram_values = sorted(ram_values, reverse=True)
@@ -317,7 +320,7 @@ def _generate_manual_graph(config):
         
     return graph
 
-def generate_infrastructure(config, event_set, random_network_seed=random_network_seed_default):
+def generate_infrastructure(config, event_set, sim_set):
     """
     Generates a random graph using the NetworkX library.
 
