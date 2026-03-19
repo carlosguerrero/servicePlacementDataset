@@ -20,6 +20,7 @@ attributes:
         action_params: 
           event_set: None
           distribution_to_enable_edge: 'rng.uniform(0, 100)'
+          sim_set: None
           
     node:
       # We keep {num_nodes} so the parser can format it via kwargs
@@ -48,11 +49,13 @@ attributes:
         action_params:
           multiplier: 'rng.uniform(1, 3)'
           user_set: None
+          sim_set: None
       decrease_popularity: 
         distribution: 'rng.uniform(0, 300)'
         action_params:
           multiplier: 'rng.uniform(0, 1)'
           user_set: None
+          sim_set: None
     
   user:
     num_users: 2
@@ -68,6 +71,7 @@ attributes:
         distribution: 'rng.uniform(0, 300)'
         action_params: 
           infrastructure: None
+          sim_set: None
       increase_request_ratio:
         distribution: 'rng.uniform(0, 300)'
         action_params:
@@ -98,3 +102,4 @@ attributes:
         event_set: None
         # Numpy equivalent for random integer between 1 and 5 (inclusive)
         num_new_users: 'rng.integers(1, 6)'
+        sim_set: None

@@ -24,7 +24,7 @@ def selectRandomAction(type_object, probabilities):
     else:
         return "No type_object recognized"
 
-def selectRandomGraphNodeByCentrality(graph_dict, centrality, node=None):  
+def selectRandomGraphNodeByCentrality(graph_dict, centrality, sim_set, node=None):  
     """
     Selects a random node from the graph based on its betweenness centrality.
 
@@ -38,15 +38,19 @@ def selectRandomGraphNodeByCentrality(graph_dict, centrality, node=None):
     actual_graph = graph_dict.get_main_graph() 
     nodes_dict = dict(actual_graph.nodes(data=True))
     nodes_copy = copy.deepcopy(nodes_dict)
+
     if node in nodes_copy:
         del nodes_copy[node]
 
     selected_nodes = [node for node, data in nodes_copy.items() if data['betweenness_centrality'] <= centrality]
+
     if selected_nodes:
-        return random.choice(selected_nodes)
+        rng = sim_set.rng_graph
+        selected_node = rng.choice(selected_nodes)
+        return int(selected_node)
     return None
 
-def selectAdjacentNodeWhenMoving(graph_dict, node_id, centrality, active=True):  
+def selectAdjacentNodeWhenMoving(graph_dict, node_id, centrality, sim_set, active=True):  
     """
     This function selects a node from the nodes that have an edge
     attached to the given "node" as argument
@@ -85,6 +89,7 @@ def selectAdjacentNodeWhenMoving(graph_dict, node_id, centrality, active=True):
     epsilon = 0.0001
     max_c = max(centralities) + epsilon
     weights = [max_c - c for c in centralities]
-    selection = random.choices(nodes, weights=weights, k=1)
+    selection = sim_set.parse_distribution(rng.choice({nodes}, {weights}, k=1), context='graph', nodes=nodes, weights=weights)
+    # BORRAR: random.choices(nodes, weights=weights, k=1)
 
     return selection[0]

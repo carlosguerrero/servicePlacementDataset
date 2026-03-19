@@ -41,9 +41,11 @@ class ApplicationSet:
         selected_app = random_app.choices(list(normalized_popularity.keys()), weights=normalized_popularity.values(), k=1)[0]
         return selected_app
     
-    def selectRandomAppIdByPopularity(self, popularity, sim_set):
+    # BORRAR
+    def selectRandomAppIdByPopularity2(self, popularity, sim_set):
         """Selects a random application based on its popularity."""
         selected_apps = [app for app in self.applications.values() if app['popularity'] >= popularity]
+        print("SELECTED APPS IS", selected_apps)
         if selected_apps:
             rndApp = sim_set.parse_distribution('rng.choice(selected_apps)', context='app')
             # BORRAR: rndApp = sim_set.random.choice(selected_apps)
@@ -53,6 +55,21 @@ class ApplicationSet:
         selected_apps = [app for app in self.applications.values()]
         # BORRAR: rndApp = sim_set.random.choice(selected_apps)
         rndApp = sim_set.parse_distribution('rng.choice(selected_apps)', context='app')
+        return rndApp['id']
+    
+    def selectRandomAppIdByPopularity(self, popularity, sim_set):
+        """Selects a random application based on its popularity."""
+        selected_apps = [app for app in self.applications.values() if app['popularity'] >= popularity]
+        
+        rng = sim_set.rng_app
+        
+        if selected_apps:
+            rndApp = rng.choice(selected_apps)
+            return rndApp['id']
+
+        selected_apps = [app for app in self.applications.values()]
+        
+        rndApp = rng.choice(selected_apps)
         return rndApp['id']
 
     def get_application_name_by_id(self, app_id):   
@@ -107,7 +124,9 @@ class ApplicationSet:
     def increase_popularity(self, app_id, params):
         if params is None:
             params = {}
-        multiplier = eval(params.get('multiplier'))
+
+        sim_set = params.get('sim_set')
+        multiplier = sim_set.parse_distribution(params.get('multiplier'), context='app')
         old_popularity = self.applications[app_id]['popularity']
 
         self.applications[app_id]['popularity'] = self.applications[app_id]['popularity'] * multiplier
@@ -121,7 +140,9 @@ class ApplicationSet:
     def decrease_popularity(self, app_id, params): 
         if params is None:
             params = {}
-        multiplier = eval(params.get('multiplier'))
+
+        sim_set = params.get('sim_set')
+        multiplier = sim_set.parse_distribution(params.get('multiplier'), context='app')
         old_popularity = self.applications[app_id]['popularity']
 
         self.applications[app_id]['popularity'] = self.applications[app_id]['popularity'] * multiplier
@@ -155,16 +176,15 @@ class ApplicationSet:
         infrastructure = params.get('infrastructure')
         user_set = params.get('user_set')
         event_set = params.get('event_set')
-        num_new_users = eval(params.get('num_new_users'))
+        sim_set = params.get('sim_set')
+        num_new_users = sim_set.parse_distribution(params.get('num_new_users'), context='app')
 
-        # Se crea igual, no?
-        # create_new_app(config, app_set, event_set)
-        create_new_app(config, app_set, event_set)
+        create_new_app(config, app_set, event_set, sim_set)
 
         created_app_id = list(app_set.applications)[-1]
 
         for i in range(num_new_users):
-            create_new_user(config, app_set, infrastructure, user_set, event_set, created_app_id)
+            create_new_user(config, app_set, infrastructure, user_set, event_set, sim_set, created_app_id)
 
         message = f"Application {created_app_id} has been created, along with {num_new_users} new users requesting this app."
         return message

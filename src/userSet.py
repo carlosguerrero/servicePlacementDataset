@@ -81,9 +81,10 @@ class UserSet:
     
         infrastructure = params.get('infrastructure')
 
+        sim_set = params.get('sim_set')
         if user_id in self.users and infrastructure is not None:
             current_node = self.users[user_id]['connectedTo']
-            self.users[user_id]['connectedTo'] = selectAdjacentNodeWhenMoving(infrastructure, current_node, user_centrality)
+            self.users[user_id]['connectedTo'] = selectAdjacentNodeWhenMoving(infrastructure, current_node, user_centrality, sim_set)
 
             message = f"User {user_id} moved from node {current_node} to node {self.users[user_id]['connectedTo']}"
             return message
@@ -103,7 +104,8 @@ class UserSet:
     def increase_request_ratio(self, user_id, params=None):
         if params is None:
             params = {}
-        multiplier = eval(params.get('multiplier'))
+        sim_set = params.get('sim_set')
+        multiplier = sim_set.parse_distribution(params.get('multiplier'), context='user')
         old_request_ratio = self.users[user_id]['requestRatio']
         self.users[user_id]['requestRatio'] = self.users[user_id]['requestRatio'] * multiplier
 
@@ -121,8 +123,9 @@ class UserSet:
     def decrease_request_ratio(self, user_id, params=None):
         if params is None:
             params = {}
+        sim_set = params.get('sim_set')
         old_request_ratio = self.users[user_id]['requestRatio']
-        multiplier = eval(params.get('multiplier'))
+        multiplier = sim_set.parse_distribution(params.get('multiplier'), context='user')
         self.users[user_id]['requestRatio'] = self.users[user_id]['requestRatio'] * multiplier
 
         message = f"Request ratio of user {user_id} decreased from {old_request_ratio} to {self.users[user_id]['requestRatio']}"
@@ -163,14 +166,14 @@ def create_new_user(config, appsSet, infrastructure, user_set, event_set, sim_se
     user_conf = attributes.get('user', {})
     user_actions_config = user_conf.get('actions', {})
     user_centrality=sim_set.parse_distribution(user_conf.get('centrality'), context='user')
-    rqApp = app_id if app_id is not None else appsSet.selectRandomAppIdByPopularity(eval(user_conf.get('request_popularity')), sim_set)
+    rqApp = app_id if app_id is not None else appsSet.selectRandomAppIdByPopularity(sim_set.parse_distribution(user_conf.get('request_popularity'), context='user'), sim_set)
     appNm=appsSet.get_application(rqApp)['name']
     userAttributes = user_set.newUserItem(
         name=user_set.getNextUserId(),
         requestedApp=rqApp,  # Randomly select an application based on popularity
         appName=appNm,
-        requestRatio=eval(user_conf.get('request_ratio')),  
-        connectedTo=selectRandomGraphNodeByCentrality(infrastructure, user_centrality),  # Randomly select a node from the graph
+        requestRatio=sim_set.parse_distribution(user_conf.get('request_ratio'), context='user'),  
+        connectedTo=selectRandomGraphNodeByCentrality(infrastructure, user_centrality, sim_set),  # Randomly select a node from the graph
         centrality=user_centrality,
         actions=user_actions_config
     )

@@ -295,7 +295,7 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict, iter
     })
     save_simulation_step(sim_folder, iteration, data)
 
-    events_list.update_event_time_and_none_params(first_event['id'], config)
+    events_list.update_event_time_and_none_params(first_event['id'], config, sim_set)
 
     return optimal_placement, total_latency
     

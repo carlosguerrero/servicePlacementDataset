@@ -3,9 +3,6 @@ import numpy as np
 import random
 from .eventSet import generate_events
 
-random_network_seed_default = 44
-random_network2 = np.random.default_rng(44)
-
 class InfrastructureSet: 
     def __init__(self):
         # Format: {'000': {'id': '000', 'graph': nx_graph, 'shortest_paths': dict, 'actions': dict}}
@@ -181,14 +178,16 @@ class InfrastructureSet:
             print("  [Warning] No active edges available to disable.")
             return
 
-        selected_edge = random_network.choice(active_edges)
+        sim_set = params.get('sim_set')
+        selected_edge = sim_set.parse_distribution('rng.choice({active_edges})', context='graph', active_edges=active_edges)
+
         print(f"  [Event] Randomly selected edge {selected_edge}")
 
         self.disable_edge(infra_id, {'edge': selected_edge})
 
         # Schedule Revival
         event_set = params.get('event_set')
-        distribution_to_enable_edge = eval(params.get('distribution_to_enable_edge', '10'))
+        distribution_to_enable_edge = sim_set.parse_distribution(params.get('distribution_to_enable_edge', '10'), context='graph')
 
         eventAttributes = event_set.newEventItem(
             object_id=infra_id,
@@ -209,7 +208,7 @@ class InfrastructureSet:
             params = {}
         edge = params.get('edge')
         item = self.infrastructures.get(infra_id)
-        if item and edge and item['graph'].has_edge(*edge):
+        if item is not None and edge is not None and item['graph'].has_edge(*edge):
             item['graph'].edges[edge]['enable'] = False
             self.update_shortest_paths(infra_id)
         else:
@@ -244,6 +243,7 @@ def _generate_random_graph(config, event_set, sim_set):
     print(f"  [Random Mode] Generating {model_name} graph with {num_nodes} nodes...")
 
     seed_graph_creation = sim_set.parse_distribution(None, context='graph_creation')
+
     if model_name == 'erdos_renyi':
         p = model_params.get('p', 0.1)
         temp_graph = nx.erdos_renyi_graph(num_nodes, p, seed=seed_graph_creation)
@@ -269,7 +269,6 @@ def _generate_random_graph(config, event_set, sim_set):
 
     node_degrees = dict(temp_graph.degree())
     sorted_nodes_by_degree = sorted(node_degrees.items(), key=lambda item: item[1], reverse=True)
-    # BORRAR: raw_pareto = eval(config['attributes']['graph']['node']['ram'].format(num_nodes=num_nodes))
     dist_string = config['attributes']['graph']['node']['ram']
     raw_pareto = sim_set.parse_distribution(dist_string, context='graph', num_nodes=num_nodes)
     ram_values = np.clip(raw_pareto * MIN_RAM + MIN_RAM, a_min=MIN_RAM, a_max=MAX_RAM)
@@ -284,7 +283,8 @@ def _generate_random_graph(config, event_set, sim_set):
         temp_graph.nodes[node_id]['enable'] = True
 
     for u, v in temp_graph.edges():
-        temp_graph.edges[u, v]['delay'] = eval(config['attributes']['graph']['edge']['delay'])
+        # temp_graph.edges[u, v]['delay'] = eval(config['attributes']['graph']['edge']['delay'])
+        temp_graph.edges[u, v]['delay'] = sim_set.parse_distribution(config['attributes']['graph']['edge']['delay'], context='graph')
 
     graph_set = InfrastructureSet()
     actions_list = config['attributes']['graph'].get('actions', {})
@@ -292,7 +292,7 @@ def _generate_random_graph(config, event_set, sim_set):
     # This creates the dictionary item {'000': {graph:..., actions:...}}
     graph_item = graph_set.init_infrastructure(temp_graph, actions=actions_list)
 
-    generate_events(graph_item, 'graph', event_set)
+    generate_events(graph_item, 'graph', event_set, sim_set)
     
     return graph_set
 
@@ -347,7 +347,7 @@ def generate_infrastructure(config, event_set, sim_set):
         # graph = _generate_manual_graph(config)
         pass
     else:
-        graph_dict = _generate_random_graph(config, event_set)
+        graph_dict = _generate_random_graph(config, event_set, sim_set)
         graph = graph_dict.get_main_graph()
 
     if graph and graph.number_of_nodes() > 0:

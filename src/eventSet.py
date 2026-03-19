@@ -68,7 +68,7 @@ class EventSet:
         for event_id in events_to_delete:
             self.remove_event(event_id)
     
-    def update_event_time_and_none_params(self, event_id, config):
+    def update_event_time_and_none_params(self, event_id, config, sim_set):
         # Update time
         if event_id not in self.events.keys():
             print("The event was deleted from event_list")
@@ -77,7 +77,7 @@ class EventSet:
         # We just need to get a new time from config + global_time
         actual_type_object = self.events[event_id]['type_object']
         actual_action = self.events[event_id]['action']
-        self.events[event_id]['time'] = get_time(config, actual_type_object, actual_action) + self.global_time
+        self.events[event_id]['time'] = get_time(config, actual_type_object, actual_action, sim_set) + self.global_time
         
         print(f"Updated time for event {event_id}: {self.events[event_id]['time']}")
         # print("Update event list después update:", self)
@@ -156,7 +156,7 @@ def init_new_object(config, event_set, sim_set):
 
     return event_set
 
-def get_time(config, type_object, action_name):
+def get_time(config, type_object, action_name, sim_set):
     """
     Retrieves a time value by evaluating the distribution string 
     found in the config file for a specific object and action.
@@ -176,7 +176,7 @@ def get_time(config, type_object, action_name):
     if distr_string:
         try:
             # explicit dictionary ensures eval has access to the 'random' module
-            return eval(distr_string, {"random": random})
+            return sim_set.parse_distribution(distr_string, context=type_object)
         except Exception as e:
             print(f"Error evaluating distribution '{distr_string}' for {action_name}: {e}")
             return 0.0
