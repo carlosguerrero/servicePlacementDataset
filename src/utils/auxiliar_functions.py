@@ -84,12 +84,14 @@ def selectAdjacentNodeWhenMoving(graph_dict, node_id, centrality, sim_set, activ
     # From the filtered nodes,
     # We want to choose the node randomly but with weights favoring the lowest betweenness centrality
     nodes = list(adjacent_nodes_info_filtered.keys())
+    print(f"NODES adjacent to {node_id} with betweenness centrality <= {centrality}: {nodes}")
     centralities = [info['betweenness_centrality'] for info in adjacent_nodes_info_filtered.values()]
 
     epsilon = 0.0001
     max_c = max(centralities) + epsilon
     weights = [max_c - c for c in centralities]
-    selection = sim_set.parse_distribution(rng.choice({nodes}, {weights}, k=1), context='graph', nodes=nodes, weights=weights)
+    selection = sim_set.parse_distribution("rng.choice({nodes}, {weights}, {k})", context='graph', nodes=nodes, weights=weights, k=1)
     # BORRAR: random.choices(nodes, weights=weights, k=1)
+    print(f"Selected adjacent node: {selection} ")
 
-    return selection[0]
+    return int(selection[0])

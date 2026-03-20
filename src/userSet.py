@@ -37,12 +37,22 @@ class UserSet:
         """Returns all users connected to a specific node."""
         return [user for user in self.users.values() if user['connectedTo'] == nodeId]
 
-    def add_user(self, userAttributes):
+    def add_user(self, userAttributes, sim_set=None):
         """Adds a new user to the set."""
-        user_id = str(uuid.uuid4()) 
+        """Adds a new user to the set with a deterministic UUID."""
+        if params is None: params = {}
+        
+        sim_set = params.get('sim_set')
+        if sim_set:
+            rng = sim_set.rng_user
+            random_bytes = rng.bytes(16)
+            user_id = str(uuid.UUID(bytes=random_bytes))
+        else:
+            user_id = str(uuid.uuid4())
         userAttributes['id'] = user_id
         self.users[user_id] = userAttributes
         return user_id
+    
 
     def remove_user_by_requested_app(self, requested_app, params):
         """Removes a user from the set based on their requested application."""
@@ -78,10 +88,13 @@ class UserSet:
 
         if user_id in self.users:
             user_centrality = self.users[user_id]['centrality']
+
+        print(f"Moving user {self.users[user_id]['name']} with associated node {self.users[user_id]['connectedTo']}")
     
         infrastructure = params.get('infrastructure')
 
         sim_set = params.get('sim_set')
+
         if user_id in self.users and infrastructure is not None:
             current_node = self.users[user_id]['connectedTo']
             self.users[user_id]['connectedTo'] = selectAdjacentNodeWhenMoving(infrastructure, current_node, user_centrality, sim_set)
@@ -178,7 +191,7 @@ def create_new_user(config, appsSet, infrastructure, user_set, event_set, sim_se
         actions=user_actions_config
     )
     
-    user_set.add_user(userAttributes)
+    user_set.add_user(userAttributes, sim_set)
     generate_events(userAttributes, 'user', event_set, sim_set)
 
 def generate_random_users(config, appsSet, infrastructure, event_set, sim_set):
