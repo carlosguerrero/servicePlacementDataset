@@ -60,7 +60,7 @@ class UserSet:
                 self.remove_user(user_id, params)
                 list_of_deleted_users.append(user_id)
             
-        message = f"Users {list_of_deleted_users} have been removed due to requested app {requested_app}"
+        message = f"Users {list_of_deleted_users} have been removed due to their requested app."
         return message
     
     def remove_user(self, user_id, params):
@@ -71,10 +71,10 @@ class UserSet:
         event_set = params.get('event_set')
 
         if user_id in self.users:
+            message = f"User {self.users[user_id]['name']} has been removed."
+
             del self.users[user_id]
             event_set.remove_events_by_object_id(user_id)
-
-            message = f"User {user_id} has been removed."
             return message
         return False
     
@@ -84,8 +84,6 @@ class UserSet:
 
         if user_id in self.users:
             user_centrality = self.users[user_id]['centrality']
-
-        print(f"Moving user {self.users[user_id]['name']} with associated node {self.users[user_id]['connectedTo']}")
     
         infrastructure = params.get('infrastructure')
 
@@ -95,7 +93,7 @@ class UserSet:
             current_node = self.users[user_id]['connectedTo']
             self.users[user_id]['connectedTo'] = selectAdjacentNodeWhenMoving(infrastructure, current_node, user_centrality, sim_set)
 
-            message = f"User {user_id} moved from node {current_node} to node {self.users[user_id]['connectedTo']}"
+            message = f"User {self.users[user_id]['name']} moved from node {current_node} to node {self.users[user_id]['connectedTo']}"
             return message
             
         return False
@@ -106,7 +104,7 @@ class UserSet:
             if user['requestedApp'] == requested_app:
                 self.increase_request_ratio(user_id, params)
 
-                message = f"Request ratio of user {user_id} increased due to requested app {requested_app}"
+                message = f"Request ratio of user {self.users[user_id]['name']} increased due to requested app {requested_app}"
                 return message
         return False
     
@@ -118,7 +116,7 @@ class UserSet:
         old_request_ratio = self.users[user_id]['requestRatio']
         self.users[user_id]['requestRatio'] = self.users[user_id]['requestRatio'] * multiplier
 
-        message = f"Request ratio of user {user_id} increased from {old_request_ratio} to {self.users[user_id]['requestRatio']}"
+        message = f"Request ratio of user {self.users[user_id]['name']} increased from {old_request_ratio} to {self.users[user_id]['requestRatio']}"
         return message
     
     def decrease_request_ratio_by_requested_app(self, requested_app, params):
@@ -137,7 +135,7 @@ class UserSet:
         multiplier = sim_set.parse_distribution(params.get('multiplier'), context='user')
         self.users[user_id]['requestRatio'] = self.users[user_id]['requestRatio'] * multiplier
 
-        message = f"Request ratio of user {user_id} decreased from {old_request_ratio} to {self.users[user_id]['requestRatio']}"
+        message = f"Request ratio of user {self.users[user_id]['name']} decreased from {old_request_ratio} to {self.users[user_id]['requestRatio']}"
         return message
 
     def get_user(self, user_id):
@@ -167,7 +165,7 @@ class UserSet:
 
         create_new_user(config, app_set, infrastructure, user_set, event_set, sim_set)
 
-        message = f"User {user_id} has been created."
+        message = f"User {self.users[user_id]['name']} has been created."
         return message
     
 def create_new_user(config, appsSet, infrastructure, user_set, event_set, sim_set, app_id = None):

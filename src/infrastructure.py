@@ -88,6 +88,8 @@ class InfrastructureSet:
 
     def disable_random_node(self, infra_id, params=None):
         """Selects and disables a random node in the specified graph."""
+        sim_set = params.get('sim_set')
+
         item = self.infrastructures.get(infra_id)
         if not item: return
 
@@ -104,17 +106,18 @@ class InfrastructureSet:
 
         epsilon = 1e-6
         weights = [1.0 / (attrs.get('betweenness_centrality', 0) + epsilon) for _, attrs in active_candidates]
+        probabilities = [w / sum(weights) for w in weights]
         node_ids = [n for n, _ in active_candidates]
 
-        random_network_seed = params.get('seed')
-        selected_node = random.Random(random_network_seed).choices(node_ids, weights=weights, k=1)[0]
+        rng = sim_set.rng_graph
+        selected_node = rng.choice(node_ids, p=probabilities, size=1)
 
         # Call disable_node passing the infrastructure ID
         self.disable_node(infra_id, {'node_id': selected_node})
 
         # Schedule Revival
         event_set = params.get('event_set')
-        distribution_to_enable_node = eval(params.get('distribution_to_enable_node', '10'))
+        distribution_to_enable_node = sim_set.parse_distribution(params.get('distribution_to_enable_node', '10'), context='graph')
 
         eventAttributes = event_set.newEventItem(
             object_id=infra_id, # The event targets the Graph Object '000'

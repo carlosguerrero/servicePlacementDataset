@@ -113,11 +113,11 @@ class ApplicationSet:
         event_set = params.get('event_set')
 
         if app_id in self.applications:
-            del self.applications[app_id]
             message2 = users.remove_user_by_requested_app(app_id, params)  # Remove users requesting this app
+            message = f"Application {self.applications[app_id]['name']} has been removed, along with its associated events. {message2}"
+            del self.applications[app_id]
             event_set.remove_events_by_object_id(app_id)
 
-            message = f"Application {app_id} has been removed, along with its associated events. {message2}"
             return message
         return False
     
@@ -134,7 +134,7 @@ class ApplicationSet:
         users = params.get('user_set')
         users.increase_request_ratio_by_requested_app(app_id, params)
 
-        message = f"Popularity of app {app_id} increased from {old_popularity} to {self.applications[app_id]['popularity']}"
+        message = f"Popularity of app {self.applications[app_id]['name']} increased from {old_popularity} to {self.applications[app_id]['popularity']}"
         return message
     
     def decrease_popularity(self, app_id, params): 
@@ -150,7 +150,7 @@ class ApplicationSet:
         users = params.get('user_set')
         users.decrease_request_ratio_by_requested_app(app_id, params)
 
-        message = f"Popularity of app {app_id} decreased from {old_popularity} to {self.applications[app_id]['popularity']}"
+        message = f"Popularity of app {self.applications[app_id]['name']} decreased from {old_popularity} to {self.applications[app_id]['popularity']}"
         return message
 
     def get_application(self, app_id):
@@ -186,7 +186,7 @@ class ApplicationSet:
         for i in range(num_new_users):
             create_new_user(config, app_set, infrastructure, user_set, event_set, sim_set, created_app_id)
 
-        message = f"Application {created_app_id} has been created, along with {num_new_users} new users requesting this app."
+        message = f"Application {self.applications[created_app_id]['name']} has been created, along with {num_new_users} new users requesting this app."
         return message
 
 def create_new_app(config, application_set, event_set, sim_set):
