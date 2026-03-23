@@ -1,0 +1,102 @@
+setup:
+  mode: random
+  num_nodes: 10
+  graph_model: 'barabasi_albert' 
+  # BORRAR: 'watts_strogatz'
+
+model_params:
+  m: 2
+  # k: 4
+  # p_rewire: 0.1
+
+attributes:
+  graph:
+    actions:
+      disable_random_node:
+        distribution: 'random.Random(random_network_seed).uniform(0, 300)'
+        action_params: 
+          event_set: None
+          distribution_to_enable_node: 'random.Random(random_network_seed).uniform(0, 100)'
+          seed: 'random_network_seed'
+      
+      disable_random_edge:
+        distribution: 'random.Random(random_network_seed).uniform(0, 300)'
+        action_params: 
+          event_set: None
+          distribution_to_enable_edge: 'random.Random(random_network_seed).uniform(0, 100)'
+          
+    node:
+      ram: 'np.random.default_rng(random_network_seed).pareto(1.16, {num_nodes})'
+      min_ram: 8
+      max_ram: 16
+
+    edge:
+      delay: 'random.Random(random_network_seed).uniform(0.1, 5.0)'
+  
+  app:
+    num_apps: 3
+    popularity: 'random.uniform(0.1, 1.0)'
+    cpu: 'random.uniform(0.1, 4.0)'
+    ram: 'random.uniform(0.5, 8.0)'
+    disk: 'random.uniform(10, 100)'
+    time: 'random.uniform(0, 300)'
+    actions: 
+      remove_app:
+        distribution: 'random.Random(random_apps_seed).uniform(0, 300)'
+        action_params: 
+          user_set: None,
+          event_set: None
+      increase_popularity:
+        distribution: 'random.Random(random_apps_seed).uniform(0, 300)'
+        action_params:
+          multiplier: 'random.uniform(1, 3)'
+          user_set: None
+      decrease_popularity: 
+        distribution: 'random.Random(random_apps_seed).uniform(0, 300)'
+        action_params:
+          multiplier: 'random.uniform(0, 1)'
+          user_set: None
+    
+  user:
+    num_users: 2
+    request_ratio: 'random.uniform(0.1, 1.0)'
+    request_popularity: 'random.uniform(0.1, 1.0)'
+    centrality: 'random.uniform(0.1, 1.0)'
+    actions:
+      remove_user:
+        distribution: 'random.Random(random_users_seed).uniform(0, 300)'
+        action_params:
+          event_set: None
+      move_user:
+        distribution: 'random.Random(random_users_seed).uniform(0, 300)'
+        action_params: 
+          infrastructure: None
+      increase_request_ratio:
+        distribution: 'random.Random(random_users_seed).uniform(0, 300)'
+        action_params:
+          multiplier: 'random.uniform(1, 3)'
+      decrease_request_ratio: 
+        distribution: 'random.Random(random_users_seed).uniform(0, 300)'
+        action_params:
+          multiplier: 'random.uniform(0, 1)'
+
+  new_object:
+    new_user: 
+      distribution: 'random.Random(random_users_seed).uniform(0, 300)'
+      action_params:
+        config: None,
+        app_set: None,
+        user_set: None,
+        infrastructure: None,
+        event_set: None
+        choose_app_seed: 'random_users_seed'
+
+    new_app: 
+      distribution: 'random.Random(random_apps_seed).uniform(0, 300)'
+      action_params:
+        config: None,
+        app_set: None,
+        user_set: None,
+        infrastructure: None,
+        event_set: None,
+        num_new_users: 'random.randint(1, 5)'

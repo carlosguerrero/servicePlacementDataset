@@ -347,10 +347,14 @@ def main():
     actual_graph = generated_infrastructure.get_main_graph() 
 
     generated_apps = generate_random_apps(config, generated_events, sim_set)
-    print(f"Apps: {generated_apps}")
+    print("\nAPPS:")
+    for app, feat in generated_apps.get_all_apps().items():
+        print(f"App {app}: name={feat.get('name')}, popularity={feat.get('popularity')}, CPU={feat.get('cpu')}, Disk={feat.get('disk')}, RAM={feat.get('ram')}, time={feat.get('time_to_run')}")
 
     generated_users = generate_random_users(config, generated_apps, generated_infrastructure, generated_events, sim_set)
-    print(f"\nUsers: {generated_users}")
+    print("\nUSERS:")
+    for user_id, user_data in generated_users.get_all_users().items():
+        print(f"User {user_id}: name={user_data.get('name')}, requestedApp={user_data.get('requestedApp')}, appName={user_data.get('appName')}, requestRatio={user_data.get('requestRatio')}, connectedTo={user_data.get('connectedTo')}, centrality={user_data.get('centrality')}")
 
     init_new_object(config, generated_events, sim_set)
 
@@ -364,7 +368,7 @@ def main():
             print("Total Latency:", total_latency)
             print("\nUpdated Node Information with Application Placement:")
             for node, feat in actual_graph.nodes(data=True):
-                print(f"Node {node}: RAM Total={feat.get('ram')}, RAM Used={feat.get('ram_used')}, Running Apps={[generated_apps.get_application(app_id)['name'] for app_id in feat.get('running_applications', [])]}")
+                print(f"Node {node}: RAM Total={feat.get('ram')}, RAM Used={feat.get('ram_used')}, Running Apps={[generated_apps.get_application(app_id)['name'] for app_id in feat.get('running_applications', [])]}, edges={[f'{nbr} (delay={actual_graph.edges[node, nbr].get('delay', 'N/A')})' for nbr in actual_graph.neighbors(node)]}   ")
         else:
             print("No feasible solution found for application placement.")
     

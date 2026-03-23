@@ -38,12 +38,8 @@ class UserSet:
         return [user for user in self.users.values() if user['connectedTo'] == nodeId]
 
     def add_user(self, userAttributes, sim_set=None):
-        """Adds a new user to the set."""
         """Adds a new user to the set with a deterministic UUID."""
-        if params is None: params = {}
-        
-        sim_set = params.get('sim_set')
-        if sim_set:
+        if sim_set != None:
             rng = sim_set.rng_user
             random_bytes = rng.bytes(16)
             user_id = str(uuid.UUID(bytes=random_bytes))

@@ -242,7 +242,7 @@ def _generate_random_graph(config, event_set, sim_set):
     
     print(f"  [Random Mode] Generating {model_name} graph with {num_nodes} nodes...")
 
-    seed_graph_creation = sim_set.parse_distribution(None, context='graph_creation')
+    seed_graph_creation = sim_set.rng_graph
 
     if model_name == 'erdos_renyi':
         p = model_params.get('p', 0.1)
@@ -283,7 +283,6 @@ def _generate_random_graph(config, event_set, sim_set):
         temp_graph.nodes[node_id]['enable'] = True
 
     for u, v in temp_graph.edges():
-        # temp_graph.edges[u, v]['delay'] = eval(config['attributes']['graph']['edge']['delay'])
         temp_graph.edges[u, v]['delay'] = sim_set.parse_distribution(config['attributes']['graph']['edge']['delay'], context='graph')
 
     graph_set = InfrastructureSet()
