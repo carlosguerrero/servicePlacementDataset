@@ -6,7 +6,7 @@ from .utils.auxiliar_functions import get_random_from_range, selectRandomAction
 from .eventSet import EventSet, generate_events
 from .userSet import create_new_user
 
-random_apps_seed_default = 45
+# Note: I just added the DESCOMENTAR line to indicate where the event generation for the graph would be triggered
 
 class ApplicationSet:
     def __init__(self):
@@ -204,10 +204,7 @@ def create_new_app(config, application_set, event_set, sim_set):
             actions=app_actions_config ) 
     
     application_set.add_application(appAttributes)
-    generate_events(appAttributes, 'app', event_set, sim_set)
-
-    # dist_string = config['attributes']['graph']['node']['ram']
-    # raw_pareto = sim_set.parse_distribution(dist_string, context='graph', num_nodes=num_nodes)
+    # DESCOMENTAR: generate_events(appAttributes, 'app', event_set, sim_set)
 
 def generate_random_apps(config, event_set, sim_set):
     """

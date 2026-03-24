@@ -181,6 +181,15 @@ def prepare_total_latency_data(total_latency):
         return 0.0
     return total_latency    
 
+def prepare_total_ram_occupied_data(total_ram_occupied):
+    """
+    Prepares total RAM occupied data for JSON serialization.
+    Assumes total_ram_occupied is a float or int.
+    """
+    if total_ram_occupied is None:
+        return 0.0
+    return total_ram_occupied
+
 def prepare_simulation_data(data_sources):
     """
     Orchestrates preparation of simulation data into a single dict based on provided data sources.
@@ -222,5 +231,8 @@ def prepare_simulation_data(data_sources):
 
     if 'total_latency' in data_sources:
         prepared_data['total_latency'] = prepare_total_latency_data(data_sources['total_latency'])
+    
+    if 'total_ram_occupied' in data_sources:
+        prepared_data['total_ram_occupied'] = prepare_total_ram_occupied_data(data_sources['total_ram_occupied'])
     
     return prepared_data

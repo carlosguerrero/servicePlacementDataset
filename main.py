@@ -171,7 +171,7 @@ def solve_application_placement(graph_dict, application_set, user_set):
         return placement, current_objective
     else:
         return None, PENALTY_DELAY
-
+    
 def difference_in_placement(old_placement, new_placement, old_latency, new_latency):
     """
     Compares old and new application placements and prints information about moved apps.
@@ -180,7 +180,8 @@ def difference_in_placement(old_placement, new_placement, old_latency, new_laten
     results_dictionary = {}
     moved_apps = []
 
-    if old_placement is None or new_placement is None or old_placement == new_placement:
+    # If everything is identical (or missing), return immediately
+    if old_placement is None or new_placement is None or (old_placement == new_placement and old_latency == new_latency):
         results_dictionary["NO_CHANGES"] = "No changes made."
         print("APPLICATION PLACEMENT: No changes made.")
         return results_dictionary
@@ -208,13 +209,21 @@ def difference_in_placement(old_placement, new_placement, old_latency, new_laten
             results_dictionary[change_key] = f"App '{app_name}' was newly placed on node {new_node}"
             i += 1
     
-    if moved_apps:
-        message = "APPLICATION PLACEMENT CHANGES:\n" + "\n".join(moved_apps)
-        message += f"\nLatency changed from {old_latency:.2f} to {new_latency:.2f}"
-        results_dictionary["LATENCY"] = f"Changed from {old_latency:.2f} to {new_latency:.2f}"
-        print(message)
+    # Output the changes if placement OR latency changed
+    if moved_apps or old_latency != new_latency:
+        message = ""
+        
+        if moved_apps:
+            message += "APPLICATION PLACEMENT CHANGES:\n" + "\n".join(moved_apps) + "\n"
+        
+        if old_latency != new_latency:
+            message += f"Latency changed from {old_latency:.2f} to {new_latency:.2f}"
+            results_dictionary["LATENCY"] = f"Changed from {old_latency:.2f} to {new_latency:.2f}"
+            
+        print(message.strip())
         return results_dictionary
     else:
+        # Fallback if somehow we get here with no changes
         results_dictionary["NO_CHANGES"] = "No changes made."
         print("APPLICATION PLACEMENT: No changes made.")
         return results_dictionary
@@ -276,9 +285,11 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict, iter
 
     node_information_and_placement_message = {}
     for node, feat in graph_dict.get_main_graph().nodes(data=True):
-        # print(f"Node {node}: RAM Total={feat.get('ram')}, RAM Used={feat.get('ram_used')}, Running Apps={[app_set.get_application(app_id)['name'] for app_id in feat.get('running_applications', [])]}")
         node_key = f"Node_{node}"
-        node_information_and_placement_message[node_key] = f"RAM Total={feat.get('ram')}, RAM Used={feat.get('ram_used')}, Running Apps={[app_set.get_application(app_id)['name'] for app_id in feat.get('running_applications', [])]}"
+        node_information_and_placement_message[node_key] = f"RAM Total={feat.get('ram')}, RAM Used={feat.get('ram_used')}, Running Apps={[app_set.get_application(app_id)['name'] for app_id in feat.get('running_applications', [])]}, enabled={feat.get('enable')}"
+
+    total_ram_occupied = round((sum(feat.get('ram_used', 0.0) for _, feat in graph_dict.get_main_graph().nodes(data=True)) / sum(feat.get('ram', 0.0) for _, feat in graph_dict.get_main_graph().nodes(data=True)) if sum(feat.get('ram', 0.0) for _, feat in graph_dict.get_main_graph().nodes(data=True)) > 0 else 0)*100, 2)
+    print(f"Total RAM Occupied: {total_ram_occupied}%")
 
     data = prepare_simulation_data({
         'global_time': events_list.global_time,
@@ -286,6 +297,7 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict, iter
         'placement': optimal_placement,
         'node_information': node_information_and_placement_message,
         'total_latency': total_latency,
+        'total_ram_occupied': total_ram_occupied,
         'graph': graph_dict.get_main_graph(),
         'graph_phase': 'after',
         'users': user_set,
@@ -320,7 +332,7 @@ def generate_scenario(events_list, config, app_set, user_set, graph_dict, sim_se
     })
     save_simulation_step(sim_folder, 0, data)
 
-    total_iterations = 20
+    total_iterations = 50
     i = 1
     old_opt_placement, old_total_latency = None, None
     while events_list.events and i < total_iterations: # and global_time < 300

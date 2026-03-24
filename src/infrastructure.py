@@ -3,6 +3,8 @@ import numpy as np
 import random
 from .eventSet import generate_events
 
+# Note: I just added the DESCOMENTAR line to indicate where the event generation for the graph would be triggered
+
 class InfrastructureSet: 
     def __init__(self):
         # Format: {'000': {'id': '000', 'graph': nx_graph, 'shortest_paths': dict, 'actions': dict}}
@@ -87,7 +89,8 @@ class InfrastructureSet:
         return active_edges
 
     def disable_random_node(self, infra_id, params=None):
-        """Selects and disables a random node in the specified graph."""
+        """Selects and disables a random node in the specified graph.
+        It gives higher probability to nodes with lower betweenness centrality to be disabled."""
         sim_set = params.get('sim_set')
 
         item = self.infrastructures.get(infra_id)
@@ -110,7 +113,7 @@ class InfrastructureSet:
         node_ids = [n for n, _ in active_candidates]
 
         rng = sim_set.rng_graph
-        selected_node = rng.choice(node_ids, p=probabilities, size=1)
+        selected_node = int(rng.choice(node_ids, p=probabilities))
 
         # Call disable_node passing the infrastructure ID
         self.disable_node(infra_id, {'node_id': selected_node})
@@ -129,7 +132,7 @@ class InfrastructureSet:
         associated_event_id = event_set.add_event(eventAttributes)
         event_set.events[associated_event_id]['action_params']['associated_event_id'] = associated_event_id
 
-        message = f"Node {selected_node} has been disabled. Scheduled revival in {distribution_to_enable_node} time units."
+        message = f"Node {selected_node} has been disabled. Scheduled revival in {distribution_to_enable_node + event_set.global_time} time units."
         return message
 
 
@@ -142,6 +145,11 @@ class InfrastructureSet:
         item = self.infrastructures.get(infra_id) 
         if item and node_id in item['graph'].nodes:
             item['graph'].nodes[node_id]['enable'] = False
+
+            # Clear the running applications and reset RAM to 0
+            item['graph'].nodes[node_id]['running_applications'] = []
+            item['graph'].nodes[node_id]['ram_used'] = 0.0
+
             self.update_shortest_paths(infra_id)
         else:
             print(f"Node {node_id} not found in graph {infra_id}.")
@@ -202,7 +210,7 @@ class InfrastructureSet:
         associated_event_id = event_set.add_event(eventAttributes)
         event_set.events[associated_event_id]['action_params']['associated_event_id'] = associated_event_id
 
-        message = f"Edge {selected_edge} has been disabled. Scheduled revival in {distribution_to_enable_edge} time units."
+        message = f"Edge {selected_edge} has been disabled. Scheduled revival in {distribution_to_enable_edge + event_set.global_time} time units."
         return message
 
     def disable_edge(self, infra_id, params=None):
@@ -294,7 +302,7 @@ def _generate_random_graph(config, event_set, sim_set):
     # This creates the dictionary item {'000': {graph:..., actions:...}}
     graph_item = graph_set.init_infrastructure(temp_graph, actions=actions_list)
 
-    generate_events(graph_item, 'graph', event_set, sim_set)
+    # DESCOMENTAR: generate_events(graph_item, 'graph', event_set, sim_set)
     
     return graph_set
 
