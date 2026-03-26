@@ -36,7 +36,7 @@ attributes:
     num_apps: 3
     popularity: 'rng.uniform(0.1, 1.0)'
     cpu: 'rng.uniform(0.1, 4.0)'
-    ram: 'rng.uniform(0.5, 8.0)'
+    ram: 'rng.uniform(6.0, 9.0)'
     disk: 'rng.uniform(10, 100)'
     time: 'rng.uniform(0, 300)'
     actions: 
@@ -60,16 +60,16 @@ attributes:
     
   user:
     num_users: 2
-    request_ratio: 'rng.uniform(0.1, 1.0)'
+    request_ratio: 'rng.exponential(5)'
     request_popularity: 'rng.uniform(0.1, 1.0)'
     centrality: 'rng.uniform(0.1, 1.0)'
     actions:
       remove_user:
-        distribution: 'rng.uniform(0, 300)'
+        distribution: 'rng.exponential(50)+20'
         action_params:
           event_set: None
       move_user:
-        distribution: 'rng.uniform(0, 300)'
+        distribution: 'rng.uniform(0, 50)'
         action_params: 
           infrastructure: None
           sim_set: None
@@ -86,7 +86,7 @@ attributes:
 
   new_object:
     new_user: 
-      distribution: 'rng.uniform(0, 300)'
+      distribution: 'rng.exponential(20)'
       action_params:
         config: None
         app_set: None
@@ -95,14 +95,14 @@ attributes:
         event_set: None
         sim_set: None
 
-    new_app: 
-      distribution: 'rng.uniform(0, 300)'
-      action_params:
-        config: None
-        app_set: None
-        user_set: None
-        infrastructure: None
-        event_set: None
-        # Numpy equivalent for random integer between 1 and 5 (inclusive)
-        num_new_users: 'rng.integers(1, 6)'
-        sim_set: None
+    # new_app: 
+    #   distribution: 'rng.exponential(50)'
+    #   action_params:
+    #     config: None
+    #     app_set: None
+    #     user_set: None
+    #     infrastructure: None
+    #     event_set: None
+    #     # Numpy equivalent for random integer between 1 and 5 (inclusive)
+    #     num_new_users: 'rng.integers(1, 6)'
+    #     sim_set: None

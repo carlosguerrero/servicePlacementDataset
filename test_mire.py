@@ -1,46 +1,29 @@
+#%%
+import matplotlib.pyplot as plt
+import pandas as pd
+#%%
+csvfile = open('/home/gaim01/PyProjects/servicePlacementDataset/Simulations/Sim_20260326_131852/user_counts_log.csv', newline='')
 
-# CODE FOR READING pkl files
-# with open('simulation_results.pkl', 'rb') as f:  # 'rb' means Read Binary
-# loaded_results = pickle.load(f)
+data = csv.reader(csvfile, delimiter=',', quotechar='|')
+print(next(data))  # Print the header row
 
-# Now you have your actual objects back!
-# first_result = loaded_results[0]
-# print(first_result.total_latency) # Works perfectly
+#%%
+file_path = '/home/gaim01/PyProjects/servicePlacementDataset/Simulations/Sim_20260326_131852/user_counts_log.csv'
+df = pd.read_csv(file_path, header=None)
 
-import yaml
-import random
-import uuid
-import networkx as nx
-from pulp import *
-import pickle
-import copy
+x = df.iloc[:, 0]
+y = df.iloc[:, 1]
 
-from src import EventSet, generate_events, init_new_object, ApplicationSet, generate_random_apps, UserSet, generate_random_users
-from main import generate_infrastructure, load_config, update_shortest_paths
+plt.figure(figsize=(10, 6))
+plt.plot(x, y, label='User Counts')
+
+plt.xlabel('Iteration')
+plt.ylabel('Number of users')
+plt.title('User Counts Over Iterations')
+plt.legend()
+plt.grid(True)
+
+plt.show()
 
 
 
-
-if __name__ == "__main__":
-    random.seed(42)
-
-    config_random = "config_random.yaml"
-    config = load_config(config_random)
-
-    # RANDOM GENERATION OF GRAPH
-    generated_infrastructure = generate_infrastructure(config)
-    update_shortest_paths(generated_infrastructure)
-    print(f"Nodes: {generated_infrastructure.number_of_nodes()}")
-    print(f"Edges: {generated_infrastructure.number_of_edges()}")
-
-    generated_events = EventSet()
-
-    generated_apps = generate_random_apps(config)
-    print(f"Apps: {generated_apps}")
-
-    generated_users = generate_random_users(config, generated_apps, generated_infrastructure, generated_events)
-    print(f"\nUsers: {generated_users}")
-
-    init_new_object(config, generated_events)
-
-    print("\nEvents in the set:", generated_events)

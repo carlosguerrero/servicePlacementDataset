@@ -119,7 +119,6 @@ def generate_events(object_item, type_object, event_set, sim_set):
     event_set: The EventSet instance where the generated events will be added.
     seed: Optional seed for random number generation to ensure reproducibility.
     """
-
     obj_id = object_item['id']
     actions_dict = object_item['actions']
 
@@ -139,8 +138,8 @@ def generate_events(object_item, type_object, event_set, sim_set):
     return event_set
 
 def init_new_object(config, event_set, sim_set):
-    """type_object: 'user' or 'app'
-    Later will be also be node"""
+    """Initializes events for creating new objects (users and apps) based on the configuration.
+    type_object: 'user' or 'app'"""
     attributes = config.get('attributes', {})
     new_object_conf = attributes.get('new_object', {})
     for action, type_conf in new_object_conf.items():
