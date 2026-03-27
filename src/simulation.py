@@ -28,7 +28,7 @@ def create_simulation_folder():
     Returns the path to the specific timestamped folder.
     """
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    base_dir = "Simulations"
+    base_dir = "Simulations_raw"
     folder_name = f"Sim_{timestamp}"
     
     full_path = os.path.join(base_dir, folder_name)

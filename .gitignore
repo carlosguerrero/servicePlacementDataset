@@ -4,6 +4,6 @@
 .AppleDouble
 .LSOverride
 
-Simulations/
+Simulations_raw/
 __pycache__/
 *.pyc

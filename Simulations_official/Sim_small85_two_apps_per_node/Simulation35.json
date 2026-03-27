@@ -1,0 +1,2037 @@
+{
+    "users_before": {
+        "017aae0d-4126-c4e7-278f-d245654eb234": {
+            "name": "User_4",
+            "requestedApp": "af0a6ea7-5335-4a37-8dc7-f03edc6aac8a",
+            "appName": "App_17",
+            "requestRatio": 4.252581160014755,
+            "connectedTo": 6,
+            "centrality": 0.9211996856761866,
+            "actions": {
+                "remove_user": {
+                    "distribution": "rng.exponential(50)+20",
+                    "action_params": {
+                        "event_set": "None"
+                    }
+                },
+                "move_user": {
+                    "distribution": "rng.uniform(0, 50)",
+                    "action_params": {
+                        "infrastructure": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "increase_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "017aae0d-4126-c4e7-278f-d245654eb234"
+        },
+        "084e843a-13dc-fdd9-931e-e182d66a5445": {
+            "name": "User_5",
+            "requestedApp": "6d5176ea-3464-47a9-89c2-b56bbbf3235d",
+            "appName": "App_19",
+            "requestRatio": 4.879676458192001,
+            "connectedTo": 3,
+            "centrality": 0.7271846213799821,
+            "actions": {
+                "remove_user": {
+                    "distribution": "rng.exponential(50)+20",
+                    "action_params": {
+                        "event_set": "None"
+                    }
+                },
+                "move_user": {
+                    "distribution": "rng.uniform(0, 50)",
+                    "action_params": {
+                        "infrastructure": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "increase_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "084e843a-13dc-fdd9-931e-e182d66a5445"
+        },
+        "33a8fa61-1f38-28c2-8905-0528cbbc0e7a": {
+            "name": "User_6",
+            "requestedApp": "1e10b432-3db8-4c5f-b212-c3bfceaf9c3b",
+            "appName": "App_15",
+            "requestRatio": 4.761418697098963,
+            "connectedTo": 9,
+            "centrality": 0.7241205662908539,
+            "actions": {
+                "remove_user": {
+                    "distribution": "rng.exponential(50)+20",
+                    "action_params": {
+                        "event_set": "None"
+                    }
+                },
+                "move_user": {
+                    "distribution": "rng.uniform(0, 50)",
+                    "action_params": {
+                        "infrastructure": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "increase_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "33a8fa61-1f38-28c2-8905-0528cbbc0e7a"
+        },
+        "134c5d00-40dd-670a-66d0-6845f84948c6": {
+            "name": "User_7",
+            "requestedApp": "70b912ae-33da-444d-a7a8-b418b4be8260",
+            "appName": "App_6",
+            "requestRatio": 0.02898550613304131,
+            "connectedTo": 3,
+            "centrality": 0.6493874211679986,
+            "actions": {
+                "remove_user": {
+                    "distribution": "rng.exponential(50)+20",
+                    "action_params": {
+                        "event_set": "None"
+                    }
+                },
+                "move_user": {
+                    "distribution": "rng.uniform(0, 50)",
+                    "action_params": {
+                        "infrastructure": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "increase_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "134c5d00-40dd-670a-66d0-6845f84948c6"
+        },
+        "48383490-7f3a-d32e-e22a-b21427667673": {
+            "name": "User_8",
+            "requestedApp": "9d4fb963-2cef-4386-b2e6-c69d9e8f919a",
+            "appName": "App_13",
+            "requestRatio": 2.343751525440935,
+            "connectedTo": 3,
+            "centrality": 0.48041944147278415,
+            "actions": {
+                "remove_user": {
+                    "distribution": "rng.exponential(50)+20",
+                    "action_params": {
+                        "event_set": "None"
+                    }
+                },
+                "move_user": {
+                    "distribution": "rng.uniform(0, 50)",
+                    "action_params": {
+                        "infrastructure": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "increase_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "48383490-7f3a-d32e-e22a-b21427667673"
+        },
+        "50fc6d7a-add3-7c43-9e2f-5f20ed70f7c0": {
+            "name": "User_9",
+            "requestedApp": "a9f2ef1f-cdea-485b-a8ea-7ba63bb8cbe1",
+            "appName": "App_18",
+            "requestRatio": 2.3752055327239234,
+            "connectedTo": 6,
+            "centrality": 0.816183770553034,
+            "actions": {
+                "remove_user": {
+                    "distribution": "rng.exponential(50)+20",
+                    "action_params": {
+                        "event_set": "None"
+                    }
+                },
+                "move_user": {
+                    "distribution": "rng.uniform(0, 50)",
+                    "action_params": {
+                        "infrastructure": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "increase_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "50fc6d7a-add3-7c43-9e2f-5f20ed70f7c0"
+        },
+        "4d7dffa4-cca0-38d3-3641-2a0f6db2296c": {
+            "name": "User_10",
+            "requestedApp": "74d0854b-68cd-49a4-a395-2f3b32885b22",
+            "appName": "App_8",
+            "requestRatio": 9.24422392435139,
+            "connectedTo": 3,
+            "centrality": 0.5166654532062203,
+            "actions": {
+                "remove_user": {
+                    "distribution": "rng.exponential(50)+20",
+                    "action_params": {
+                        "event_set": "None"
+                    }
+                },
+                "move_user": {
+                    "distribution": "rng.uniform(0, 50)",
+                    "action_params": {
+                        "infrastructure": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "increase_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "4d7dffa4-cca0-38d3-3641-2a0f6db2296c"
+        },
+        "2b4508a9-efd2-61eb-b614-b503482e2b30": {
+            "name": "User_11",
+            "requestedApp": "f107a59b-c98e-45e9-b9db-ef2cf559c87c",
+            "appName": "App_11",
+            "requestRatio": 8.131534252163942,
+            "connectedTo": 5,
+            "centrality": 0.9162364078773053,
+            "actions": {
+                "remove_user": {
+                    "distribution": "rng.exponential(50)+20",
+                    "action_params": {
+                        "event_set": "None"
+                    }
+                },
+                "move_user": {
+                    "distribution": "rng.uniform(0, 50)",
+                    "action_params": {
+                        "infrastructure": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "increase_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "2b4508a9-efd2-61eb-b614-b503482e2b30"
+        }
+    },
+    "apps_before": {
+        "93e72021-6dd8-4366-8cb1-26ab50839a79": {
+            "name": "App_0",
+            "popularity": 0.6870693364308196,
+            "cpu": 0.27072376219208677,
+            "ram": 4.010014793437108,
+            "disk": 85.5291324259927,
+            "time": 176.14291427641754,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "93e72021-6dd8-4366-8cb1-26ab50839a79"
+        },
+        "12294f82-2aa1-401d-84c5-21d48c01bf9a": {
+            "name": "App_1",
+            "popularity": 0.302234707183262,
+            "cpu": 3.0319898600926005,
+            "ram": 4.131846098739187,
+            "disk": 47.79801187446412,
+            "time": 135.30941610033267,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "12294f82-2aa1-401d-84c5-21d48c01bf9a"
+        },
+        "0d51ef76-d0f2-4bc1-9189-b9119dd45a60": {
+            "name": "App_2",
+            "popularity": 0.9597831212991139,
+            "cpu": 3.5784165098138665,
+            "ram": 4.139316512759471,
+            "disk": 35.06808680014381,
+            "time": 126.59987245417884,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "0d51ef76-d0f2-4bc1-9189-b9119dd45a60"
+        },
+        "8d861e68-93af-4856-9977-a372b5d0e2ea": {
+            "name": "App_3",
+            "popularity": 0.10366995248738982,
+            "cpu": 1.3048026942059923,
+            "ram": 4.475877008231807,
+            "disk": 85.43843004416314,
+            "time": 160.5384771292812,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "8d861e68-93af-4856-9977-a372b5d0e2ea"
+        },
+        "4a3a5c2d-70c8-441b-a8a7-d18eb5874c06": {
+            "name": "App_4",
+            "popularity": 0.5369396913617388,
+            "cpu": 3.7859940525880753,
+            "ram": 4.296587093732082,
+            "disk": 94.85811267118393,
+            "time": 299.3645232822361,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "4a3a5c2d-70c8-441b-a8a7-d18eb5874c06"
+        },
+        "59197ea0-3876-4091-95c2-538445027b32": {
+            "name": "App_5",
+            "popularity": 0.1303881888841266,
+            "cpu": 0.5623863481601528,
+            "ram": 4.380599418988424,
+            "disk": 21.352372209397544,
+            "time": 102.55285653556948,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "59197ea0-3876-4091-95c2-538445027b32"
+        },
+        "70b912ae-33da-444d-a7a8-b418b4be8260": {
+            "name": "App_6",
+            "popularity": 0.3700173608168248,
+            "cpu": 2.2490758532999195,
+            "ram": 4.0253098811492185,
+            "disk": 50.58733413947838,
+            "time": 166.62496864839665,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "70b912ae-33da-444d-a7a8-b418b4be8260"
+        },
+        "898f2cae-30f1-4348-b492-456eb3c4ca47": {
+            "name": "App_7",
+            "popularity": 0.20725347188967286,
+            "cpu": 1.4315578354875094,
+            "ram": 4.252275874576574,
+            "disk": 37.356859951514956,
+            "time": 125.35090054593844,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "898f2cae-30f1-4348-b492-456eb3c4ca47"
+        },
+        "74d0854b-68cd-49a4-a395-2f3b32885b22": {
+            "name": "App_8",
+            "popularity": 0.47310490148150164,
+            "cpu": 0.4639239844117332,
+            "ram": 4.293998200294659,
+            "disk": 16.66502754151523,
+            "time": 174.15582956768412,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "74d0854b-68cd-49a4-a395-2f3b32885b22"
+        },
+        "2f3563cc-fd15-41fd-b13b-6d6cac851b9b": {
+            "name": "App_9",
+            "popularity": 0.1745843643614775,
+            "cpu": 2.2025828888557175,
+            "ram": 4.425384491464579,
+            "disk": 35.99166342804622,
+            "time": 24.82345700652967,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "2f3563cc-fd15-41fd-b13b-6d6cac851b9b"
+        },
+        "15c6b43d-aeaf-4b1d-9905-596ec43267b5": {
+            "name": "App_10",
+            "popularity": 0.38843208301281995,
+            "cpu": 1.755546854600834,
+            "ram": 4.306082803364898,
+            "disk": 23.63786473597115,
+            "time": 1.1884091170856648,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "15c6b43d-aeaf-4b1d-9905-596ec43267b5"
+        },
+        "f107a59b-c98e-45e9-b9db-ef2cf559c87c": {
+            "name": "App_11",
+            "popularity": 0.8587740820841252,
+            "cpu": 1.874848340024484,
+            "ram": 4.286815304410606,
+            "disk": 82.11953467508066,
+            "time": 228.9741113775515,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "f107a59b-c98e-45e9-b9db-ef2cf559c87c"
+        },
+        "36b2753f-c9b1-4b3e-ad08-0399dd902322": {
+            "name": "App_12",
+            "popularity": 0.8757406586349114,
+            "cpu": 1.355609043015659,
+            "ram": 4.096897276719673,
+            "disk": 11.143322399316837,
+            "time": 118.81711536168406,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "36b2753f-c9b1-4b3e-ad08-0399dd902322"
+        },
+        "9d4fb963-2cef-4386-b2e6-c69d9e8f919a": {
+            "name": "App_13",
+            "popularity": 0.6458546246986685,
+            "cpu": 2.3094187618149644,
+            "ram": 4.43940810961657,
+            "disk": 84.50004907577721,
+            "time": 148.96058684873853,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "9d4fb963-2cef-4386-b2e6-c69d9e8f919a"
+        },
+        "61f08173-cbd7-45a5-b529-eae2685e443e": {
+            "name": "App_14",
+            "popularity": 0.2104219254930209,
+            "cpu": 2.0522487470788784,
+            "ram": 4.459743044549841,
+            "disk": 89.27702299711429,
+            "time": 202.22267799191914,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "61f08173-cbd7-45a5-b529-eae2685e443e"
+        },
+        "1e10b432-3db8-4c5f-b212-c3bfceaf9c3b": {
+            "name": "App_15",
+            "popularity": 0.693015165793029,
+            "cpu": 3.3332252632380976,
+            "ram": 4.343519205337388,
+            "disk": 66.17735658939289,
+            "time": 120.52847702282044,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "1e10b432-3db8-4c5f-b212-c3bfceaf9c3b"
+        },
+        "1b3af764-2a44-4891-a5bd-75f084a89474": {
+            "name": "App_16",
+            "popularity": 0.4595560863076652,
+            "cpu": 1.9967397978964803,
+            "ram": 4.440864949473316,
+            "disk": 67.73741549368997,
+            "time": 247.639482115618,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "1b3af764-2a44-4891-a5bd-75f084a89474"
+        },
+        "af0a6ea7-5335-4a37-8dc7-f03edc6aac8a": {
+            "name": "App_17",
+            "popularity": 0.5524128082531241,
+            "cpu": 2.19221518836013,
+            "ram": 4.349396477749343,
+            "disk": 72.51186502838311,
+            "time": 65.84203712434984,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "af0a6ea7-5335-4a37-8dc7-f03edc6aac8a"
+        },
+        "a9f2ef1f-cdea-485b-a8ea-7ba63bb8cbe1": {
+            "name": "App_18",
+            "popularity": 0.9342412623252896,
+            "cpu": 0.9762273637743711,
+            "ram": 4.3290871445040615,
+            "disk": 42.61195542929684,
+            "time": 84.45039582703441,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "a9f2ef1f-cdea-485b-a8ea-7ba63bb8cbe1"
+        },
+        "6d5176ea-3464-47a9-89c2-b56bbbf3235d": {
+            "name": "App_19",
+            "popularity": 0.9939033944175985,
+            "cpu": 2.750170327620014,
+            "ram": 4.141679649887992,
+            "disk": 75.44701202463543,
+            "time": 225.79531314607314,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "6d5176ea-3464-47a9-89c2-b56bbbf3235d"
+        }
+    },
+    "users_after": {
+        "017aae0d-4126-c4e7-278f-d245654eb234": {
+            "name": "User_4",
+            "requestedApp": "af0a6ea7-5335-4a37-8dc7-f03edc6aac8a",
+            "appName": "App_17",
+            "requestRatio": 4.252581160014755,
+            "connectedTo": 6,
+            "centrality": 0.9211996856761866,
+            "actions": {
+                "remove_user": {
+                    "distribution": "rng.exponential(50)+20",
+                    "action_params": {
+                        "event_set": "None"
+                    }
+                },
+                "move_user": {
+                    "distribution": "rng.uniform(0, 50)",
+                    "action_params": {
+                        "infrastructure": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "increase_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "017aae0d-4126-c4e7-278f-d245654eb234"
+        },
+        "084e843a-13dc-fdd9-931e-e182d66a5445": {
+            "name": "User_5",
+            "requestedApp": "6d5176ea-3464-47a9-89c2-b56bbbf3235d",
+            "appName": "App_19",
+            "requestRatio": 4.879676458192001,
+            "connectedTo": 3,
+            "centrality": 0.7271846213799821,
+            "actions": {
+                "remove_user": {
+                    "distribution": "rng.exponential(50)+20",
+                    "action_params": {
+                        "event_set": "None"
+                    }
+                },
+                "move_user": {
+                    "distribution": "rng.uniform(0, 50)",
+                    "action_params": {
+                        "infrastructure": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "increase_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "084e843a-13dc-fdd9-931e-e182d66a5445"
+        },
+        "33a8fa61-1f38-28c2-8905-0528cbbc0e7a": {
+            "name": "User_6",
+            "requestedApp": "1e10b432-3db8-4c5f-b212-c3bfceaf9c3b",
+            "appName": "App_15",
+            "requestRatio": 4.761418697098963,
+            "connectedTo": 7,
+            "centrality": 0.7241205662908539,
+            "actions": {
+                "remove_user": {
+                    "distribution": "rng.exponential(50)+20",
+                    "action_params": {
+                        "event_set": "None"
+                    }
+                },
+                "move_user": {
+                    "distribution": "rng.uniform(0, 50)",
+                    "action_params": {
+                        "infrastructure": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "increase_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "33a8fa61-1f38-28c2-8905-0528cbbc0e7a"
+        },
+        "134c5d00-40dd-670a-66d0-6845f84948c6": {
+            "name": "User_7",
+            "requestedApp": "70b912ae-33da-444d-a7a8-b418b4be8260",
+            "appName": "App_6",
+            "requestRatio": 0.02898550613304131,
+            "connectedTo": 3,
+            "centrality": 0.6493874211679986,
+            "actions": {
+                "remove_user": {
+                    "distribution": "rng.exponential(50)+20",
+                    "action_params": {
+                        "event_set": "None"
+                    }
+                },
+                "move_user": {
+                    "distribution": "rng.uniform(0, 50)",
+                    "action_params": {
+                        "infrastructure": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "increase_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "134c5d00-40dd-670a-66d0-6845f84948c6"
+        },
+        "48383490-7f3a-d32e-e22a-b21427667673": {
+            "name": "User_8",
+            "requestedApp": "9d4fb963-2cef-4386-b2e6-c69d9e8f919a",
+            "appName": "App_13",
+            "requestRatio": 2.343751525440935,
+            "connectedTo": 3,
+            "centrality": 0.48041944147278415,
+            "actions": {
+                "remove_user": {
+                    "distribution": "rng.exponential(50)+20",
+                    "action_params": {
+                        "event_set": "None"
+                    }
+                },
+                "move_user": {
+                    "distribution": "rng.uniform(0, 50)",
+                    "action_params": {
+                        "infrastructure": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "increase_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "48383490-7f3a-d32e-e22a-b21427667673"
+        },
+        "50fc6d7a-add3-7c43-9e2f-5f20ed70f7c0": {
+            "name": "User_9",
+            "requestedApp": "a9f2ef1f-cdea-485b-a8ea-7ba63bb8cbe1",
+            "appName": "App_18",
+            "requestRatio": 2.3752055327239234,
+            "connectedTo": 6,
+            "centrality": 0.816183770553034,
+            "actions": {
+                "remove_user": {
+                    "distribution": "rng.exponential(50)+20",
+                    "action_params": {
+                        "event_set": "None"
+                    }
+                },
+                "move_user": {
+                    "distribution": "rng.uniform(0, 50)",
+                    "action_params": {
+                        "infrastructure": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "increase_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "50fc6d7a-add3-7c43-9e2f-5f20ed70f7c0"
+        },
+        "4d7dffa4-cca0-38d3-3641-2a0f6db2296c": {
+            "name": "User_10",
+            "requestedApp": "74d0854b-68cd-49a4-a395-2f3b32885b22",
+            "appName": "App_8",
+            "requestRatio": 9.24422392435139,
+            "connectedTo": 3,
+            "centrality": 0.5166654532062203,
+            "actions": {
+                "remove_user": {
+                    "distribution": "rng.exponential(50)+20",
+                    "action_params": {
+                        "event_set": "None"
+                    }
+                },
+                "move_user": {
+                    "distribution": "rng.uniform(0, 50)",
+                    "action_params": {
+                        "infrastructure": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "increase_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "4d7dffa4-cca0-38d3-3641-2a0f6db2296c"
+        },
+        "2b4508a9-efd2-61eb-b614-b503482e2b30": {
+            "name": "User_11",
+            "requestedApp": "f107a59b-c98e-45e9-b9db-ef2cf559c87c",
+            "appName": "App_11",
+            "requestRatio": 8.131534252163942,
+            "connectedTo": 5,
+            "centrality": 0.9162364078773053,
+            "actions": {
+                "remove_user": {
+                    "distribution": "rng.exponential(50)+20",
+                    "action_params": {
+                        "event_set": "None"
+                    }
+                },
+                "move_user": {
+                    "distribution": "rng.uniform(0, 50)",
+                    "action_params": {
+                        "infrastructure": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "increase_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_request_ratio": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "2b4508a9-efd2-61eb-b614-b503482e2b30"
+        }
+    },
+    "apps_after": {
+        "93e72021-6dd8-4366-8cb1-26ab50839a79": {
+            "name": "App_0",
+            "popularity": 0.6870693364308196,
+            "cpu": 0.27072376219208677,
+            "ram": 4.010014793437108,
+            "disk": 85.5291324259927,
+            "time": 176.14291427641754,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "93e72021-6dd8-4366-8cb1-26ab50839a79"
+        },
+        "12294f82-2aa1-401d-84c5-21d48c01bf9a": {
+            "name": "App_1",
+            "popularity": 0.302234707183262,
+            "cpu": 3.0319898600926005,
+            "ram": 4.131846098739187,
+            "disk": 47.79801187446412,
+            "time": 135.30941610033267,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "12294f82-2aa1-401d-84c5-21d48c01bf9a"
+        },
+        "0d51ef76-d0f2-4bc1-9189-b9119dd45a60": {
+            "name": "App_2",
+            "popularity": 0.9597831212991139,
+            "cpu": 3.5784165098138665,
+            "ram": 4.139316512759471,
+            "disk": 35.06808680014381,
+            "time": 126.59987245417884,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "0d51ef76-d0f2-4bc1-9189-b9119dd45a60"
+        },
+        "8d861e68-93af-4856-9977-a372b5d0e2ea": {
+            "name": "App_3",
+            "popularity": 0.10366995248738982,
+            "cpu": 1.3048026942059923,
+            "ram": 4.475877008231807,
+            "disk": 85.43843004416314,
+            "time": 160.5384771292812,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "8d861e68-93af-4856-9977-a372b5d0e2ea"
+        },
+        "4a3a5c2d-70c8-441b-a8a7-d18eb5874c06": {
+            "name": "App_4",
+            "popularity": 0.5369396913617388,
+            "cpu": 3.7859940525880753,
+            "ram": 4.296587093732082,
+            "disk": 94.85811267118393,
+            "time": 299.3645232822361,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "4a3a5c2d-70c8-441b-a8a7-d18eb5874c06"
+        },
+        "59197ea0-3876-4091-95c2-538445027b32": {
+            "name": "App_5",
+            "popularity": 0.1303881888841266,
+            "cpu": 0.5623863481601528,
+            "ram": 4.380599418988424,
+            "disk": 21.352372209397544,
+            "time": 102.55285653556948,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "59197ea0-3876-4091-95c2-538445027b32"
+        },
+        "70b912ae-33da-444d-a7a8-b418b4be8260": {
+            "name": "App_6",
+            "popularity": 0.3700173608168248,
+            "cpu": 2.2490758532999195,
+            "ram": 4.0253098811492185,
+            "disk": 50.58733413947838,
+            "time": 166.62496864839665,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "70b912ae-33da-444d-a7a8-b418b4be8260"
+        },
+        "898f2cae-30f1-4348-b492-456eb3c4ca47": {
+            "name": "App_7",
+            "popularity": 0.20725347188967286,
+            "cpu": 1.4315578354875094,
+            "ram": 4.252275874576574,
+            "disk": 37.356859951514956,
+            "time": 125.35090054593844,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "898f2cae-30f1-4348-b492-456eb3c4ca47"
+        },
+        "74d0854b-68cd-49a4-a395-2f3b32885b22": {
+            "name": "App_8",
+            "popularity": 0.47310490148150164,
+            "cpu": 0.4639239844117332,
+            "ram": 4.293998200294659,
+            "disk": 16.66502754151523,
+            "time": 174.15582956768412,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "74d0854b-68cd-49a4-a395-2f3b32885b22"
+        },
+        "2f3563cc-fd15-41fd-b13b-6d6cac851b9b": {
+            "name": "App_9",
+            "popularity": 0.1745843643614775,
+            "cpu": 2.2025828888557175,
+            "ram": 4.425384491464579,
+            "disk": 35.99166342804622,
+            "time": 24.82345700652967,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "2f3563cc-fd15-41fd-b13b-6d6cac851b9b"
+        },
+        "15c6b43d-aeaf-4b1d-9905-596ec43267b5": {
+            "name": "App_10",
+            "popularity": 0.38843208301281995,
+            "cpu": 1.755546854600834,
+            "ram": 4.306082803364898,
+            "disk": 23.63786473597115,
+            "time": 1.1884091170856648,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "15c6b43d-aeaf-4b1d-9905-596ec43267b5"
+        },
+        "f107a59b-c98e-45e9-b9db-ef2cf559c87c": {
+            "name": "App_11",
+            "popularity": 0.8587740820841252,
+            "cpu": 1.874848340024484,
+            "ram": 4.286815304410606,
+            "disk": 82.11953467508066,
+            "time": 228.9741113775515,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "f107a59b-c98e-45e9-b9db-ef2cf559c87c"
+        },
+        "36b2753f-c9b1-4b3e-ad08-0399dd902322": {
+            "name": "App_12",
+            "popularity": 0.8757406586349114,
+            "cpu": 1.355609043015659,
+            "ram": 4.096897276719673,
+            "disk": 11.143322399316837,
+            "time": 118.81711536168406,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "36b2753f-c9b1-4b3e-ad08-0399dd902322"
+        },
+        "9d4fb963-2cef-4386-b2e6-c69d9e8f919a": {
+            "name": "App_13",
+            "popularity": 0.6458546246986685,
+            "cpu": 2.3094187618149644,
+            "ram": 4.43940810961657,
+            "disk": 84.50004907577721,
+            "time": 148.96058684873853,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "9d4fb963-2cef-4386-b2e6-c69d9e8f919a"
+        },
+        "61f08173-cbd7-45a5-b529-eae2685e443e": {
+            "name": "App_14",
+            "popularity": 0.2104219254930209,
+            "cpu": 2.0522487470788784,
+            "ram": 4.459743044549841,
+            "disk": 89.27702299711429,
+            "time": 202.22267799191914,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "61f08173-cbd7-45a5-b529-eae2685e443e"
+        },
+        "1e10b432-3db8-4c5f-b212-c3bfceaf9c3b": {
+            "name": "App_15",
+            "popularity": 0.693015165793029,
+            "cpu": 3.3332252632380976,
+            "ram": 4.343519205337388,
+            "disk": 66.17735658939289,
+            "time": 120.52847702282044,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "1e10b432-3db8-4c5f-b212-c3bfceaf9c3b"
+        },
+        "1b3af764-2a44-4891-a5bd-75f084a89474": {
+            "name": "App_16",
+            "popularity": 0.4595560863076652,
+            "cpu": 1.9967397978964803,
+            "ram": 4.440864949473316,
+            "disk": 67.73741549368997,
+            "time": 247.639482115618,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "1b3af764-2a44-4891-a5bd-75f084a89474"
+        },
+        "af0a6ea7-5335-4a37-8dc7-f03edc6aac8a": {
+            "name": "App_17",
+            "popularity": 0.5524128082531241,
+            "cpu": 2.19221518836013,
+            "ram": 4.349396477749343,
+            "disk": 72.51186502838311,
+            "time": 65.84203712434984,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "af0a6ea7-5335-4a37-8dc7-f03edc6aac8a"
+        },
+        "a9f2ef1f-cdea-485b-a8ea-7ba63bb8cbe1": {
+            "name": "App_18",
+            "popularity": 0.9342412623252896,
+            "cpu": 0.9762273637743711,
+            "ram": 4.3290871445040615,
+            "disk": 42.61195542929684,
+            "time": 84.45039582703441,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "a9f2ef1f-cdea-485b-a8ea-7ba63bb8cbe1"
+        },
+        "6d5176ea-3464-47a9-89c2-b56bbbf3235d": {
+            "name": "App_19",
+            "popularity": 0.9939033944175985,
+            "cpu": 2.750170327620014,
+            "ram": 4.141679649887992,
+            "disk": 75.44701202463543,
+            "time": 225.79531314607314,
+            "actions": {
+                "remove_app": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "user_set": "None",
+                        "event_set": "None"
+                    }
+                },
+                "increase_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(1, 3)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                },
+                "decrease_popularity": {
+                    "distribution": "rng.uniform(0, 300)",
+                    "action_params": {
+                        "multiplier": "rng.uniform(0, 1)",
+                        "user_set": "None",
+                        "sim_set": "None"
+                    }
+                }
+            },
+            "id": "6d5176ea-3464-47a9-89c2-b56bbbf3235d"
+        }
+    },
+    "action": {
+        "action": {
+            "type_object": "user",
+            "object_id": "33a8fa61-1f38-28c2-8905-0528cbbc0e7a",
+            "time": 121.61083860153379,
+            "action": "move_user",
+            "message": "User 'User_6' moved from node 9 to node 7",
+            "id": "8b08e636-a6a8-41f6-8e32-7c1a13def7de"
+        },
+        "global_time": 121.61083860153379
+    },
+    "placement": {
+        "App_0": 0,
+        "App_1": 0,
+        "App_2": 1,
+        "App_3": 8,
+        "App_4": 2,
+        "App_5": 5,
+        "App_6": 4,
+        "App_7": 1,
+        "App_8": 3,
+        "App_9": 8,
+        "App_10": 7,
+        "App_11": 5,
+        "App_12": 2,
+        "App_13": 4,
+        "App_14": 9,
+        "App_15": 7,
+        "App_16": 9,
+        "App_17": 6,
+        "App_18": 6,
+        "App_19": 3
+    },
+    "node_information": {
+        "Node_0": "RAM Total=10.0, RAM Used=8.141860892176295, Running Apps=['App_0', 'App_1'], enabled=True",
+        "Node_1": "RAM Total=10.0, RAM Used=8.391592387336045, Running Apps=['App_2', 'App_7'], enabled=True",
+        "Node_2": "RAM Total=10.0, RAM Used=8.393484370451755, Running Apps=['App_4', 'App_12'], enabled=True",
+        "Node_3": "RAM Total=10.0, RAM Used=8.435677850182651, Running Apps=['App_8', 'App_19'], enabled=True",
+        "Node_4": "RAM Total=10.0, RAM Used=8.464717990765788, Running Apps=['App_6', 'App_13'], enabled=True",
+        "Node_5": "RAM Total=10.0, RAM Used=8.66741472339903, Running Apps=['App_5', 'App_11'], enabled=True",
+        "Node_6": "RAM Total=10.0, RAM Used=8.678483622253404, Running Apps=['App_17', 'App_18'], enabled=True",
+        "Node_7": "RAM Total=10.0, RAM Used=8.649602008702285, Running Apps=['App_10', 'App_15'], enabled=True",
+        "Node_8": "RAM Total=10.0, RAM Used=8.901261499696385, Running Apps=['App_3', 'App_9'], enabled=True",
+        "Node_9": "RAM Total=9.74, RAM Used=8.900607994023158, Running Apps=['App_14', 'App_16'], enabled=True"
+    },
+    "total_latency": 1.7477945810032143,
+    "total_ram_occupied": 85.85,
+    "diff_message": {
+        "Change_1": "App 'App_0' moved from node 5 to node 0",
+        "Change_2": "App 'App_1' moved from node 1 to node 0",
+        "Change_3": "App 'App_2' moved from node 9 to node 1",
+        "Change_4": "App 'App_5' moved from node 8 to node 5",
+        "Change_5": "App 'App_9' moved from node 0 to node 8",
+        "Change_6": "App 'App_10' moved from node 2 to node 7",
+        "Change_7": "App 'App_12' moved from node 0 to node 2",
+        "Change_8": "App 'App_14' moved from node 7 to node 9",
+        "Change_9": "App 'App_15' moved from node 9 to node 7",
+        "Change_10": "App 'App_16' moved from node 7 to node 9"
+    }
+}
