@@ -332,7 +332,7 @@ def generate_scenario(events_list, config, app_set, user_set, graph_dict, sim_se
     })
     save_simulation_step(sim_folder, 0, data)
 
-    total_iterations = 50
+    total_iterations = 10
     i = 1
     old_opt_placement, old_total_latency = None, None
     while events_list.events and i < total_iterations: # and global_time < 300
@@ -358,12 +358,15 @@ def main():
     generated_infrastructure = generate_infrastructure(config, generated_events, sim_set)
     actual_graph = generated_infrastructure.get_main_graph() 
 
-    generated_apps = generate_random_apps(config, generated_events, sim_set)
+    num_apps = config.get('attributes', {}).get('app', {}).get('num_apps')
+    saturation_percen = config.get('attributes', {}).get('app', {}).get('saturation_percentage')
+    # BORRAR: generated_apps = generate_random_apps(config, generated_events, sim_set)
+    generated_apps, generated_users = generate_random_apps(config, generated_events, sim_set, generated_infrastructure, num_apps=None, saturation_percentage=saturation_percen)
     print("\nAPPS:")
     for app, feat in generated_apps.get_all_apps().items():
         print(f"App {app}: name={feat.get('name')}, popularity={feat.get('popularity')}, CPU={feat.get('cpu')}, Disk={feat.get('disk')}, RAM={feat.get('ram')}, time={feat.get('time_to_run')}")
 
-    generated_users = generate_random_users(config, generated_apps, generated_infrastructure, generated_events, sim_set)
+    # BORRAR: generated_users = generate_random_users(config, generated_apps, generated_infrastructure, generated_events, sim_set)
     print("\nUSERS:")
     for user_id, user_data in generated_users.get_all_users().items():
         print(f"User {user_id}: name={user_data.get('name')}, requestedApp={user_data.get('requestedApp')}, appName={user_data.get('appName')}, requestRatio={user_data.get('requestRatio')}, connectedTo={user_data.get('connectedTo')}, centrality={user_data.get('centrality')}")

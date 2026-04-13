@@ -4,7 +4,7 @@ import uuid
 # BORRAr from utils import get_random_from_range, selectRandomAction
 from .utils.auxiliar_functions import get_random_from_range, selectRandomAction
 from .eventSet import EventSet, generate_events
-from .userSet import create_new_user
+from .userSet import UserSet, create_new_user
 
 # Note: I just added the DESCOMENTAR line to indicate where the event generation for the graph would be triggered
 
@@ -206,7 +206,10 @@ def create_new_app(config, application_set, event_set, sim_set):
     application_set.add_application(appAttributes)
     # DESCOMENTAR: generate_events(appAttributes, 'app', event_set, sim_set)
 
-def generate_random_apps(config, event_set, sim_set):
+    return appAttributes['ram']
+
+# BORRAR: antigua
+def generate_random_apps2(config, event_set, sim_set):
     """
     Generates a list of random applications with random resource requirements.
 
@@ -225,7 +228,68 @@ def generate_random_apps(config, event_set, sim_set):
 
     for i in range(num_apps):
         create_new_app(config, application_set, event_set, sim_set)
+
+        created_app_id = list(app_set.applications)[-1]
+
+        for i in range(num_new_users):
+            create_new_user(config, app_set, infrastructure, user_set, event_set, sim_set, created_app_id)
+
     return application_set
+
+def generate_random_apps(config, event_set, sim_set, infrastructure, num_apps=None, saturation_percentage=None):
+    """
+    Generates a list of random applications with random resource requirements.
+
+    Args:
+        num_apps (int): The number of applications to generate.
+        **kwargs: Additional arguments to customize the application generation.
+
+    Returns:
+        list: A list of dictionaries representing the generated applications.
+    """
+    application_set = ApplicationSet()
+    user_set = UserSet()
+
+    total_ram_available = sum(feat.get('ram', 0.0) for _, feat in infrastructure.get_main_graph().nodes(data=True))
+    
+    attributes = config.get('attributes', {})
+    app_conf = attributes.get('app', {})
+    total_ram_occupied = 0
+
+    
+    # CASE when I am given the saturation percentage to generate the number of apps accordingly
+    if saturation_percentage is not None:
+        i=0
+        created_total_ram = 0
+        while total_ram_occupied < saturation_percentage: # and i < 10:
+            app_ram =create_new_app(config, application_set, event_set, sim_set)
+            created_total_ram += app_ram
+            created_app_id = list(application_set.applications)[-1]
+
+            num_users_per_app = sim_set.parse_distribution(app_conf.get('num_new_users', 1), context='app')
+            for _ in range(num_users_per_app):
+                create_new_user(config, application_set, infrastructure, user_set, event_set, sim_set, created_app_id)
+
+            total_ram_occupied = round((created_total_ram / total_ram_available if total_ram_available > 0 else 0)*100, 2)
+            print(f"Total RAM occupied after creating app {created_app_id}: {total_ram_occupied}%")
+
+            i += 1
+
+
+    # CASE when I am given the number of apps to generate
+    elif num_apps is not None:
+        for i in range(num_apps):
+            create_new_app(config, application_set, event_set, sim_set)
+
+            created_app_id = list(application_set.applications)[-1]
+
+            for i in range(num_users_per_app):
+                create_new_user(config, application_set, infrastructure, user_set, event_set, sim_set, created_app_id)
+    
+    else:
+        raise ValueError("Either num_apps or saturation_percentage must be provided to generate applications.")
+
+    return application_set, user_set
 
 if __name__ == "__main__":
     print("appSet works fine")
