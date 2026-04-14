@@ -228,7 +228,7 @@ def difference_in_placement(old_placement, new_placement, old_latency, new_laten
         print("APPLICATION PLACEMENT: No changes made.")
         return results_dictionary
 
-def update_system_state(events_list, config, app_set, user_set, graph_dict, iteration, sim_folder, sim_set):
+def update_system_state(events_list, config, app_set, user_set, graph_dict, iteration, sim_folder, sim_set, csv_users):
 
     first_event = events_list.get_first_event()
     events_list.global_time = first_event['time']
@@ -306,6 +306,7 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict, iter
         'apps_phase': 'after'
     })
     save_simulation_step(sim_folder, iteration, data)
+    add_and_log_user_count(user_set, iteration, csv_users, first_event['action'])
 
     events_list.update_event_time_and_none_params(first_event['id'], config, sim_set)
 
@@ -314,7 +315,7 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict, iter
 def generate_scenario(events_list, config, app_set, user_set, graph_dict, sim_set):
     sim_folder = create_simulation_folder()
     csv_users = os.path.join(sim_folder, "user_counts_log.csv")
-    add_and_log_user_count(user_set, 0, csv_users)
+    add_and_log_user_count(user_set, 0, csv_users, "No Action")
 
     # Calculate first scenario and save it in the iteration_0
     optimal_placement, total_latency = solve_application_placement(graph_dict, app_set, user_set)
@@ -332,16 +333,15 @@ def generate_scenario(events_list, config, app_set, user_set, graph_dict, sim_se
     })
     save_simulation_step(sim_folder, 0, data)
 
-    total_iterations = 10
+    total_iterations = 50
     i = 1
     old_opt_placement, old_total_latency = None, None
     while events_list.events and i < total_iterations: # and global_time < 300
         print("\nITERATION", i)
-        actual_opt_placement, actual_total_latency = update_system_state(events_list, config, app_set, user_set, graph_dict, i, sim_folder, sim_set)
+        actual_opt_placement, actual_total_latency = update_system_state(events_list, config, app_set, user_set, graph_dict, i, sim_folder, sim_set, csv_users)
         diff_message = difference_in_placement(old_opt_placement, actual_opt_placement, old_total_latency, actual_total_latency)
         data = prepare_simulation_data({'diff_message': diff_message})
         save_simulation_step(sim_folder, i, data)
-        add_and_log_user_count(user_set, i, csv_users)
         old_opt_placement, old_total_latency = actual_opt_placement, actual_total_latency
         i += 1
 

@@ -6,7 +6,7 @@ import networkx as nx
 import csv
 import os
 
-def add_and_log_user_count(user_set, i, csv_users):
+def add_and_log_user_count(user_set, i, csv_users, action):
     """
     Writes the latest user count to a CSV after the event has been processed and the system state has been updated.
     """
@@ -17,10 +17,10 @@ def add_and_log_user_count(user_set, i, csv_users):
         writer = csv.writer(file)
         
         if not file_exists:
-            writer.writerow(['Iteration', 'User Count'])
+            writer.writerow(['Iteration', 'User Count', 'Action'])
         
         # Write the new row (e.g., Entry 1, 50 users)
-        writer.writerow([i, new_count])
+        writer.writerow([i, new_count, action if action else 'No Action'])
 
 def create_simulation_folder():
     """

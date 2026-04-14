@@ -50,7 +50,8 @@ def selectRandomGraphNodeByCentrality(graph_dict, centrality, sim_set, node=None
         return int(selected_node)
     return None
 
-def selectAdjacentNodeWhenMoving(graph_dict, node_id, centrality, sim_set, active=True):  
+# BORRAR
+def selectAdjacentNodeWhenMoving2(graph_dict, node_id, centrality, sim_set, active=True):  
     """
     This function selects a node from the nodes that have an edge
     attached to the given "node" as argument
@@ -94,6 +95,70 @@ def selectAdjacentNodeWhenMoving(graph_dict, node_id, centrality, sim_set, activ
     max_c = max(centralities) + epsilon
     weights = [max_c - c for c in centralities]
     probabilities = [w / sum(weights) for w in weights]
+    selection = rng.choice(nodes, p=probabilities, size=1)
+
+    return int(selection[0])
+
+
+def selectAdjacentNodeWhenMoving(graph_dict, node_id, centrality, sim_set, active=True):  
+    """
+    This function selects a node starting from the direct neighbors of the given "node_id".
+    If no nodes meet the centrality and 'enable' condition, it expands the search to 
+    neighbors of neighbors (distance 2), then distance 3, etc., layer by layer.
+    
+    The node needs to be chosen randomly but we have weights favoring the 
+    betweenness centrality (the lowest betweenness centrality gets the highest weight).
+    """
+    rng = sim_set.rng_graph
+    actual_graph = graph_dict.get_main_graph() 
+
+    visited = {node_id}
+    
+    current_layer = list(actual_graph.neighbors(node_id))
+    adjacent_nodes_info_filtered = {}
+
+    while current_layer:
+        for n in current_layer:
+            visited.add(n) 
+            
+            bc = actual_graph.nodes[n].get('betweenness_centrality', 0)
+            enabled = actual_graph.nodes[n].get('enable', True)
+            
+            if enabled and bc <= centrality:
+                adjacent_nodes_info_filtered[n] = {
+                    'betweenness_centrality': bc,
+                    'enable': enabled
+                }
+        
+        if adjacent_nodes_info_filtered:
+            break
+            
+        next_layer = []
+        for n in current_layer:
+            for neighbor in actual_graph.neighbors(n):
+                if neighbor not in visited:
+                    next_layer.append(neighbor)
+                    visited.add(neighbor) 
+                    
+        current_layer = next_layer
+
+    if not adjacent_nodes_info_filtered:
+        direct_neighbors = [n for n in actual_graph.neighbors(node_id) if actual_graph.nodes[n].get('enable', True)]
+        
+        if direct_neighbors:
+            selection = rng.choice(direct_neighbors)
+            return int(selection)
+        else:
+            return node_id
+    
+    nodes = list(adjacent_nodes_info_filtered.keys())
+    centralities = [info['betweenness_centrality'] for info in adjacent_nodes_info_filtered.values()]
+    
+    epsilon = 0.0001
+    max_c = max(centralities) + epsilon
+    weights = [max_c - c for c in centralities]
+    probabilities = [w / sum(weights) for w in weights]
+    
     selection = rng.choice(nodes, p=probabilities, size=1)
 
     return int(selection[0])
