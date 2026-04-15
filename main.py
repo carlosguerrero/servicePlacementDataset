@@ -333,7 +333,7 @@ def generate_scenario(events_list, config, app_set, user_set, graph_dict, sim_se
     })
     save_simulation_step(sim_folder, 0, data)
 
-    total_iterations = 50
+    total_iterations = 500
     i = 1
     old_opt_placement, old_total_latency = None, None
     while events_list.events and i < total_iterations: # and global_time < 300
