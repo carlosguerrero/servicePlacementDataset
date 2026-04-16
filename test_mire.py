@@ -7,7 +7,10 @@ import numpy as np
 
 #%%
 path_mac = Path('/Users/mireia/PyProjects/servicePlacementDataset/Simulations_official/Sim_small85_two_apps_per_node')
-path_linux = Path('/home/gaim01/PyProjects/servicePlacementDataset/Simulations_official/Sim_small85_two_apps_per_node')
+# path_linux = Path('/home/gaim01/PyProjects/servicePlacementDataset/Simulations_official/Sim_small85_two_apps_per_node')
+path_linux = Path('/home/gaim01/PyProjects/servicePlacementDataset/Simulations_raw/Sim_20260416_131422')
+
+BIN_SIZE = 50
 
 folder_path = path_mac if path_mac.exists() else path_linux
 file_name = 'user_counts_log.csv'
@@ -66,8 +69,6 @@ def plot_action_histogram(df, actions_list, bin_size, colour='lightblue'):
     plt.grid(axis='y', linestyle='--', alpha=0.7)
     plt.tight_layout()
     plt.show()
-
-BIN_SIZE = 50
 
 # %%
 plot_action_histogram(df, ['move_user'], BIN_SIZE, 'violet')

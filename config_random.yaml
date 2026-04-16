@@ -67,7 +67,7 @@ attributes:
     centrality: 'rng.uniform(0.1, 1.0)'
     actions:
       remove_user:
-        distribution: 'rng.exponential(50)+20'
+        distribution: 'rng.exponential(120)' # Users stay for 120 time units on average
         action_params:
           event_set: None
       move_user:
@@ -88,7 +88,7 @@ attributes:
 
   new_object:
     new_user: 
-      distribution: 'rng.exponential(20)'
+      distribution: 'rng.exponential(4)' # A new user appears every 4 time units on average
       action_params:
         config: None
         app_set: None

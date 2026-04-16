@@ -12,7 +12,7 @@ import numpy as np
 
 from src import EventSet, generate_events, init_new_object, ApplicationSet, generate_random_apps, UserSet, generate_random_users, generate_infrastructure
 from src.simulationSet import SimulationSet
-from src import create_simulation_folder, save_simulation_step, prepare_simulation_data, add_and_log_user_count
+from src import create_simulation_folder, save_simulation_step, prepare_simulation_data, add_and_log_user_count, stop_simulation
 from src.utils.auxiliar_functions import get_random_from_range
 
 def load_config(config_path):
@@ -229,10 +229,11 @@ def difference_in_placement(old_placement, new_placement, old_latency, new_laten
         return results_dictionary
 
 def update_system_state(events_list, config, app_set, user_set, graph_dict, iteration, sim_folder, sim_set, csv_users):
-
+    # 1. Get the first event and update the global time
     first_event = events_list.get_first_event()
     events_list.global_time = first_event['time']
 
+    # 2. Prepare and save the state "before" before processing the event
     data = prepare_simulation_data({
         'graph': graph_dict.get_main_graph(),
         'graph_phase': 'before',
@@ -243,7 +244,7 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict, iter
     })
     save_simulation_step(sim_folder, iteration, data)
     
-    # Identify which set we need to update based on 'type_object': user, app, graph
+    # 3. Identify which set we need to update based on 'type_object': user, app, graph
     set_map = {
         'user': user_set,
         'app': app_set,
@@ -253,35 +254,20 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict, iter
     if not target_object:
         raise ValueError(f"Unknown object type: {first_event['type_object']}")
     
+    # 4. Apply the action method to update the state of the system
     events_list.update_event_params(first_event['id'], config, app_set, user_set, graph_dict, sim_set)
     params = first_event['action_params']
-
-    print("Time event:", first_event['time'])
     action_method = getattr(target_object, first_event['action'])
     message = action_method(first_event['object_id'], params)
-
-    # If the action returned a human-readable message, save it in the event
     if isinstance(message, str):
         first_event['message'] = message
         print("Processing event:", message)
-    
-    # Stop the program in case apps, users, active nodes or active edges is empty
-    if not app_set.get_all_apps():
-        print("\nSTOPPING THE SIMULATION:  No applications available after processing the event.")
-        sys.exit()
-    if not user_set.get_all_users():
-        print("\nSTOPPING THE SIMULATION:  No users available after processing the event.")
-        sys.exit()
-    active_nodes = graph_dict.get_active_nodes()
-    if not active_nodes:
-        print("\nSTOPPING THE SIMULATION:  No active nodes in the graph after processing the event.")
-        sys.exit()
-    active_edges = graph_dict.get_active_edges()
-    if not active_edges:
-        print("\nSTOPPING THE SIMULATION:  No active edges in the graph after processing the event.")
-        sys.exit()
 
-    optimal_placement, total_latency = solve_application_placement(graph_dict, app_set, user_set)
+    stop_simulation(app_set, user_set, graph_dict)
+    
+    # 5. Prepare and save the state "after" after processing the event
+    # DESCOMENTAR: optimal_placement, total_latency = solve_application_placement(graph_dict, app_set, user_set)
+    optimal_placement, total_latency = 0, 0
 
     node_information_and_placement_message = {}
     for node, feat in graph_dict.get_main_graph().nodes(data=True):
@@ -366,7 +352,6 @@ def main():
     for app, feat in generated_apps.get_all_apps().items():
         print(f"App {app}: name={feat.get('name')}, popularity={feat.get('popularity')}, CPU={feat.get('cpu')}, Disk={feat.get('disk')}, RAM={feat.get('ram')}, time={feat.get('time_to_run')}")
 
-    # BORRAR: generated_users = generate_random_users(config, generated_apps, generated_infrastructure, generated_events, sim_set)
     print("\nUSERS:")
     for user_id, user_data in generated_users.get_all_users().items():
         print(f"User {user_id}: name={user_data.get('name')}, requestedApp={user_data.get('requestedApp')}, appName={user_data.get('appName')}, requestRatio={user_data.get('requestRatio')}, connectedTo={user_data.get('connectedTo')}, centrality={user_data.get('centrality')}")

@@ -3,4 +3,4 @@ from .appSet import ApplicationSet, generate_random_apps
 from .userSet import UserSet, generate_random_users, create_new_user
 from .infrastructure import InfrastructureSet, _generate_random_graph, generate_infrastructure
 from .simulationSet import SimulationSet
-from .simulation import create_simulation_folder, save_simulation_step, prepare_simulation_data, add_and_log_user_count
+from .simulation import create_simulation_folder, save_simulation_step, prepare_simulation_data, add_and_log_user_count, stop_simulation
