@@ -67,28 +67,28 @@ attributes:
     centrality: 'rng.uniform(0.1, 1.0)'
     actions:
       remove_user:
-        distribution: 'rng.exponential(120)' # Users stay for 120 time units on average
+        distribution: 'rng.exponential(300)' # Users stay for 120 time units on average
         action_params:
           event_set: None
       move_user:
-        distribution: 'rng.uniform(0, 50)'
+        distribution: 'rng.exponential(120)'
         action_params: 
           infrastructure: None
           sim_set: None
       increase_request_ratio:
-        distribution: 'rng.uniform(0, 300)'
+        distribution: 'rng.exponential(90)'
         action_params:
           multiplier: 'rng.uniform(1, 3)'
           sim_set: None
       decrease_request_ratio: 
-        distribution: 'rng.uniform(0, 300)'
+        distribution: 'rng.exponential(90)'
         action_params:
-          multiplier: 'rng.uniform(0, 1)'
+          multiplier: 'rng.uniform(0.2, 1)'
           sim_set: None
 
   new_object:
     new_user: 
-      distribution: 'rng.exponential(4)' # A new user appears every 4 time units on average
+      distribution: 'rng.exponential(30)' # A new user appears every 4 time units on average
       action_params:
         config: None
         app_set: None
