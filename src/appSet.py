@@ -1,7 +1,6 @@
 import random
 import uuid
 
-# BORRAr from utils import get_random_from_range, selectRandomAction
 from .utils.auxiliar_functions import get_random_from_range, selectRandomAction
 from .eventSet import EventSet, generate_events
 from .userSet import UserSet, create_new_user
@@ -40,22 +39,6 @@ class ApplicationSet:
         # Select a random application based on the normalized popularity
         selected_app = random_app.choices(list(normalized_popularity.keys()), weights=normalized_popularity.values(), k=1)[0]
         return selected_app
-    
-    # BORRAR
-    def selectRandomAppIdByPopularity2(self, popularity, sim_set):
-        """Selects a random application based on its popularity."""
-        selected_apps = [app for app in self.applications.values() if app['popularity'] >= popularity]
-        print("SELECTED APPS IS", selected_apps)
-        if selected_apps:
-            rndApp = sim_set.parse_distribution('rng.choice(selected_apps)', context='app')
-            # BORRAR: rndApp = sim_set.random.choice(selected_apps)
-            return rndApp['id']
-        # If no applications meet the popularity criteria, return any random application to satisfy requirement of 
-        # all the users should have an application to request  
-        selected_apps = [app for app in self.applications.values()]
-        # BORRAR: rndApp = sim_set.random.choice(selected_apps)
-        rndApp = sim_set.parse_distribution('rng.choice(selected_apps)', context='app')
-        return rndApp['id']
     
     def selectRandomAppIdByPopularity(self, popularity, sim_set):
         """Selects a random application based on its popularity."""
@@ -207,34 +190,6 @@ def create_new_app(config, application_set, event_set, sim_set):
     # DESCOMENTAR: generate_events(appAttributes, 'app', event_set, sim_set)
 
     return appAttributes['ram']
-
-# BORRAR: antigua
-def generate_random_apps2(config, event_set, sim_set):
-    """
-    Generates a list of random applications with random resource requirements.
-
-    Args:
-        num_apps (int): The number of applications to generate.
-        **kwargs: Additional arguments to customize the application generation.
-
-    Returns:
-        list: A list of dictionaries representing the generated applications.
-    """
-    application_set = ApplicationSet()
-
-    attributes = config.get('attributes', {})
-    app_conf = attributes.get('app', {})
-    num_apps = app_conf.get('num_apps', 1)
-
-    for i in range(num_apps):
-        create_new_app(config, application_set, event_set, sim_set)
-
-        created_app_id = list(app_set.applications)[-1]
-
-        for i in range(num_new_users):
-            create_new_user(config, app_set, infrastructure, user_set, event_set, sim_set, created_app_id)
-
-    return application_set
 
 def generate_random_apps(config, event_set, sim_set, infrastructure, num_apps=None, saturation_percentage=None):
     """

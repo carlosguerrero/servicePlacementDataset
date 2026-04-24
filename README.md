@@ -41,6 +41,7 @@ The simulator is fully YAML-driven and fully seeded: every stochastic decision i
 ├── main.py                  # Simulation entry point and ILP solver
 ├── config_random.yaml       # Random-graph configuration (default)
 ├── config_manual.yaml       # Manually-defined topology (optional)
+├── Documents                # Contains the Excel that explains the config YAML doc and some cited Research Papers
 ├── visual_results.py        # Plots from the CSV log
 ├── pyproject.toml
 ├── .python-version

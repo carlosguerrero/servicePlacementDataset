@@ -20,86 +20,6 @@ def load_config(config_path):
     with open(config_path, 'r') as file:
         return yaml.safe_load(file)
 
-# BORRAR: versión original de Carlos
-def solve_application_placement_carlos(graph, application_set, user_set):
-    """Solves the application placement problem using ILP."""
-    applications = application_set.get_all_apps()
-    nodes = list(graph.nodes())
-    users = user_set.get_all_users()
-
-    # Pre-calculate all-pairs shortest paths based on 'delay'
-    # This is crucial for efficient latency calculation in the objective function
-    try:
-        # Check if the graph is connected. If not, shortest_path_length might fail for some pairs.
-        # For disconnected graphs, consider infinite delay or a large penalty.
-        # Here, we assume connectivity for all relevant pairs.
-        all_pairs_shortest_paths = dict(nx.all_pairs_dijkstra_path_length(graph, weight='delay'))
-    except nx.NetworkXNoPath:
-        print("Warning: Graph is disconnected. Some shortest paths might not exist.")
-        # Handle disconnected components if necessary, e.g., by assigning a very large delay
-        all_pairs_shortest_paths = {} # Fallback
-
-    # Decision variable: Is application 'a' placed on node 'n'? (Binary: 0 = no, 1 = yes)
-    x_an = LpVariable.dicts("Place", [(app_id, node) for app_id in applications for node in nodes], cat='Binary')
-
-    # Objective function: Minimize the total weighted latency
-    prob = LpProblem("Application_Placement", LpMinimize)
-
-    # The objective is built directly using the pre-calculated shortest paths
-    objective_terms = []
-    for user_id, user_data in users.items():
-        requested_app_id = user_data['requestedApp']
-        user_home_node = user_data['connectedTo']
-
-        if requested_app_id and user_home_node is not None:
-            # Sum over all possible placement nodes for the requested app
-            # Only one x_an for a given requested_app_id will be 1
-            for node_app_placed in nodes:
-                # Get the delay from the user's home node to the node where the app is placed
-                delay_value = all_pairs_shortest_paths.get(user_home_node, {}).get(node_app_placed, float('inf'))
-                # Add term: (delay * request_ratio * x_an)
-                objective_terms.append(delay_value * user_data['requestRatio'] * x_an[requested_app_id, node_app_placed])
-        
-    prob += lpSum(objective_terms), "Total Weighted Latency"
-
-    # Constraint 1: Each application is placed on exactly one node
-    for app_id in applications:
-        prob += lpSum(x_an[app_id, node] for node in nodes) == 1, f"PlacementConstraint_{app_id}"
-
-    # Constraint 2: Total RAM used on a node does not exceed its capacity
-    for node in nodes:
-        prob += lpSum(applications[app_id]['ram'] * x_an[app_id, node] for app_id in applications) <= graph.nodes[node]['ram'], f"RAMConstraint_{node}"
-
-    # Solve the ILP problem
-    prob.solve(PULP_CBC_CMD(msg=0)) # msg=0 to suppress solver output
-
-    if LpStatus[prob.status] == "Optimal":
-        print("\nOptimal Application Placement Found:")
-        placement = {}
-        total_ram_used_per_node = {node: 0.0 for node in nodes}
-        for app_id, app_data in applications.items():
-            for node in nodes:
-                if value(x_an[app_id, node]) == 1:
-                    placement[app_data['name']] = node
-                    total_ram_used_per_node[node] += app_data['ram']
-                    break
-
-        # Update the graph nodes with the placement information
-        #for node in nodes:
-        #    graph.nodes[node]['running_applications'] = [] # Reset before updating
-        #    graph.nodes[node]['ram_used'] = 0.0 # Reset before updating
-
-        #for app_id, app_data in applications.items():
-        #    for node in nodes:
-        #        if value(x_an[app_id, node]) == 1:
-        #            graph.nodes[node]['running_applications'].append(app_id)
-        #            graph.nodes[node]['ram_used'] += app_data['ram'] # Already accumulated in total_ram_used_per_node, but update node attribute
-
-        return placement, value(prob.objective)
-    else:
-        print(f"No Optimal Solution Found. Status: {LpStatus[prob.status]}")
-        return None, None
-
 def solve_application_placement(graph_dict, application_set, user_set):
     PENALTY_DELAY = 1_000_000 
     graph = graph_dict.get_main_graph() 
@@ -266,7 +186,7 @@ def update_system_state(events_list, config, app_set, user_set, graph_dict, iter
     stop_simulation(app_set, user_set, graph_dict)
     
     # 5. Prepare and save the state "after" after processing the event
-    # DESCOMENTAR: optimal_placement, total_latency = solve_application_placement(graph_dict, app_set, user_set)
+    optimal_placement, total_latency = solve_application_placement(graph_dict, app_set, user_set)
     optimal_placement, total_latency = 0, 0
 
     node_information_and_placement_message = {}
@@ -346,7 +266,7 @@ def main():
 
     num_apps = config.get('attributes', {}).get('app', {}).get('num_apps')
     saturation_percen = config.get('attributes', {}).get('app', {}).get('saturation_percentage')
-    # BORRAR: generated_apps = generate_random_apps(config, generated_events, sim_set)
+    # DELETE: generated_apps = generate_random_apps(config, generated_events, sim_set)
     generated_apps, generated_users = generate_random_apps(config, generated_events, sim_set, generated_infrastructure, num_apps=None, saturation_percentage=saturation_percen)
     print("\nAPPS:")
     for app, feat in generated_apps.get_all_apps().items():

@@ -306,7 +306,7 @@ def _generate_random_graph(config, event_set, sim_set):
     
     return graph_set
 
-# BORRAR: por ahora lo dejo estar
+# We can DELETE this function if we decide not to implement manual graph creation, but I left it here for now in case we want to add that feature later without much hassle
 def _generate_manual_graph(config):
     print("  [Manual Mode] Building graph from defined topology...")
     graph = InfrastructureSet()
