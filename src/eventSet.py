@@ -125,6 +125,8 @@ def generate_events(object_item, type_object, event_set, sim_set):
     for action_name, action_details in actions_dict.items():
         distribution_str = action_details.get('distribution', '0')
         delay_val = sim_set.parse_distribution(distribution_str, context=type_object)
+        if delay_val is None:
+            delay_val = 0.0
         
         eventAttributes = event_set.newEventItem(
             object_id=obj_id,
@@ -144,10 +146,13 @@ def init_new_object(config, event_set, sim_set):
     new_object_conf = attributes.get('new_object', {})
     for action, type_conf in new_object_conf.items():
         type_object=action.removeprefix("new_")
+        delay_val = sim_set.parse_distribution(type_conf['distribution'], context=type_object)
+        if delay_val is None:
+            delay_val = 0.0
         eventAttributes = event_set.newEventItem(
             object_id=None,
             type_object=type_object,
-            time = round(sim_set.parse_distribution(type_conf['distribution'], context=type_object), 2) + event_set.global_time, 
+            time = round(delay_val, 2) + event_set.global_time, 
             action = action,
             action_params = type_conf['action_params']
         )
@@ -175,10 +180,14 @@ def get_time(config, type_object, action_name, sim_set):
     if distr_string:
         try:
             # explicit dictionary ensures eval has access to the 'random' module
-            return sim_set.parse_distribution(distr_string, context=type_object)
+            parsed = sim_set.parse_distribution(distr_string, context=type_object)
+            if parsed is None:
+                parsed = 0.0
+            return parsed
         except Exception as e:
             print(f"Error evaluating distribution '{distr_string}' for {action_name}: {e}")
             return 0.0
                 
-    return False
+    # No distribution found -> no additional delay
+    return 0.0
 

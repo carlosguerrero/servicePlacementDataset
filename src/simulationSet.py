@@ -19,7 +19,9 @@ class SimulationSet:
         if context == 'graph':
             return self.rng_graph
         if context == 'graph_creation':
-            return self.seed_graph_creation
+            # Backwards-compat: use the same RNG as 'graph' generation.
+            # (Previously referenced a non-existent attribute.)
+            return self.rng_graph
         elif context == 'app':
             return self.rng_app
         elif context == 'user':

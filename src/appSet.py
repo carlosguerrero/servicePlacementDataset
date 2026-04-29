@@ -222,6 +222,9 @@ def generate_random_apps(config, event_set, sim_set, infrastructure, num_apps=No
             created_app_id = list(application_set.applications)[-1]
 
             num_users_per_app = sim_set.parse_distribution(app_conf.get('num_new_users', 1), context='app')
+            if num_users_per_app is None:
+                num_users_per_app = 0
+            num_users_per_app = int(num_users_per_app)
             for _ in range(num_users_per_app):
                 create_new_user(config, application_set, infrastructure, user_set, event_set, sim_set, created_app_id)
 
@@ -233,12 +236,17 @@ def generate_random_apps(config, event_set, sim_set, infrastructure, num_apps=No
 
     # CASE when I am given the number of apps to generate
     elif num_apps is not None:
-        for i in range(num_apps):
+        num_users_per_app = sim_set.parse_distribution(app_conf.get('num_new_users', 1), context='app')
+        if num_users_per_app is None:
+            num_users_per_app = 0
+        num_users_per_app = int(num_users_per_app)
+
+        for _ in range(num_apps):
             create_new_app(config, application_set, event_set, sim_set)
 
             created_app_id = list(application_set.applications)[-1]
 
-            for i in range(num_users_per_app):
+            for _ in range(num_users_per_app):
                 create_new_user(config, application_set, infrastructure, user_set, event_set, sim_set, created_app_id)
     
     else:

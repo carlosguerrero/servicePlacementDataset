@@ -7,6 +7,9 @@ import networkx as nx
 import csv
 import os
 
+class SimulationStopped(Exception):
+    """Raised to stop a simulation run when the system reaches a terminal condition."""
+
 def add_and_log_user_count(user_set, i, csv_users, action):
     """
     Writes the latest user count to a CSV after the event has been processed and the system state has been updated.
@@ -58,6 +61,8 @@ def save_simulation_step(folder_path, iteration, data):
     graph_phase_from_data = None
 
     if isinstance(data, dict):
+        # Avoid mutating caller-owned dict via `pop()`
+        data = dict(data)
         graph_obj = data.pop('graph', None)
         graph_phase_from_data = data.pop('graph_phase', None)
 
@@ -244,15 +249,15 @@ def stop_simulation(app_set, user_set, graph_dict):
     """
     if not app_set.get_all_apps():
         print("\nSTOPPING THE SIMULATION:  No applications available after processing the event.")
-        sys.exit()
+        raise SimulationStopped("No applications available after processing the event.")
     if not user_set.get_all_users():
         print("\nSTOPPING THE SIMULATION:  No users available after processing the event.")
-        sys.exit()
+        raise SimulationStopped("No users available after processing the event.")
     active_nodes = graph_dict.get_active_nodes()
     if not active_nodes:
         print("\nSTOPPING THE SIMULATION:  No active nodes in the graph after processing the event.")
-        sys.exit()
+        raise SimulationStopped("No active nodes in the graph after processing the event.")
     active_edges = graph_dict.get_active_edges()
     if not active_edges:
         print("\nSTOPPING THE SIMULATION:  No active edges in the graph after processing the event.")
-        sys.exit()
+        raise SimulationStopped("No active edges in the graph after processing the event.")

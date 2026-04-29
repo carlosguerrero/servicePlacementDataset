@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import os
 from pathlib import Path
-import numpy as np
 
 #%%
 path_mac = Path('/Users/mireia/PyProjects/servicePlacementDataset/Simulations_official/Sim_small85_two_apps_per_node')
@@ -12,34 +11,40 @@ path_linux = Path('/home/gaim01/PyProjects/servicePlacementDataset/Simulations_r
 
 BIN_SIZE = 50
 
-folder_path = path_mac if path_mac.exists() else path_linux
-file_name = 'user_counts_log.csv'
-image_name = 'user_count_graph.png'
+def main() -> None:
+    folder_path = path_mac if path_mac.exists() else path_linux
+    file_name = 'user_counts_log.csv'
+    image_name = 'user_count_graph.png'
 
-file_path = f"{folder_path}/{file_name}"
-full_path_image = os.path.join(folder_path, image_name)
+    file_path = f"{folder_path}/{file_name}"
+    full_path_image = os.path.join(folder_path, image_name)
 
-df = pd.read_csv(file_path)
+    df = pd.read_csv(file_path)
 
-x = df.iloc[:, 0]
-y = df.iloc[:, 1]
+    x = df.iloc[:, 0]
+    y = df.iloc[:, 1]
 
- #%%
- # EVOLUTION OF USERS
-plt.figure(figsize=(10, 6))
-plt.plot(x, y, label='User Counts')
+    # EVOLUTION OF USERS
+    plt.figure(figsize=(10, 6))
+    plt.plot(x, y, label='User Counts')
 
-plt.xlabel('Iteration')
-plt.ylabel('Number of users')
-plt.title('User Counts Over Iterations')
-plt.legend()
-plt.grid(False)
+    plt.xlabel('Iteration')
+    plt.ylabel('Number of users')
+    plt.title('User Counts Over Iterations')
+    plt.legend()
+    plt.grid(False)
 
-plt.savefig(full_path_image)
-plt.show()
+    plt.savefig(full_path_image)
+    plt.show()
 
-# %%
-plt.savefig(full_path_image)
+    # Keep a second save for backwards-compatibility with older manual usage
+    plt.savefig(full_path_image)
+
+    # Action histograms
+    plot_action_histogram(df, ['move_user'], BIN_SIZE, 'violet')
+    plot_action_histogram(df, ['remove_user'], BIN_SIZE, 'lightgray')
+    plot_action_histogram(df, ['new_user'], BIN_SIZE, 'lightgreen')
+    plot_action_histogram(df, ['increase_request_ratio', 'decrease_request_ratio'], BIN_SIZE, 'lightcoral')
 
 
 # %%
@@ -71,9 +76,5 @@ def plot_action_histogram(df, actions_list, bin_size, colour='lightblue'):
     plt.show()
 
 # %%
-plot_action_histogram(df, ['move_user'], BIN_SIZE, 'violet')
-plot_action_histogram(df, ['remove_user'], BIN_SIZE, 'lightgray')
-plot_action_histogram(df, ['new_user'], BIN_SIZE, 'lightgreen')
-plot_action_histogram(df, ['increase_request_ratio', 'decrease_request_ratio'], BIN_SIZE, 'lightcoral')
-
-# %%
+if __name__ == "__main__":
+    main()
