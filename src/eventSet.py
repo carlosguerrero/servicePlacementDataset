@@ -2,63 +2,49 @@ import uuid
 import random
 import copy
 import numpy as np
+import logging
+from typing import Any, Dict, List, Optional
+
+logger = logging.getLogger(__name__)
 
 
 class EventSet:
-    def __init__(self):
-        self.events = {}
-        self.global_time = 0
+    def __init__(self) -> None:
+        self.events: Dict[str, Dict[str, Any]] = {}
+        self.global_time: float = 0.0
     
-    def get_first_event(self):
+    def get_first_event(self) -> Optional[Dict[str, Any]]:
         if not self.events:
             return None
         
         min_id = min(self.events, key=lambda k: self.events[k]['time'])
         return self.events[min_id]
 
-    def newEventItem(self, type_object, object_id, time, action, action_params):
+    def newEventItem(self, type_object: str, object_id: Optional[str], time: float, action: str, impact: Dict[str, Any]) -> Dict[str, Any]:
         return {
             'type_object': type_object,
             'object_id': object_id,
             'time': time,
             'action': action,
-            'action_params': action_params,
+            'impact': impact,
             'message': None
         }
     
-    def add_event(self, eventAttributes):
+    def add_event(self, eventAttributes: Dict[str, Any]) -> str:
         event_id = str(uuid.uuid4()) 
         eventAttributes['id'] = event_id
         self.events[event_id] = eventAttributes
         return event_id
     
-    def remove_event(self, event_id):
+    def remove_event(self, event_id: str) -> bool:
         if event_id in self.events:
             del self.events[event_id]
             return True
         return False
 
-    def update_event_params(self, event_id, config, app_set, user_set, graph_dict, sim_set):
-        event = self.events[event_id]
-        params = event.get('action_params')
 
-        if not isinstance(params, dict):
-            return
 
-        params_map = {
-            'infrastructure': graph_dict,
-            'config': config,
-            'app_set': app_set,
-            'user_set': user_set,
-            'event_set': self,
-            'sim_set': sim_set
-        }
-
-        for key, obj_value in params_map.items():
-            if key in params:
-                params[key] = obj_value
-
-    def remove_events_by_object_id(self, object_id):
+    def remove_events_by_object_id(self, object_id: str) -> None:
         events_to_delete = [
             event_id
             for event_id, value in self.events.items()
@@ -68,50 +54,42 @@ class EventSet:
         for event_id in events_to_delete:
             self.remove_event(event_id)
     
-    def update_event_time_and_none_params(self, event_id, config, sim_set):
+    def update_event_time(self, event_id: str, config: Dict[str, Any], sim_set: Any) -> None:
         # Update time
         if event_id not in self.events.keys():
-            print("The event was deleted from event_list")
+            logger.debug("The event was deleted from event_list")
             return
         
+        impact = self.events[event_id].get('impact') or {}
+        is_implicit = impact.get('is_implicit', False)
+        if is_implicit:
+            self.remove_event(event_id)
+            logger.debug(f"Implicit event {event_id} removed after execution")
+            return
+
         # We just need to get a new time from config + global_time
         actual_type_object = self.events[event_id]['type_object']
         actual_action = self.events[event_id]['action']
-        self.events[event_id]['time'] = get_time(config, actual_type_object, actual_action, sim_set) + self.global_time
         
-        print(f"Updated time for event {event_id}: {self.events[event_id]['time']}")
-        # print("Update event list después update:", self)
-
-        # Change parameters of the event back to None
-        event = self.events[event_id]
-        params = event.get('action_params')
-
-        if not isinstance(params, dict):
+        delay = get_time(config, actual_type_object, actual_action, sim_set)
+        if delay == 0.0:
+            self.remove_event(event_id)
+            logger.debug(f"Event {event_id} removed because it has no recurring frequency")
             return
+            
+        self.events[event_id]['time'] = delay + self.global_time
+        logger.debug(f"Updated time for event {event_id}: {self.events[event_id]['time']}")
 
-        params_map = {
-            'infrastructure': None,
-            'config': None,
-            'app_set': None,
-            'user_set': None,
-            'event_set': None,
-            'sim_set': None
-        }
-
-        for key, obj_value in params_map.items():
-            if key in params:
-                params[key] = obj_value
-
-    def __str__(self):
-        """Returns a string representation of the EventSet (the events list) without action_params."""
+    def __str__(self) -> str:
+        """Returns a string representation of the EventSet (the events list) without impact."""
         events_to_print = {}
         for event_id, event in self.events.items():
-            event_copy = {k: v for k, v in event.items() if k != 'action_params'}
+            event_copy = {k: v for k, v in event.items() if k != 'impact'}
             events_to_print[event_id] = event_copy
         return str(events_to_print)
         # return str(self.events)
 
-def generate_events(object_item, type_object, event_set, sim_set):
+def generate_events(object_item: Dict[str, Any], type_object: str, event_set: EventSet, sim_set: Any) -> EventSet:
     """
     object_item: A dictionary containing {'id': ..., 'actions': ...} 
                  (Works for User items, App items, and the new Infrastructure items)
@@ -123,62 +101,71 @@ def generate_events(object_item, type_object, event_set, sim_set):
     actions_dict = object_item['actions']
 
     for action_name, action_details in actions_dict.items():
-        distribution_str = action_details.get('distribution', '0')
+        distribution_str = action_details.get('frequency', '0')
         delay_val = sim_set.parse_distribution(distribution_str, context=type_object)
+        if delay_val is None:
+            delay_val = 0.0
         
         eventAttributes = event_set.newEventItem(
             object_id=obj_id,
             type_object=type_object,
             time=round(delay_val, 2) + event_set.global_time,
             action=action_name,
-            action_params=copy.deepcopy(action_details.get('action_params', {}))  # Use deepcopy
+            impact=copy.deepcopy(action_details.get('impact', {}))  # Use deepcopy
         )
         event_set.add_event(eventAttributes)
 
     return event_set
 
-def init_new_object(config, event_set, sim_set):
+def init_global_spawner(config: Dict[str, Any], event_set: EventSet, sim_set: Any) -> EventSet:
     """Initializes events for creating new objects (users and apps) based on the configuration.
     type_object: 'user' or 'app'"""
-    attributes = config.get('attributes', {})
-    new_object_conf = attributes.get('new_object', {})
-    for action, type_conf in new_object_conf.items():
+    attributes = config
+    global_spawner_conf = attributes.get('global_spawner', {})
+    for action, type_conf in global_spawner_conf.items():
         type_object=action.removeprefix("new_")
+        delay_val = sim_set.parse_distribution(type_conf['frequency'], context=type_object)
+        if delay_val is None:
+            delay_val = 0.0
         eventAttributes = event_set.newEventItem(
             object_id=None,
             type_object=type_object,
-            time = round(sim_set.parse_distribution(type_conf['distribution'], context=type_object), 2) + event_set.global_time, 
+            time = round(delay_val, 2) + event_set.global_time, 
             action = action,
-            action_params = type_conf['action_params']
+            impact = type_conf.get('impact')
         )
         event_set.add_event(eventAttributes)
 
     return event_set
 
-def get_time(config, type_object, action_name, sim_set):
+def get_time(config: Dict[str, Any], type_object: str, action_name: str, sim_set: Any) -> float:
     """
     Retrieves a time value by evaluating the distribution string 
     found in the config file for a specific object and action.
     """
-    attributes = config.get('attributes', {})
+    attributes = config
 
     if action_name.startswith('new'):
-        obj_conf = attributes.get('new_object', {})
+        obj_conf = attributes.get('global_spawner', {})
         actions_conf = obj_conf.get(action_name, {})
-        distr_string = actions_conf.get('distribution')
+        distr_string = actions_conf.get('frequency')
     else:
         obj_conf = attributes.get(type_object, {})
         actions_conf = obj_conf.get('actions', {})
         specific_action_conf = actions_conf.get(action_name, {})
-        distr_string = specific_action_conf.get('distribution')
+        distr_string = specific_action_conf.get('frequency')
         
     if distr_string:
         try:
             # explicit dictionary ensures eval has access to the 'random' module
-            return sim_set.parse_distribution(distr_string, context=type_object)
+            parsed = sim_set.parse_distribution(distr_string, context=type_object)
+            if parsed is None:
+                parsed = 0.0
+            return parsed
         except Exception as e:
-            print(f"Error evaluating distribution '{distr_string}' for {action_name}: {e}")
+            logger.error(f"Error evaluating distribution '{distr_string}' for {action_name}: {e}")
             return 0.0
                 
-    return False
+    # No distribution found -> no additional delay
+    return 0.0
 

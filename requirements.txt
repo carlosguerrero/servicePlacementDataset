@@ -1,0 +1,4 @@
+networkx==3.6.1
+numpy==2.4.6
+PuLP==3.3.2
+PyYAML==6.0.3

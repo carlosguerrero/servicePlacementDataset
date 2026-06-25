@@ -1,109 +1,238 @@
 setup:
   mode: random
-  num_nodes: 10
-  graph_model: 'barabasi_albert' 
+  ilp_solver:
+    timeLimit: 60
+    gapRel: 0.05
+    objective: multi-objective # can be single-objective or multi-objective
+    weights:
+      latency: 1.0
+      migration: 100.0
+      server_usage: 50.0  # Tolerancia relativa para el óptimo (ej: 0.05 = 5%). Evita time-outs en modos complejos o en modo monolithic.
 
-model_params:
-  m: 2
+trigger_policy:
+  type: solve_all
+  # Ejemplo de politica periodica (solve_every_t_seconds)
+  # interval_seconds: 10.0
+  # Ejemplo de politica combinada:
+  # type: combined
+  # critical_events: ["disable_node", "disable_edge", "update_app", "surge_popularity"]
+  # interval_seconds: 10.0
 
-attributes:
-  graph:
+infrastructure:
+  num_nodes: 50
+  model:
+    name: scale_free
+    m: 2
+    layer:
+      mode: centrality_based_layer
+      thresholds:
+        cloud_min: 0.1
+        fog_min: 0.02
+
+
+  node:
     actions:
-      disable_random_node:
-        distribution: 'rng.uniform(0, 300)'
-        action_params: 
-          event_set: None
-          distribution_to_enable_node: 'rng.uniform(0, 100)'
-          sim_set: None
-      
-      disable_random_edge:
-        distribution: 'rng.uniform(0, 300)'
-        action_params: 
-          event_set: None
-          distribution_to_enable_edge: 'rng.uniform(0, 100)'
-          sim_set: None
-          
-    node:
-      ram: 'rng.pareto(1.16, {num_nodes})'
-      min_ram: 8.0
-      max_ram: 16.0
-
-    edge:
-      delay: 'rng.uniform(0.1, 5.0)'
-  
-  app:
-    num_apps: 20
-    saturation_percentage: 80
-    popularity: 'rng.uniform(0.1, 1.0)'
-    cpu: 'rng.uniform(0.1, 4.0)'
-    ram: 'rng.uniform(4.0, 4.5)'
-    disk: 'rng.uniform(10, 100)'
-    time: 'rng.uniform(0, 300)'
-    num_new_users: 'rng.integers(1, 6)'
-    actions: 
-      remove_app:
-        distribution: 'rng.uniform(0, 300)'
-        action_params: 
-          user_set: None
-          event_set: None
-      increase_popularity:
-        distribution: 'rng.uniform(0, 300)'
-        action_params:
-          multiplier: 'rng.uniform(1, 3)'
-          user_set: None
-          sim_set: None
-      decrease_popularity: 
-        distribution: 'rng.uniform(0, 300)'
-        action_params:
-          multiplier: 'rng.uniform(0, 1)'
-          user_set: None
-          sim_set: None
-    
-  user:
-    num_users: 2
-    request_ratio: 'rng.exponential(5)'
-    request_popularity: 'rng.uniform(0.1, 1.0)'
-    centrality: 'rng.uniform(0.1, 1.0)'
+      disable_node:
+        frequency:
+          type: uniform
+          low: 0
+          high: 300
+        impact:
+          distribution_to_enable_node:
+            type: uniform
+            low: 0
+            high: 100
+      degrade_node:
+        frequency:
+          type: exponential
+          scale: 150
+        impact:
+          p_loss_dist:
+            type: beta
+            a: 2
+            b: 5
+          distribution_to_restore_node:
+            type: exponential
+            scale: 50
+    attributes:
+      ram:
+        mode: centrality_based
+        centrality_type: direct_proportional
+        distribution:
+          type: pareto
+          a: 1.16
+        min: 8.0
+        max: 16.0
+        cloud:
+          distribution:
+            type: uniform
+            low: 100000.0
+            high: 100000.0
+  edge:
     actions:
-      remove_user:
-        distribution: 'rng.exponential(300)' # Users stay for 120 time units on average
-        action_params:
-          event_set: None
-      move_user:
-        distribution: 'rng.exponential(120)'
-        action_params: 
-          infrastructure: None
-          sim_set: None
-      increase_request_ratio:
-        distribution: 'rng.exponential(90)'
-        action_params:
-          multiplier: 'rng.uniform(1, 3)'
-          sim_set: None
-      decrease_request_ratio: 
-        distribution: 'rng.exponential(90)'
-        action_params:
-          multiplier: 'rng.uniform(0.2, 1)'
-          sim_set: None
+      disable_edge:
+        frequency:
+          type: uniform
+          low: 0
+          high: 300
+        impact:
+          distribution_to_enable_edge:
+            type: uniform
+            low: 0
+            high: 100
+      congest_edge:
+        frequency:
+          type: exponential
+          scale: 150
+        impact:
+          p_loss_dist:
+            type: beta
+            a: 2
+            b: 5
+          m_lat_dist:
+            type: lognormal
+            mean: 0.5
+            sigma: 0.2
+          distribution_to_clear_edge:
+            type: exponential
+            scale: 50
+    attributes:
+      delay:
+        mode: homogenic
+        distribution:
+          type: uniform
+          low: 0.1
+          high: 5.0
+app:
+  num_apps: 20
+  architecture: monolithic
+  sfc:
+    length_range: [2, 6]
+    profiles:
+      iot:
+        prob: 0.6
+        cpu_lognorm: [0.1, 0.5]
+        ram_lognorm: [0.1, 0.5]
+      video:
+        prob: 0.4
+        cpu_lognorm: [2.0, 1.0]
+        ram_lognorm: [3.0, 1.5]
+  popularity:
+    model: "zipf"
+    alpha: 1.2
+    local_app_ratio: 0.3
+    local_radius_influence: 0.15
+  num_new_users:
+    type: integers
+    low: 1
+    high: 6
+  actions:
+    remove_app:
+      frequency:
+        type: uniform
+        low: 0
+        high: 300
+    update_app:
+      frequency:
+        type: exponential
+        scale: 100
+      impact:
+        sigma_footprint: 0.1
+        sigma_net: 0.1
+        p_topo: 0.15
+        l_min: 2
+        l_max_global: 6
+    surge_popularity:
+      frequency:
+        type: exponential
+        scale: 200
+      impact:
+        transient_prob: 0.7
+        weibull_shape: 1.5
+        weibull_scale: 10.0
+    drop_popularity:
+      frequency:
+        type: exponential
+        scale: 200
+      impact:
+        transient_prob: 0.7
+        weibull_shape: 1.5
+        weibull_scale: 10.0
+    geo_demand_shift:
+      frequency:
+        type: exponential
+        scale: 50
+      impact:
+        jump_prob: 0.2
+        sigma_drift: 0.05
 
-  new_object:
-    new_user: 
-      distribution: 'rng.exponential(30)' # A new user appears every 4 time units on average
-      action_params:
-        config: None
-        app_set: None
-        user_set: None
-        infrastructure: None
-        event_set: None
-        sim_set: None
+user:
+  num_users: 2
+  spatial_distribution:
+    model: thomas_cluster
+    hotspots: 5
+    spread: 0.05
+  spatial_region:
+    width: 2.0
+    height: 2.0
+    num_vertical_streets: 10
+    num_horizontal_streets: 10
+  mobility:
+    model: random
+    turn_probabilities:
+      straight: 0.33
+      left: 0.33
+      right: 0.34
+    speed:
+      type: uniform
+      low: 0.005
+      high: 0.02
+    coverage_radius:
+      type: normal
+      mean: 0.2
+      sigma: 0.02
+  request_ratio:
+    type: exponential
+    scale: 5
 
-    # new_app: 
-    #   distribution: 'rng.exponential(50)'
-    #   action_params:
-    #     config: None
-    #     app_set: None
-    #     user_set: None
-    #     infrastructure: None
-    #     event_set: None
-    #     # Numpy equivalent for random integer between 1 and 5 (inclusive)
-    #     num_new_users: 'rng.integers(1, 6)'
-    #     sim_set: None
+  actions:
+    remove_user:
+      frequency:
+        type: exponential
+        scale: 300
+    suspend_user:
+      frequency:
+        type: exponential
+        scale: 150
+      impact:
+        resume_user:
+          type: lognormal
+          mean: 1.0
+          sigma: 0.5
+    move_user:
+      frequency:
+        type: exponential
+        scale: 120
+    change_request_ratio:
+      frequency:
+        type: exponential
+        scale: 90
+      impact:
+        increase_probability: 0.5
+        multiplier:
+          type: uniform
+          low: 1.5
+          high: 3.0
+        restore_ratio:
+          type: lognormal
+          mean: 1.0
+          sigma: 0.5
+global_spawner:
+  new_user:
+    frequency:
+      type: exponential
+      scale: 30
+  new_app:
+    frequency:
+      type: exponential
+      scale: 3600  # Valor muy alto (1 hora en simulacion) para generar apps muy rara vez

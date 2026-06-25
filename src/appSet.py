@@ -1,25 +1,28 @@
 import random
 import uuid
+import logging
+from typing import Any, Dict, List, Optional, Tuple
 
-from .utils.auxiliar_functions import get_random_from_range, selectRandomAction
+logger = logging.getLogger(__name__)
+
 from .eventSet import EventSet, generate_events
 from .userSet import UserSet, create_new_user
 
 # Note: I just added the DESCOMENTAR line to indicate where the event generation for the graph would be triggered
 
 class ApplicationSet:
-    def __init__(self):
-        self.applications = {}
+    def __init__(self) -> None:
+        self.applications: Dict[str, Dict[str, Any]] = {}
         # Initialize a counter to keep track of App IDs (App_0, App_1)
-        self.app_counter = 0
+        self.app_counter: int = 0
 
-    def getNextAppId(self):
+    def getNextAppId(self) -> str:
         """Generates the next sequential application name."""
         name = f"App_{self.app_counter}"
         self.app_counter += 1
         return name
 
-    def selectRandomAppByAggregatedPopularity(self, popularity):
+    def selectRandomAppByAggregatedPopularity(self, popularity: float) -> Optional[str]:
         """
         Selects a random application based on the aggregated popularity of the applications.
 
@@ -40,8 +43,10 @@ class ApplicationSet:
         selected_app = random_app.choices(list(normalized_popularity.keys()), weights=normalized_popularity.values(), k=1)[0]
         return selected_app
     
-    def selectRandomAppIdByPopularity(self, popularity, sim_set):
+    def selectRandomAppIdByPopularity(self, popularity: Optional[float], sim_set: Any) -> str:
         """Selects a random application based on its popularity."""
+        if popularity is None:
+            popularity = 0.0
         selected_apps = [app for app in self.applications.values() if app['popularity'] >= popularity]
         
         rng = sim_set.rng_app
@@ -54,49 +59,85 @@ class ApplicationSet:
         
         rndApp = rng.choice(selected_apps)
         return rndApp['id']
+        
+    def select_app_for_user(self, user_pos: Tuple[float, float], pop_conf: Dict[str, Any], sim_set: Any) -> Optional[str]:
+        app_list = list(self.applications.values())
+        if not app_list:
+            return None
+            
+        rng = sim_set.rng_user
+        import numpy as np
+        
+        radius = pop_conf.get('local_radius_influence', 0.15)
+        
+        # Calculate dynamic probabilities
+        probs = []
+        for app in app_list:
+            p = app['popularity']
+            if app.get('is_local') and app.get('pos') is not None and user_pos is not None:
+                dist = np.linalg.norm(np.array(user_pos) - np.array(app['pos']))
+                if dist <= radius:
+                    # Boost probability exponentially based on distance
+                    p = p * np.exp(-dist / radius) * 10 # Boost factor
+            probs.append(p)
+            
+        probs = np.array(probs)
+        probs_sum = probs.sum()
+        if probs_sum > 0:
+            probs = probs / probs_sum
+        else:
+            probs = np.ones(len(app_list)) / len(app_list)
+        
+        selected_app = rng.choice(app_list, p=probs)
+        return selected_app['id']
 
-    def get_application_name_by_id(self, app_id):   
+    def get_application_name_by_id(self, app_id: str) -> Optional[str]:   
         """Retrieves the name of an application by its ID."""
         app = self.applications.get(app_id)
         if app:
             return app['name']
         return None
        
-    def get_application_ram_by_name(self, app_name):
+    def get_application_ram_by_name(self, app_name: str) -> Optional[float]:
         """Retrieves the RAM requirement of an application by its name."""
         for app in self.applications.values():
             if app['name'] == app_name:
                 return app['ram']
         return None
 
-    def newAppItem(self, name, popularity, cpu, ram, disk, time, actions):
+    def newAppItem(self, name: str, popularity: float, microservices: List[Dict[str, Any]], actions: Dict[str, Any], is_local: bool = False, pos: Optional[Tuple[float, float]] = None, bw: float = 0.0, l_max: float = 0.0) -> Dict[str, Any]:
         """Creates a new application item with the given attributes."""
+        # Calculate aggregated resources for ILP compatibility (Option A)
+        total_cpu = sum(ms['cpu'] for ms in microservices)
+        total_ram = sum(ms['ram'] for ms in microservices)
+
         return {
             'name': name,
             'popularity': popularity,
-            'cpu': cpu,
-            'ram': ram,
-            'disk': disk,
-            'time': time,
-            'actions': actions
+            'microservices': microservices,
+            'cpu': total_cpu,
+            'ram': total_ram,
+            'disk': 0.0,
+            'bw': bw,
+            'l_max': l_max,
+            'time': 0.0,
+            'actions': actions,
+            'is_local': is_local,
+            'pos': pos
         }
 
-    def add_application(self, appAttributes):
+    def add_application(self, appAttributes: Dict[str, Any]) -> str:
         """Adds a new application to the set."""
         app_id = str(uuid.uuid4())  # Generates a unique identifier
         appAttributes['id'] = app_id
         self.applications[app_id] = appAttributes
         return app_id
 
-    def remove_app(self, app_id, params):
+    def remove_app(self, app_id: str, user_set: Any, event_set: Any, **kwargs: Any) -> Any:
         """Removes an application from the set based on its ID."""
-        if params is None:
-            params = {}
-        users = params.get('user_set')
-        event_set = params.get('event_set')
 
         if app_id in self.applications:
-            message2 = users.remove_user_by_requested_app(app_id, params)  # Remove users requesting this app
+            message2 = user_set.remove_user_by_requested_app(app_id, event_set=event_set)  # Remove users requesting this app
             message = f"Application {self.applications[app_id]['name']} has been removed, along with its associated events. {message2}"
             del self.applications[app_id]
             event_set.remove_events_by_object_id(app_id)
@@ -104,94 +145,319 @@ class ApplicationSet:
             return message
         return False
     
-    def increase_popularity(self, app_id, params):
-        if params is None:
-            params = {}
-
-        sim_set = params.get('sim_set')
-        multiplier = sim_set.parse_distribution(params.get('multiplier'), context='app')
+    def increase_popularity(self, app_id: str, sim_set: Any, user_set: Any, multiplier: str, **kwargs: Any) -> str:
+        multiplier_val = sim_set.parse_distribution(multiplier, context='app')
         old_popularity = self.applications[app_id]['popularity']
 
-        self.applications[app_id]['popularity'] = self.applications[app_id]['popularity'] * multiplier
+        self.applications[app_id]['popularity'] = self.applications[app_id]['popularity'] * multiplier_val
 
-        users = params.get('user_set')
-        users.increase_request_ratio_by_requested_app(app_id, params)
+        user_set.increase_request_ratio_by_requested_app(app_id, sim_set=sim_set, multiplier=multiplier)
 
         message = f"Popularity of app {self.applications[app_id]['name']} increased from {old_popularity} to {self.applications[app_id]['popularity']}"
         return message
     
-    def decrease_popularity(self, app_id, params): 
-        if params is None:
-            params = {}
-
-        sim_set = params.get('sim_set')
-        multiplier = sim_set.parse_distribution(params.get('multiplier'), context='app')
+    def decrease_popularity(self, app_id: str, sim_set: Any, user_set: Any, multiplier: str, **kwargs: Any) -> str: 
+        multiplier_val = sim_set.parse_distribution(multiplier, context='app')
         old_popularity = self.applications[app_id]['popularity']
 
-        self.applications[app_id]['popularity'] = self.applications[app_id]['popularity'] * multiplier
+        self.applications[app_id]['popularity'] = self.applications[app_id]['popularity'] * multiplier_val
 
-        users = params.get('user_set')
-        users.decrease_request_ratio_by_requested_app(app_id, params)
+        user_set.decrease_request_ratio_by_requested_app(app_id, sim_set=sim_set, multiplier=multiplier)
 
         message = f"Popularity of app {self.applications[app_id]['name']} decreased from {old_popularity} to {self.applications[app_id]['popularity']}"
         return message
 
-    def get_application(self, app_id):
+    def update_app(self, app_id: str, sim_set: Any, config: Any, **kwargs: Any) -> str:
+        app = self.applications.get(app_id)
+        if not app:
+            return "Application not found for update_app."
+
+        rng = sim_set.rng_app
+        events_conf = kwargs
+        
+        sigma_footprint = events_conf.get('sigma_footprint', 0.1)
+        sigma_net = events_conf.get('sigma_net', 0.1)
+        p_topo = events_conf.get('p_topo', 0.15)
+        l_min = events_conf.get('l_min', 2)
+        l_max_global = events_conf.get('l_max_global', 6)
+
+        msg_parts = []
+
+        # 1. Footprint Mutation
+        for ms in app.get('microservices', []):
+            delta_cpu = rng.normal(0, sigma_footprint)
+            delta_ram = rng.normal(0, sigma_footprint)
+            ms['cpu'] = round(max(0.01, ms['cpu'] * (1 + delta_cpu)), 2)
+            ms['ram'] = round(max(0.01, ms['ram'] * (1 + delta_ram)), 2)
+        app['cpu'] = sum(ms['cpu'] for ms in app.get('microservices', []))
+        app['ram'] = sum(ms['ram'] for ms in app.get('microservices', []))
+        msg_parts.append("Footprint mutated")
+
+        # 2. Network Constraints Mutation
+        if 'bw' in app and 'l_max' in app:
+            delta_bw = rng.normal(0, sigma_net)
+            delta_lmax = rng.normal(0, sigma_net)
+            app['bw'] = round(max(1.0, app['bw'] * (1 + delta_bw)), 2)
+            app['l_max'] = round(max(1.0, app['l_max'] * (1 + delta_lmax)), 2)
+            msg_parts.append("Network mutated")
+
+        # 3. SFC Topology Mutation
+        architecture = config.get('app', {}).get('architecture', 'microservice')
+        if architecture != 'monolithic':
+            if rng.random() < p_topo:
+                L = len(app.get('microservices', []))
+                if rng.random() < 0.5:
+                    # Insert
+                    if L < l_max_global:
+                        ms_cpu = rng.lognormal(mean=0.5, sigma=0.2)
+                        ms_ram = rng.lognormal(mean=0.5, sigma=0.2)
+                        new_ms = {
+                            'id': f"{app['name']}_ms_new_{rng.integers(1000, 9999)}",
+                            'cpu': round(float(ms_cpu), 2),
+                            'ram': round(float(ms_ram), 2)
+                        }
+                        insert_idx = rng.integers(0, L + 1)
+                        app['microservices'].insert(insert_idx, new_ms)
+                        msg_parts.append(f"Topology mutated (inserted MS at {insert_idx})")
+                else:
+                    # Delete
+                    if L > l_min:
+                        del_idx = rng.integers(0, L)
+                        app['microservices'].pop(del_idx)
+                        msg_parts.append(f"Topology mutated (deleted MS at {del_idx})")
+
+        return f"App {app['name']} updated: " + ", ".join(msg_parts)
+
+    def _rank_swap(self, app_id1: str, app_id2: str) -> None:
+        if app_id1 in self.applications and app_id2 in self.applications:
+            pop1 = self.applications[app_id1]['popularity']
+            pop2 = self.applications[app_id2]['popularity']
+            self.applications[app_id1]['popularity'] = pop2
+            self.applications[app_id2]['popularity'] = pop1
+
+    def surge_popularity(self, app_id: str, sim_set: Any, event_set: Any, config: Any, **kwargs: Any) -> str:
+        app = self.applications.get(app_id)
+        if not app:
+            return "App not found"
+        
+        rng = sim_set.rng_app
+        events_conf = kwargs
+        
+        # Sort apps by popularity (highest first)
+        sorted_apps = sorted(self.applications.items(), key=lambda x: x[1]['popularity'], reverse=True)
+        # Find current rank (0-indexed)
+        current_rank = next((i for i, (a_id, _) in enumerate(sorted_apps) if a_id == app_id), -1)
+        
+        # Pick a target rank (Top 1 to 5)
+        target_rank = rng.integers(0, min(5, len(sorted_apps))) if len(sorted_apps) > 0 else 0
+        target_app_id = sorted_apps[target_rank][0] if len(sorted_apps) > 0 else app_id
+
+        if current_rank != target_rank and current_rank != -1:
+            self._rank_swap(app_id, target_app_id)
+            
+            # Transient logic
+            is_transient = rng.random() < events_conf.get('transient_prob', 0.7)
+            if is_transient:
+                # Weibull distribution for duration
+                shape = events_conf.get('weibull_shape', 1.5)
+                scale = events_conf.get('weibull_scale', 10.0)
+                duration = rng.weibull(shape) * scale
+                
+                restore_event = event_set.newEventItem(
+                    type_object='app',
+                    object_id=app_id,
+                    time=event_set.global_time + duration,
+                    action='restore_popularity',
+                    impact={'target_app_id': target_app_id}
+                )
+                event_set.add_event(restore_event)
+                return f"Surged popularity of {app['name']} (swapped with {self.applications[target_app_id]['name']}) - Transient ({duration:.2f}s)"
+            else:
+                return f"Surged popularity of {app['name']} (swapped with {self.applications[target_app_id]['name']}) - Permanent"
+        return f"Surge failed for {app['name']}"
+
+    def drop_popularity(self, app_id: str, sim_set: Any, event_set: Any, config: Any, **kwargs: Any) -> str:
+        app = self.applications.get(app_id)
+        if not app:
+            return "App not found"
+        
+        rng = sim_set.rng_app
+        events_conf = kwargs
+        
+        sorted_apps = sorted(self.applications.items(), key=lambda x: x[1]['popularity'], reverse=True)
+        current_rank = next((i for i, (a_id, _) in enumerate(sorted_apps) if a_id == app_id), -1)
+        
+        # Pick a target rank (Bottom 5)
+        num_apps = len(sorted_apps)
+        target_rank = rng.integers(max(0, num_apps - 5), num_apps) if num_apps > 0 else 0
+        target_app_id = sorted_apps[target_rank][0] if num_apps > 0 else app_id
+
+        if current_rank != target_rank and current_rank != -1:
+            self._rank_swap(app_id, target_app_id)
+            
+            is_transient = rng.random() < events_conf.get('transient_prob', 0.7)
+            if is_transient:
+                shape = events_conf.get('weibull_shape', 1.5)
+                scale = events_conf.get('weibull_scale', 10.0)
+                duration = rng.weibull(shape) * scale
+                
+                restore_event = event_set.newEventItem(
+                    type_object='app',
+                    object_id=app_id,
+                    time=event_set.global_time + duration,
+                    action='restore_popularity',
+                    impact={'target_app_id': target_app_id}
+                )
+                event_set.add_event(restore_event)
+                return f"Dropped popularity of {app['name']} (swapped with {self.applications[target_app_id]['name']}) - Transient ({duration:.2f}s)"
+            else:
+                return f"Dropped popularity of {app['name']} (swapped with {self.applications[target_app_id]['name']}) - Permanent"
+        return f"Drop failed for {app['name']}"
+
+    def restore_popularity(self, app_id: str, target_app_id: str, **kwargs: Any) -> str:
+        if app_id in self.applications and target_app_id in self.applications:
+            self._rank_swap(app_id, target_app_id)
+            return f"Restored popularity of {self.applications[app_id]['name']} (swapped back with {self.applications[target_app_id]['name']})"
+        return "Restore failed (app missing)"
+
+    def geo_demand_shift(self, app_id: str, sim_set: Any, config: Any, **kwargs: Any) -> str:
+        app = self.applications.get(app_id)
+        if not app or not app.get('is_local') or app.get('pos') is None:
+            return "App not found or not a local app"
+        
+        rng = sim_set.rng_app
+        events_conf = kwargs
+        
+        shift_type = 'jump' if rng.random() < events_conf.get('jump_prob', 0.2) else 'drift'
+        
+        if shift_type == 'jump':
+            new_pos = (float(rng.random()), float(rng.random()))
+            app['pos'] = new_pos
+            return f"Geo demand jumped to ({new_pos[0]:.3f}, {new_pos[1]:.3f}) for {app['name']}"
+        else:
+            # Drift
+            sigma_drift = events_conf.get('sigma_drift', 0.05)
+            dx = rng.normal(0, sigma_drift)
+            dy = rng.normal(0, sigma_drift)
+            old_x, old_y = app['pos']
+            new_x = max(0.0, min(1.0, old_x + dx))
+            new_y = max(0.0, min(1.0, old_y + dy))
+            app['pos'] = (float(new_x), float(new_y))
+            return f"Geo demand drifted to ({new_x:.3f}, {new_y:.3f}) for {app['name']}"
+
+    def get_application(self, app_id: str) -> Optional[Dict[str, Any]]:
         """Retrieves an application by its ID from the set."""
         return self.applications.get(app_id)
 
-    def get_all_apps(self):
+    def get_all_apps(self) -> Dict[str, Dict[str, Any]]:
         """Returns all applications in the set."""
         return self.applications
     
-    def __str__(self):
+    def __str__(self) -> str:
         """Returns a string representation of the ApplicationSet (the applications dictionary)."""
         return str(self.applications)
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Official string representation for developers (useful for debugging)."""
         return f"ApplicationSet(applications={self.applications})"
     
-    def new_app(self, app_id, params):
-        """Creates a new user with random attributes based on the configuration."""
-        config = params.get('config')
-        app_set = params.get('app_set')
-        infrastructure = params.get('infrastructure')
-        user_set = params.get('user_set')
-        event_set = params.get('event_set')
-        sim_set = params.get('sim_set')
-        num_new_users = sim_set.parse_distribution(params.get('num_new_users'), context='app')
+    def new_app(self, app_id: str, config: Any, app_set: Any, infrastructure: Any, user_set: Any, event_set: Any, sim_set: Any, num_new_users: str, **kwargs: Any) -> str:
+        """Creates a new app with random attributes based on the configuration."""
+        num_new_users_val = sim_set.parse_distribution(num_new_users, context='app')
 
         create_new_app(config, app_set, event_set, sim_set)
 
         created_app_id = list(app_set.applications)[-1]
 
-        for i in range(num_new_users):
+        for i in range(num_new_users_val):
             create_new_user(config, app_set, infrastructure, user_set, event_set, sim_set, created_app_id)
 
-        message = f"Application {self.applications[created_app_id]['name']} has been created, along with {num_new_users} new users requesting this app."
+        message = f"Application {self.applications[created_app_id]['name']} has been created, along with {num_new_users_val} new users requesting this app."
         return message
 
-def create_new_app(config, application_set, event_set, sim_set):
-    attributes = config.get('attributes', {})
+def create_new_app(config: Dict[str, Any], application_set: ApplicationSet, event_set: EventSet, sim_set: Any) -> float:
+    attributes = config
     app_conf = attributes.get('app', {})
-    app_actions_config =app_conf.get('actions', {})
+    app_actions_config = app_conf.get('actions', {})
+    sfc_conf = app_conf.get('sfc', {})
+    pop_conf = app_conf.get('popularity', {})
+    
+    rng = sim_set.rng_app
+    
+    # 1. SFC Generation
+    length_range = sfc_conf.get('length_range', [2, 6])
+    if length_range[0] > length_range[1]:
+        length_range = [2, 6] # Fallback
+    chain_length = rng.integers(length_range[0], length_range[1] + 1)
+    
+    profiles = sfc_conf.get('profiles', {})
+    if not profiles:
+        # Default profile if not defined
+        profiles = {
+            'default': {
+                'prob': 1.0,
+                'cpu_lognorm': [0.5, 0.2],
+                'ram_lognorm': [0.5, 0.2]
+            }
+        }
+        
+    profile_names = list(profiles.keys())
+    profile_probs = [p.get('prob', 1.0) for p in profiles.values()]
+    total_prob = sum(profile_probs)
+    profile_probs = [p / total_prob for p in profile_probs]
+    
+    selected_profile_name = rng.choice(profile_names, p=profile_probs)
+    selected_profile = profiles[selected_profile_name]
+    
+    cpu_lognorm = selected_profile.get('cpu_lognorm', [0.5, 0.2])
+    ram_lognorm = selected_profile.get('ram_lognorm', [0.5, 0.2])
+    
+    microservices = []
+    for i in range(chain_length):
+        ms_cpu = rng.lognormal(mean=cpu_lognorm[0], sigma=cpu_lognorm[1])
+        ms_ram = rng.lognormal(mean=ram_lognorm[0], sigma=ram_lognorm[1])
+        microservices.append({
+            'id': f"{application_set.app_counter}_ms_{i}",
+            'cpu': round(float(ms_cpu), 2),
+            'ram': round(float(ms_ram), 2)
+        })
+        
+    architecture = app_conf.get('architecture', 'microservice')
+    if architecture == 'monolithic':
+        total_cpu = sum(ms['cpu'] for ms in microservices)
+        total_ram = sum(ms['ram'] for ms in microservices)
+        microservices = [{
+            'id': f"{application_set.app_counter}_ms_mono",
+            'cpu': round(total_cpu, 2),
+            'ram': round(total_ram, 2)
+        }]
+        
+    # 2. Local vs Global App
+    is_local = rng.random() < pop_conf.get('local_app_ratio', 0.3)
+    pos = (float(rng.random()), float(rng.random())) if is_local else None
 
-    appAttributes=application_set.newAppItem(
-            name=application_set.getNextAppId(),
-            popularity=sim_set.parse_distribution(app_conf.get('popularity'), context='app'), 
-            cpu=sim_set.parse_distribution(app_conf.get('cpu'), context='app'),  
-            ram=sim_set.parse_distribution(app_conf.get('ram'), context='app'), 
-            disk=sim_set.parse_distribution(app_conf.get('disk'), context='app'),  
-            time=sim_set.parse_distribution(app_conf.get('time'), context='app'),
-            actions=app_actions_config ) 
+    # 3. Network Requirements
+    net_conf = sfc_conf.get('network', {})
+    bw = round(float(rng.uniform(net_conf.get('bw_min', 10.0), net_conf.get('bw_max', 100.0))), 2)
+    l_max = round(float(rng.uniform(net_conf.get('l_max_min', 10.0), net_conf.get('l_max_max', 50.0))), 2)
+
+    appAttributes = application_set.newAppItem(
+        name=application_set.getNextAppId(),
+        popularity=0.0, # Will be set by Zipf calculation later
+        microservices=microservices,
+        actions=app_actions_config,
+        is_local=is_local,
+        pos=pos,
+        bw=bw,
+        l_max=l_max
+    )
     
     application_set.add_application(appAttributes)
-    # DESCOMENTAR: generate_events(appAttributes, 'app', event_set, sim_set)
+    generate_events(appAttributes, 'app', event_set, sim_set)
 
     return appAttributes['ram']
 
-def generate_random_apps(config, event_set, sim_set, infrastructure, num_apps=None, saturation_percentage=None):
+def generate_random_apps(config: Dict[str, Any], event_set: EventSet, sim_set: Any, infrastructure: Any, num_apps: Optional[int] = None, saturation_percentage: Optional[float] = None) -> Tuple[ApplicationSet, UserSet]:
     """
     Generates a list of random applications with random resource requirements.
 
@@ -207,7 +473,7 @@ def generate_random_apps(config, event_set, sim_set, infrastructure, num_apps=No
 
     total_ram_available = sum(feat.get('ram', 0.0) for _, feat in infrastructure.get_main_graph().nodes(data=True))
     
-    attributes = config.get('attributes', {})
+    attributes = config
     app_conf = attributes.get('app', {})
     total_ram_occupied = 0
 
@@ -222,29 +488,47 @@ def generate_random_apps(config, event_set, sim_set, infrastructure, num_apps=No
             created_app_id = list(application_set.applications)[-1]
 
             num_users_per_app = sim_set.parse_distribution(app_conf.get('num_new_users', 1), context='app')
+            if num_users_per_app is None:
+                num_users_per_app = 0
+            num_users_per_app = int(num_users_per_app)
             for _ in range(num_users_per_app):
                 create_new_user(config, application_set, infrastructure, user_set, event_set, sim_set, created_app_id)
 
             total_ram_occupied = round((created_total_ram / total_ram_available if total_ram_available > 0 else 0)*100, 2)
-            print(f"Total RAM occupied after creating app {created_app_id}: {total_ram_occupied}%")
+            logger.info(f"Total RAM occupied after creating app {created_app_id}: {total_ram_occupied}%")
 
             i += 1
 
 
     # CASE when I am given the number of apps to generate
     elif num_apps is not None:
-        for i in range(num_apps):
+        num_users_per_app = sim_set.parse_distribution(app_conf.get('num_new_users', 1), context='app')
+        if num_users_per_app is None:
+            num_users_per_app = 0
+        num_users_per_app = int(num_users_per_app)
+
+        for _ in range(num_apps):
             create_new_app(config, application_set, event_set, sim_set)
 
             created_app_id = list(application_set.applications)[-1]
 
-            for i in range(num_users_per_app):
+            for _ in range(num_users_per_app):
                 create_new_user(config, application_set, infrastructure, user_set, event_set, sim_set, created_app_id)
     
     else:
         raise ValueError("Either num_apps or saturation_percentage must be provided to generate applications.")
 
-    return application_set, user_set
+    # Apply Zipf's Law popularity
+    pop_conf = app_conf.get('popularity', {})
+    alpha = pop_conf.get('alpha', 1.2)
+    app_list = list(application_set.applications.values())
+    num_created = len(app_list)
+    
+    if num_created > 0:
+        sum_zipf = sum(1.0 / (i**alpha) for i in range(1, num_created + 1))
+        
+        for i, app in enumerate(app_list):
+            rank = i + 1
+            app['popularity'] = (1.0 / (rank**alpha)) / sum_zipf
 
-if __name__ == "__main__":
-    print("appSet works fine")
+    return application_set, user_set

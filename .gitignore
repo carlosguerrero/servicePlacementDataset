@@ -5,6 +5,10 @@
 .LSOverride
 
 Simulations_raw/
+Simulations_official/
+docs_pdf/
+spec_driven_development_catalog/
+__pycache__/
 __pycache__/
 *.pyc
 
