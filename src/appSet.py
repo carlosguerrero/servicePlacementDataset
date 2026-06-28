@@ -10,6 +10,9 @@ from .userSet import UserSet, create_new_user
 
 # Note: I just added the DESCOMENTAR line to indicate where the event generation for the graph would be triggered
 
+class InvalidTopologyModelError(Exception):
+    pass
+
 class ApplicationSet:
     def __init__(self) -> None:
         self.applications: Dict[str, Dict[str, Any]] = {}
@@ -105,11 +108,17 @@ class ApplicationSet:
                 return app['ram']
         return None
 
-    def newAppItem(self, name: str, popularity: float, microservices: List[Dict[str, Any]], actions: Dict[str, Any], is_local: bool = False, pos: Optional[Tuple[float, float]] = None, bw: float = 0.0, l_max: float = 0.0) -> Dict[str, Any]:
+    def newAppItem(self, name: str, popularity: float, microservices: List[Dict[str, Any]], actions: Dict[str, Any], is_local: bool = False, pos: Optional[Tuple[float, float]] = None, bw: float = 0.0, l_max: float = 0.0, edges: Optional[List[Dict[str, str]]] = None) -> Dict[str, Any]:
         """Creates a new application item with the given attributes."""
-        # Calculate aggregated resources for ILP compatibility (Option A)
-        total_cpu = sum(ms['cpu'] for ms in microservices)
-        total_ram = sum(ms['ram'] for ms in microservices)
+        # Calculate aggregated resources dynamically
+        aggregated_resources = {}
+        for ms in microservices:
+            for k, v in ms.items():
+                if k != 'id' and isinstance(v, (int, float)):
+                    aggregated_resources[k] = aggregated_resources.get(k, 0.0) + v
+                    
+        total_cpu = aggregated_resources.get('cpu', 0.0)
+        total_ram = aggregated_resources.get('ram', 0.0)
 
         return {
             'name': name,
@@ -117,13 +126,15 @@ class ApplicationSet:
             'microservices': microservices,
             'cpu': total_cpu,
             'ram': total_ram,
-            'disk': 0.0,
+            **aggregated_resources,
+            'disk': aggregated_resources.get('disk', 0.0),
             'bw': bw,
             'l_max': l_max,
             'time': 0.0,
             'actions': actions,
             'is_local': is_local,
-            'pos': pos
+            'pos': pos,
+            'edges': edges if edges is not None else []
         }
 
     def add_application(self, appAttributes: Dict[str, Any]) -> str:
@@ -379,18 +390,22 @@ def create_new_app(config: Dict[str, Any], application_set: ApplicationSet, even
     attributes = config
     app_conf = attributes.get('app', {})
     app_actions_config = app_conf.get('actions', {})
-    sfc_conf = app_conf.get('sfc', {})
+    services_conf = app_conf.get('services', app_conf.get('sfc', {}))
     pop_conf = app_conf.get('popularity', {})
     
     rng = sim_set.rng_app
     
-    # 1. SFC Generation
-    length_range = sfc_conf.get('length_range', [2, 6])
+    topology_model = services_conf.get('topology_model', 'sfc')
+    if topology_model not in ['sfc', 'directed_scale_free']:
+        raise InvalidTopologyModelError(f"Unsupported topology_model: {topology_model}")
+    
+    # 1. SFC/DAG Generation
+    length_range = services_conf.get('length_range', [2, 6])
     if length_range[0] > length_range[1]:
         length_range = [2, 6] # Fallback
     chain_length = rng.integers(length_range[0], length_range[1] + 1)
     
-    profiles = sfc_conf.get('profiles', {})
+    profiles = services_conf.get('profiles', {})
     if not profiles:
         # Default profile if not defined
         profiles = {
@@ -409,35 +424,74 @@ def create_new_app(config: Dict[str, Any], application_set: ApplicationSet, even
     selected_profile_name = rng.choice(profile_names, p=profile_probs)
     selected_profile = profiles[selected_profile_name]
     
-    cpu_lognorm = selected_profile.get('cpu_lognorm', [0.5, 0.2])
-    ram_lognorm = selected_profile.get('ram_lognorm', [0.5, 0.2])
+    attributes_def = selected_profile.get('attributes', {})
     
     microservices = []
     for i in range(chain_length):
-        ms_cpu = rng.lognormal(mean=cpu_lognorm[0], sigma=cpu_lognorm[1])
-        ms_ram = rng.lognormal(mean=ram_lognorm[0], sigma=ram_lognorm[1])
-        microservices.append({
-            'id': f"{application_set.app_counter}_ms_{i}",
-            'cpu': round(float(ms_cpu), 2),
-            'ram': round(float(ms_ram), 2)
-        })
+        ms_item = {'id': f"{application_set.app_counter}_ms_{i}"}
+        for attr_name, attr_config in attributes_def.items():
+            dist_config = attr_config.get('distribution', attr_config)
+            val = sim_set.parse_distribution(dist_config, context='app')
+            if val is not None:
+                ms_item[attr_name] = round(float(val), 2)
+        microservices.append(ms_item)
         
     architecture = app_conf.get('architecture', 'microservice')
     if architecture == 'monolithic':
-        total_cpu = sum(ms['cpu'] for ms in microservices)
-        total_ram = sum(ms['ram'] for ms in microservices)
-        microservices = [{
-            'id': f"{application_set.app_counter}_ms_mono",
-            'cpu': round(total_cpu, 2),
-            'ram': round(total_ram, 2)
-        }]
+        mono_ms = {'id': f"{application_set.app_counter}_ms_mono"}
+        for attr_name in attributes_def.keys():
+            total_val = sum(ms.get(attr_name, 0.0) for ms in microservices)
+            mono_ms[attr_name] = round(float(total_val), 2)
+        microservices = [mono_ms]
+    
+    edges = []
+    if architecture == 'microservice':
+        if topology_model == 'sfc':
+            for i in range(len(microservices) - 1):
+                edges.append({'source': microservices[i]['id'], 'target': microservices[i+1]['id']})
+        elif topology_model == 'directed_scale_free':
+            scale_free_settings = services_conf.get('scale_free_settings', {})
+            m0 = scale_free_settings.get('initial_nodes', 2)
+            m = scale_free_settings.get('edges_per_node', 2)
+            
+            if m > m0:
+                raise InvalidTopologyModelError("edges_per_node must be less than or equal to initial_nodes")
+            
+            # Initial base DAG
+            for i in range(min(m0, len(microservices)) - 1):
+                edges.append({'source': microservices[i]['id'], 'target': microservices[i+1]['id']})
+                
+            degrees = {ms['id']: 0 for ms in microservices}
+            for e in edges:
+                degrees[e['source']] += 1
+                degrees[e['target']] += 1
+                
+            # Preferential attachment growth
+            for i in range(m0, len(microservices)):
+                new_node_id = microservices[i]['id']
+                existing_nodes = [microservices[j]['id'] for j in range(i)]
+                
+                total_degree = sum(degrees[node] for node in existing_nodes)
+                if total_degree == 0:
+                    probs = [1.0 / len(existing_nodes)] * len(existing_nodes)
+                else:
+                    probs = [degrees[node] / total_degree for node in existing_nodes]
+                
+                num_edges_to_create = min(m, len(existing_nodes))
+                targets = rng.choice(existing_nodes, size=num_edges_to_create, replace=False, p=probs)
+                
+                for target_id in targets:
+                    # Target (existing node, capa inferior) points to new node to maintain DAG
+                    edges.append({'source': target_id, 'target': new_node_id})
+                    degrees[new_node_id] += 1
+                    degrees[target_id] += 1
         
     # 2. Local vs Global App
     is_local = rng.random() < pop_conf.get('local_app_ratio', 0.3)
     pos = (float(rng.random()), float(rng.random())) if is_local else None
 
     # 3. Network Requirements
-    net_conf = sfc_conf.get('network', {})
+    net_conf = services_conf.get('network', {})
     bw = round(float(rng.uniform(net_conf.get('bw_min', 10.0), net_conf.get('bw_max', 100.0))), 2)
     l_max = round(float(rng.uniform(net_conf.get('l_max_min', 10.0), net_conf.get('l_max_max', 50.0))), 2)
 
@@ -449,7 +503,8 @@ def create_new_app(config: Dict[str, Any], application_set: ApplicationSet, even
         is_local=is_local,
         pos=pos,
         bw=bw,
-        l_max=l_max
+        l_max=l_max,
+        edges=edges
     )
     
     application_set.add_application(appAttributes)
@@ -518,17 +573,38 @@ def generate_random_apps(config: Dict[str, Any], event_set: EventSet, sim_set: A
     else:
         raise ValueError("Either num_apps or saturation_percentage must be provided to generate applications.")
 
-    # Apply Zipf's Law popularity
+    # Apply popularity distribution
     pop_conf = app_conf.get('popularity', {})
-    alpha = pop_conf.get('alpha', 1.2)
+    dist_config = pop_conf.get('distribution')
     app_list = list(application_set.applications.values())
     num_created = len(app_list)
     
     if num_created > 0:
-        sum_zipf = sum(1.0 / (i**alpha) for i in range(1, num_created + 1))
-        
-        for i, app in enumerate(app_list):
-            rank = i + 1
-            app['popularity'] = (1.0 / (rank**alpha)) / sum_zipf
+        if dist_config:
+            # Parse custom distribution
+            raw_popularities = []
+            for _ in range(num_created):
+                val = sim_set.parse_distribution(dist_config, context='app')
+                raw_popularities.append(float(val) if val is not None else 1.0)
+            
+            # Sort descending to assign higher popularities to earlier application ranks
+            raw_popularities.sort(reverse=True)
+            
+            sum_pop = sum(raw_popularities)
+            if sum_pop > 0:
+                normalized_pops = [p / sum_pop for p in raw_popularities]
+            else:
+                normalized_pops = [1.0 / num_created] * num_created
+                
+            for i, app in enumerate(app_list):
+                app['popularity'] = normalized_pops[i]
+        else:
+            # Fallback to Zipf's Law for backwards compatibility
+            alpha = pop_conf.get('alpha', 1.2)
+            sum_zipf = sum(1.0 / (i**alpha) for i in range(1, num_created + 1))
+            
+            for i, app in enumerate(app_list):
+                rank = i + 1
+                app['popularity'] = (1.0 / (rank**alpha)) / sum_zipf
 
     return application_set, user_set

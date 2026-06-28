@@ -49,15 +49,14 @@ class ILPSingleObjectiveSolver(BaseSolver):
                                  [(app_id, ms_id, node) for app_id, ms_id, m_idx in ms_indices for node in active_nodes], 
                                  cat='Binary')
 
-        # Decision Variable for SFC links: y_amnn is 1 if ms 'm' is on n1 AND ms 'm+1' is on n2
+        # Decision Variable for SFC links: y_amnn is 1 if source ms is on n1 AND target ms is on n2
         y_amnn = {}
         for app_id, app_data in applications.items():
-            microservices = app_data.get('microservices', [])
-            num_ms = len(microservices)
-            for m_idx in range(num_ms - 1):
+            edges = app_data.get('edges', [])
+            for e_idx, edge in enumerate(edges):
                 for n1 in active_nodes:
                     for n2 in active_nodes:
-                        y_amnn[(app_id, m_idx, n1, n2)] = LpVariable(f"Link_{app_id}_{m_idx}_{n1}_{n2}", lowBound=0, cat='Continuous')
+                        y_amnn[(app_id, e_idx, n1, n2)] = LpVariable(f"Link_{app_id}_{e_idx}_{n1}_{n2}", lowBound=0, cat='Continuous')
 
         prob = LpProblem("SFC_Placement", LpMinimize)
         objective_terms = []
@@ -78,22 +77,21 @@ class ILPSingleObjectiveSolver(BaseSolver):
                     delay_value = paths_from_user.get(n, PENALTY_DELAY)
                     objective_terms.append(delay_value * user_data['requestRatio'] * x_amn[requested_app_id, first_ms_id, n])
 
-        # 2. Internal SFC Latency: Delay between consecutive microservices
+        # 2. Internal SFC Latency: Delay between microservices
         for app_id, app_data in applications.items():
-            microservices = app_data.get('microservices', [])
-            num_ms = len(microservices)
+            edges = app_data.get('edges', [])
 
             # Weight internal delay by the total request ratio for this app
             app_request_ratio = sum(u['requestRatio'] for u in users.values() if u['requestedApp'] == app_id)
             if app_request_ratio == 0:
                 app_request_ratio = 1.0 # Give it some base weight so it still optimizes
 
-            for m_idx in range(num_ms - 1):
+            for e_idx, edge in enumerate(edges):
                 for n1 in active_nodes:
                     paths_from_n1 = all_pairs_shortest_paths.get(n1, {})
                     for n2 in active_nodes:
                         delay_value = paths_from_n1.get(n2, PENALTY_DELAY)
-                        objective_terms.append(delay_value * app_request_ratio * y_amnn[(app_id, m_idx, n1, n2)])
+                        objective_terms.append(delay_value * app_request_ratio * y_amnn[(app_id, e_idx, n1, n2)])
 
         # 3. Symmetry Breaker: Add a tiny penalty based on node index to break symmetry for apps without users
         # This prevents the solver from getting stuck exploring identical zero-cost placements
@@ -119,30 +117,33 @@ class ILPSingleObjectiveSolver(BaseSolver):
         for app_id, ms_id, m_idx in ms_indices:
             prob += lpSum(x_amn[app_id, ms_id, node] for node in active_nodes) == 1, f"Placement_{app_id}_{ms_id}"
 
-        # Constraint 2: RAM Capacity constraint per node
+        # Constraint 2: Generic Resource Capacity constraints per node
         for node in active_nodes:
-            ram_terms = []
-            for app_id, ms_id, m_idx in ms_indices:
-                # find ms ram
-                app_data = applications[app_id]
-                ms_ram = app_data['microservices'][m_idx]['ram']
-                ram_terms.append(ms_ram * x_amn[app_id, ms_id, node])
-            if ram_terms:
-                prob += lpSum(ram_terms) <= graph.nodes[node]['ram'], f"RAM_{node}"
+            node_attrs = graph.nodes[node]
+            for attr_name, node_cap in node_attrs.items():
+                # We only want numeric capacities
+                if isinstance(node_cap, (int, float)):
+                    attr_terms = []
+                    for app_id, ms_id, m_idx in ms_indices:
+                        app_data = applications[app_id]
+                        ms_attr_val = app_data['microservices'][m_idx].get(attr_name, 0.0)
+                        if ms_attr_val > 0:
+                            attr_terms.append(ms_attr_val * x_amn[app_id, ms_id, node])
+                    if attr_terms:
+                        prob += lpSum(attr_terms) <= node_cap, f"Cap_{attr_name}_{node}"
 
         # Constraint 3: Linearization of y variables
         for app_id, app_data in applications.items():
-            microservices = app_data.get('microservices', [])
-            num_ms = len(microservices)
-            for m_idx in range(num_ms - 1):
-                ms_id1 = microservices[m_idx]['id']
-                ms_id2 = microservices[m_idx+1]['id']
+            edges = app_data.get('edges', [])
+            for e_idx, edge in enumerate(edges):
+                ms_id1 = edge['source']
+                ms_id2 = edge['target']
                 for n1 in active_nodes:
                     # The sum of links originating from ms_id1 on n1 must equal x_amn for ms_id1 on n1
-                    prob += lpSum(y_amnn[(app_id, m_idx, n1, n2)] for n2 in active_nodes) == x_amn[app_id, ms_id1, n1], f"Lin3_{app_id}_{m_idx}_{n1}"
+                    prob += lpSum(y_amnn[(app_id, e_idx, n1, n2)] for n2 in active_nodes) == x_amn[app_id, ms_id1, n1], f"Lin3_{app_id}_{e_idx}_{n1}"
                 for n2 in active_nodes:
                     # The sum of links terminating at ms_id2 on n2 must equal x_amn for ms_id2 on n2
-                    prob += lpSum(y_amnn[(app_id, m_idx, n1, n2)] for n1 in active_nodes) == x_amn[app_id, ms_id2, n2], f"Lin4_{app_id}_{m_idx}_{n2}"
+                    prob += lpSum(y_amnn[(app_id, e_idx, n1, n2)] for n1 in active_nodes) == x_amn[app_id, ms_id2, n2], f"Lin4_{app_id}_{e_idx}_{n2}"
 
         # Limit solving time to prevent hanging on complex topologies
         prob.solve(PULP_CBC_CMD(msg=0, timeLimit=time_limit, gapRel=gap_rel))

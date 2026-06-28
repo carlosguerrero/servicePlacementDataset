@@ -196,10 +196,32 @@
           ],
           "description": "Software architecture type. 'microservice' models Service Function Chains."
         },
-        "sfc": {
+        "services": {
           "type": "object",
-          "description": "Service Function Chain configuration for applications.",
+          "description": "Services configuration for applications.",
           "properties": {
+            "topology_model": {
+              "type": "string",
+              "enum": [
+                "sfc",
+                "directed_scale_free"
+              ],
+              "description": "Topology generation model. 'sfc' for linear chain, 'directed_scale_free' for DAG."
+            },
+            "scale_free_settings": {
+              "type": "object",
+              "description": "Parameters for the directed_scale_free generation model.",
+              "properties": {
+                "initial_nodes": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "edges_per_node": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
             "length_range": {
               "type": "array",
               "description": "Minimum and maximum number of microservices per chain.",
@@ -219,23 +241,12 @@
                     "type": "number",
                     "description": "Probability of this profile being selected."
                   },
-                  "cpu_lognorm": {
-                    "type": "array",
-                    "description": "Mean and standard deviation for the Lognormal distribution applied to CPU.",
-                    "items": {
-                      "type": "number"
-                    },
-                    "minItems": 2,
-                    "maxItems": 2
-                  },
-                  "ram_lognorm": {
-                    "type": "array",
-                    "description": "Mean and standard deviation for the Lognormal distribution applied to RAM.",
-                    "items": {
-                      "type": "number"
-                    },
-                    "minItems": 2,
-                    "maxItems": 2
+                  "attributes": {
+                    "type": "object",
+                    "description": "Dynamic attributes for microservices (e.g. cpu, ram) mapped to their distributions.",
+                    "additionalProperties": {
+                      "$ref": "#/definitions/attributeDef"
+                    }
                   }
                 }
               }
@@ -264,13 +275,17 @@
           "type": "object",
           "description": "App popularity distribution.",
           "properties": {
+            "distribution": {
+              "description": "Statistical distribution from which the application popularity is drawn.",
+              "$ref": "#/definitions/distributionDef"
+            },
             "model": {
               "type": "string",
-              "description": "Popularity distribution model, typically 'zipf'."
+              "description": "Popularity distribution model, typically 'zipf'. Deprecated: use distribution instead."
             },
             "alpha": {
               "type": "number",
-              "description": "Alpha parameter for Zipf's law. Values close to 1 are standard."
+              "description": "Alpha parameter for Zipf's law. Deprecated: use distribution instead."
             },
             "local_app_ratio": {
               "type": "number",

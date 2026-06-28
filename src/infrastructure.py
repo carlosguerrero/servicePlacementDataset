@@ -260,14 +260,12 @@ class InfrastructureSet:
             if p_loss is None: p_loss = 0.2
             
             node = item['graph'].nodes[node_id]
-            # Save nominal RAM
-            if 'nominal_ram' not in node: node['nominal_ram'] = node.get('ram', 0.0)
-            node['ram'] = round(node['nominal_ram'] * (1 - p_loss), 2)
-            
-            # Save nominal CPU if it exists
-            if 'cpu' in node:
-                if 'nominal_cpu' not in node: node['nominal_cpu'] = node.get('cpu', 0.0)
-                node['cpu'] = round(node['nominal_cpu'] * (1 - p_loss), 2)
+            target_attributes = kwargs.get('target_attributes', ['ram', 'cpu'])
+            for attr in target_attributes:
+                if attr in node:
+                    if f'nominal_{attr}' not in node: 
+                        node[f'nominal_{attr}'] = node.get(attr, 0.0)
+                    node[attr] = round(node[f'nominal_{attr}'] * (1 - p_loss), 2)
 
             # Schedule Restoration
             distribution_to_restore_node = sim_set.parse_distribution(distribution_to_restore_node, context='graph')
@@ -294,12 +292,11 @@ class InfrastructureSet:
         item = self.infrastructures.get(infra_id)
         if item and node_id in item['graph'].nodes:
             node = item['graph'].nodes[node_id]
-            if 'nominal_ram' in node:
-                node['ram'] = node['nominal_ram']
-                del node['nominal_ram']
-            if 'nominal_cpu' in node:
-                node['cpu'] = node['nominal_cpu']
-                del node['nominal_cpu']
+            nominal_keys = [k for k in list(node.keys()) if k.startswith('nominal_')]
+            for k in nominal_keys:
+                attr = k.replace('nominal_', '', 1)
+                node[attr] = node[k]
+                del node[k]
         else:
             logger.warning(f"Node {node_id} not found in graph {infra_id}.")
         
@@ -308,7 +305,7 @@ class InfrastructureSet:
 
         return f"Node {node_id} capacity restored."
 
-    def congest_edge(self, object_id: Tuple[Any, Any], sim_set: Any, event_set: Any, p_loss_dist: str = '{"type": "beta", "a": 2, "b": 5}', m_lat_dist: str = '{"type": "lognormal", "mean": 0.5, "sigma": 0.2}', distribution_to_clear_edge: str = '10', **kwargs: Any) -> Optional[str]:
+    def congest_edge(self, object_id: Tuple[Any, Any], sim_set: Any, event_set: Any, p_loss_dist: str = '{"type": "beta", "a": 2, "b": 5}', multiplier_dist: str = '{"type": "lognormal", "mean": 0.5, "sigma": 0.2}', distribution_to_clear_edge: str = '10', **kwargs: Any) -> Optional[str]:
         """Degrades a specific edge's bandwidth and latency."""
         infra_id = DEFAULT_INFRA_ID
         edge = object_id
@@ -317,20 +314,26 @@ class InfrastructureSet:
         if item and edge and item['graph'].has_edge(*edge):
             p_loss = sim_set.parse_distribution(p_loss_dist, context='graph')
             if p_loss is None: p_loss = 0.2
-            m_lat = sim_set.parse_distribution(m_lat_dist, context='graph')
-            if m_lat is None: m_lat = 1.5
-            m_lat = max(1.01, m_lat)
+            multiplier = sim_set.parse_distribution(multiplier_dist, context='graph')
+            if multiplier is None: multiplier = 1.5
+            multiplier = max(1.01, multiplier)
 
-            edge_data = item['graph'].edges[edge]
-            # Save nominal bandwidth
-            if 'nominal_bandwidth' not in edge_data:
-                edge_data['nominal_bandwidth'] = edge_data.get('bandwidth', 100.0)
-            edge_data['bandwidth'] = round(edge_data['nominal_bandwidth'] * (1 - p_loss), 2)
+            edge_data = item['graph'].edges[edge[0], edge[1]]
             
-            # Save nominal delay and increase it
-            if 'nominal_delay' not in edge_data:
-                edge_data['nominal_delay'] = edge_data.get('delay', 1.0)
-            edge_data['delay'] = round(edge_data['nominal_delay'] * m_lat, 4)
+            target_attributes_loss = kwargs.get('target_attributes_loss', ['bw', 'prb'])
+            target_attributes_mult = kwargs.get('target_attributes_multiplier', ['latency'])
+            
+            for attr in target_attributes_loss:
+                if attr in edge_data:
+                    if f'nominal_{attr}' not in edge_data: 
+                        edge_data[f'nominal_{attr}'] = edge_data.get(attr, 0.0)
+                    edge_data[attr] = round(edge_data[f'nominal_{attr}'] * (1 - p_loss), 2)
+                    
+            for attr in target_attributes_mult:
+                if attr in edge_data:
+                    if f'nominal_{attr}' not in edge_data: 
+                        edge_data[f'nominal_{attr}'] = edge_data.get(attr, 0.0)
+                    edge_data[attr] = round(edge_data[f'nominal_{attr}'] * multiplier, 2)
             
             self.update_shortest_paths(infra_id)
 
@@ -346,7 +349,7 @@ class InfrastructureSet:
             associated_event_id = event_set.add_event(eventAttributes)
             event_set.events[associated_event_id]['impact']['associated_event_id'] = associated_event_id
 
-            return f"Edge {edge} congested (BW loss: {p_loss*100:.1f}%, Latency mult: {m_lat:.2f}x). Scheduled clearance in {distribution_to_clear_edge + event_set.global_time} time units. - Transient"
+            return f"Edge {edge} congested (BW loss: {p_loss*100:.1f}%, Latency mult: {multiplier:.2f}x). Scheduled clearance in {distribution_to_clear_edge + event_set.global_time} time units. - Transient"
         else:
             logger.warning(f"Edge {edge} not found in graph {infra_id}.")
             return None
@@ -358,14 +361,12 @@ class InfrastructureSet:
         
         item = self.infrastructures.get(infra_id)
         if item and edge and item['graph'].has_edge(*edge):
-            edge_data = item['graph'].edges[edge]
-            if 'nominal_bandwidth' in edge_data:
-                edge_data['bandwidth'] = edge_data['nominal_bandwidth']
-                del edge_data['nominal_bandwidth']
-            if 'nominal_delay' in edge_data:
-                edge_data['delay'] = edge_data['nominal_delay']
-                del edge_data['nominal_delay']
-                
+            edge_data = item['graph'].edges[edge[0], edge[1]]
+            nominal_keys = [k for k in list(edge_data.keys()) if k.startswith('nominal_')]
+            for k in nominal_keys:
+                attr = k.replace('nominal_', '', 1)
+                edge_data[attr] = edge_data[k]
+                del edge_data[k]
             self.update_shortest_paths(infra_id)
         else:
             logger.warning(f"Edge {edge} not found in graph {infra_id}.")
@@ -374,4 +375,3 @@ class InfrastructureSet:
             event_set.remove_event(associated_event_id)
             
         return f"Edge {edge} congestion cleared."
-

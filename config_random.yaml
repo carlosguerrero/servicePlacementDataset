@@ -47,6 +47,7 @@ infrastructure:
           type: exponential
           scale: 150
         impact:
+          target_attributes: ["ram", "cpu"]
           p_loss_dist:
             type: beta
             a: 2
@@ -83,19 +84,21 @@ infrastructure:
       congest_edge:
         frequency:
           type: exponential
-          scale: 150
+          scale: 60
         impact:
+          target_attributes_loss: ["bandwidth"]
+          target_attributes_multiplier: ["delay"]
           p_loss_dist:
             type: beta
             a: 2
             b: 5
-          m_lat_dist:
+          multiplier_dist:
             type: lognormal
             mean: 0.5
             sigma: 0.2
           distribution_to_clear_edge:
             type: exponential
-            scale: 50
+            scale: 30
     attributes:
       delay:
         mode: homogenic
@@ -106,20 +109,43 @@ infrastructure:
 app:
   num_apps: 20
   architecture: monolithic
-  sfc:
+  services:
+    topology_model: directed_scale_free # Puede ser 'sfc' o 'directed_scale_free'
+    scale_free_settings:
+      initial_nodes: 2
+      edges_per_node: 2
     length_range: [2, 6]
     profiles:
       iot:
         prob: 0.6
-        cpu_lognorm: [0.1, 0.5]
-        ram_lognorm: [0.1, 0.5]
+        attributes:
+          cpu:
+            distribution:
+              type: lognormal
+              mean: 0.1
+              sigma: 0.5
+          ram:
+            distribution:
+              type: lognormal
+              mean: 0.1
+              sigma: 0.5
       video:
         prob: 0.4
-        cpu_lognorm: [2.0, 1.0]
-        ram_lognorm: [3.0, 1.5]
+        attributes:
+          cpu:
+            distribution:
+              type: lognormal
+              mean: 2.0
+              sigma: 1.0
+          ram:
+            distribution:
+              type: lognormal
+              mean: 3.0
+              sigma: 1.5
   popularity:
-    model: "zipf"
-    alpha: 1.2
+    distribution:
+      type: zipf
+      a: 1.2
     local_app_ratio: 0.3
     local_radius_influence: 0.15
   num_new_users:

@@ -12,3 +12,7 @@ __pycache__/
 __pycache__/
 *.pyc
 
+# Local files and scratchplots
+scratch/
+src/paper_plots/
+
