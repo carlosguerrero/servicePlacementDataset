@@ -505,7 +505,8 @@
             "normal",
             "lognormal",
             "weibull",
-            "beta"
+            "beta",
+            "zipf"
           ],
           "description": "The type of statistical distribution to draw values from."
         },
@@ -519,7 +520,7 @@
         },
         "a": {
           "type": "number",
-          "description": "Shape parameter for Pareto or Beta."
+          "description": "Shape parameter for Pareto, Beta, Weibull, or Zipf."
         },
         "b": {
           "type": "number",

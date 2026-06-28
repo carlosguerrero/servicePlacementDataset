@@ -186,11 +186,20 @@ class ApplicationSet:
         rng = sim_set.rng_app
         events_conf = kwargs
         
-        sigma_footprint = events_conf.get('sigma_footprint', 0.1)
-        sigma_net = events_conf.get('sigma_net', 0.1)
-        p_topo = events_conf.get('p_topo', 0.15)
-        l_min = events_conf.get('l_min', 2)
-        l_max_global = events_conf.get('l_max_global', 6)
+        sigma_footprint_val = sim_set.parse_distribution(events_conf.get('sigma_footprint'), context='app')
+        sigma_footprint = float(sigma_footprint_val) if sigma_footprint_val is not None else 0.1
+        
+        sigma_net_val = sim_set.parse_distribution(events_conf.get('sigma_net'), context='app')
+        sigma_net = float(sigma_net_val) if sigma_net_val is not None else 0.1
+        
+        p_topo_val = sim_set.parse_distribution(events_conf.get('p_topo'), context='app')
+        p_topo = float(p_topo_val) if p_topo_val is not None else 0.15
+        
+        l_min_val = sim_set.parse_distribution(events_conf.get('l_min'), context='app')
+        l_min = int(l_min_val) if l_min_val is not None else 2
+        
+        l_max_global_val = sim_set.parse_distribution(events_conf.get('l_max_global'), context='app')
+        l_max_global = int(l_max_global_val) if l_max_global_val is not None else 6
 
         msg_parts = []
 
@@ -267,12 +276,12 @@ class ApplicationSet:
             self._rank_swap(app_id, target_app_id)
             
             # Transient logic
-            is_transient = rng.random() < events_conf.get('transient_prob', 0.7)
+            transient_prob_val = sim_set.parse_distribution(events_conf.get('transient_prob'), context='app')
+            transient_prob = float(transient_prob_val) if transient_prob_val is not None else 0.7
+            is_transient = rng.random() < transient_prob
             if is_transient:
-                # Weibull distribution for duration
-                shape = events_conf.get('weibull_shape', 1.5)
-                scale = events_conf.get('weibull_scale', 10.0)
-                duration = rng.weibull(shape) * scale
+                duration_val = sim_set.parse_distribution(events_conf.get('duration_dist'), context='app')
+                duration = float(duration_val) if duration_val is not None else 10.0
                 
                 restore_event = event_set.newEventItem(
                     type_object='app',
@@ -306,11 +315,12 @@ class ApplicationSet:
         if current_rank != target_rank and current_rank != -1:
             self._rank_swap(app_id, target_app_id)
             
-            is_transient = rng.random() < events_conf.get('transient_prob', 0.7)
+            transient_prob_val = sim_set.parse_distribution(events_conf.get('transient_prob'), context='app')
+            transient_prob = float(transient_prob_val) if transient_prob_val is not None else 0.7
+            is_transient = rng.random() < transient_prob
             if is_transient:
-                shape = events_conf.get('weibull_shape', 1.5)
-                scale = events_conf.get('weibull_scale', 10.0)
-                duration = rng.weibull(shape) * scale
+                duration_val = sim_set.parse_distribution(events_conf.get('duration_dist'), context='app')
+                duration = float(duration_val) if duration_val is not None else 10.0
                 
                 restore_event = event_set.newEventItem(
                     type_object='app',
@@ -339,7 +349,10 @@ class ApplicationSet:
         rng = sim_set.rng_app
         events_conf = kwargs
         
-        shift_type = 'jump' if rng.random() < events_conf.get('jump_prob', 0.2) else 'drift'
+        jump_prob_val = sim_set.parse_distribution(events_conf.get('jump_prob'), context='app')
+        jump_prob = float(jump_prob_val) if jump_prob_val is not None else 0.2
+        
+        shift_type = 'jump' if rng.random() < jump_prob else 'drift'
         
         if shift_type == 'jump':
             new_pos = (float(rng.random()), float(rng.random()))
@@ -347,9 +360,11 @@ class ApplicationSet:
             return f"Geo demand jumped to ({new_pos[0]:.3f}, {new_pos[1]:.3f}) for {app['name']}"
         else:
             # Drift
-            sigma_drift = events_conf.get('sigma_drift', 0.05)
-            dx = rng.normal(0, sigma_drift)
-            dy = rng.normal(0, sigma_drift)
+            dx_val = sim_set.parse_distribution(events_conf.get('drift_dist'), context='app')
+            dy_val = sim_set.parse_distribution(events_conf.get('drift_dist'), context='app')
+            dx = float(dx_val) if dx_val is not None else 0.0
+            dy = float(dy_val) if dy_val is not None else 0.0
+            
             old_x, old_y = app['pos']
             new_x = max(0.0, min(1.0, old_x + dx))
             new_y = max(0.0, min(1.0, old_y + dy))

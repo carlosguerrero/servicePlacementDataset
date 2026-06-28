@@ -109,8 +109,16 @@ class SimulationSet:
 
                 dist_params[k] = v
 
+            # Intercept scale for Weibull since numpy's weibull generator does not take a scale parameter directly
+            weibull_scale = 1.0
+            if dist_type == "weibull" and "scale" in dist_params:
+                weibull_scale = float(dist_params.pop("scale"))
+
             try:
-                return dist_method(**dist_params)
+                val = dist_method(**dist_params)
+                if dist_type == "weibull":
+                    val = val * weibull_scale
+                return val
             except Exception as e:
                 logger.error(f"Error calling {dist_type} with params {dist_params}: {e}")
                 return None
