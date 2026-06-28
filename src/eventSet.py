@@ -113,27 +113,51 @@ def generate_events(object_item: Dict[str, Any], type_object: str, event_set: Ev
             action=action_name,
             impact=copy.deepcopy(action_details.get('impact', {}))  # Use deepcopy
         )
+        eventAttributes['action_type'] = action_details.get('action_type', action_name)
         event_set.add_event(eventAttributes)
 
     return event_set
 
 def init_global_spawner(config: Dict[str, Any], event_set: EventSet, sim_set: Any) -> EventSet:
-    """Initializes events for creating new objects (users and apps) based on the configuration.
-    type_object: 'user' or 'app'"""
+    """Initializes events for creating new objects (users and apps) based on the configuration."""
     attributes = config
     global_spawner_conf = attributes.get('global_spawner', {})
-    for action, type_conf in global_spawner_conf.items():
-        type_object=action.removeprefix("new_")
-        delay_val = sim_set.parse_distribution(type_conf['frequency'], context=type_object)
+    actions_conf = global_spawner_conf.get('actions', {})
+    
+    # Retrocompatibility if 'actions' key is not used
+    if not actions_conf and global_spawner_conf:
+        for action, type_conf in global_spawner_conf.items():
+            if action == 'actions': continue
+            type_object = action.removeprefix("new_")
+            delay_val = sim_set.parse_distribution(type_conf['frequency'], context=type_object)
+            if delay_val is None:
+                delay_val = 0.0
+            eventAttributes = event_set.newEventItem(
+                object_id=None,
+                type_object=type_object,
+                time = round(delay_val, 2) + event_set.global_time, 
+                action = action,
+                impact = type_conf.get('impact')
+            )
+            eventAttributes['action_type'] = action
+            event_set.add_event(eventAttributes)
+        return event_set
+
+    for action_name, type_conf in actions_conf.items():
+        type_object = type_conf.get('type_object', 'global')
+        actual_action = type_conf.get('action_type', action_name)
+        delay_val = sim_set.parse_distribution(type_conf.get('frequency', '0'), context=type_object)
         if delay_val is None:
             delay_val = 0.0
+            
         eventAttributes = event_set.newEventItem(
             object_id=None,
             type_object=type_object,
             time = round(delay_val, 2) + event_set.global_time, 
-            action = action,
-            impact = type_conf.get('impact')
+            action = action_name,
+            impact = copy.deepcopy(type_conf.get('impact', {}))
         )
+        eventAttributes['action_type'] = actual_action
         event_set.add_event(eventAttributes)
 
     return event_set
@@ -145,10 +169,17 @@ def get_time(config: Dict[str, Any], type_object: str, action_name: str, sim_set
     """
     attributes = config
 
-    if action_name.startswith('new'):
-        obj_conf = attributes.get('global_spawner', {})
-        actions_conf = obj_conf.get(action_name, {})
-        distr_string = actions_conf.get('frequency')
+    # Check if the action is from global_spawner
+    global_spawner_conf = attributes.get('global_spawner', {})
+    actions_conf = global_spawner_conf.get('actions', {})
+    
+    if action_name in actions_conf:
+        specific_action_conf = actions_conf.get(action_name, {})
+        distr_string = specific_action_conf.get('frequency')
+    elif action_name in global_spawner_conf and action_name != 'actions':
+        # Retrocompatibility
+        specific_action_conf = global_spawner_conf.get(action_name, {})
+        distr_string = specific_action_conf.get('frequency')
     else:
         obj_conf = attributes.get(type_object, {})
         actions_conf = obj_conf.get('actions', {})

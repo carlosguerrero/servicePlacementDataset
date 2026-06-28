@@ -17,6 +17,7 @@ from .simulation import (
 )
 from .simulationSet import SimulationSet
 from .trigger_policies import TriggerPolicyManager
+from .target_resolution import resolve_targets
 
 
 def difference_in_placement(
@@ -217,32 +218,88 @@ class ServicePlacementSimulation:
             "graph": self.infrastructure,
             "graph_node": self.infrastructure,
             "graph_edge": self.infrastructure,
+            "global": self, # Global events shouldn't have direct actions unless delegated
         }
         target_object = set_map.get(first_event["type_object"])
-        if not target_object:
+        if not target_object and first_event["type_object"] != "global":
             raise ValueError(f"Unknown object type: {first_event['type_object']}")
 
         # 3. Apply action
-        raw_params = first_event.get("impact")
-        params = raw_params.copy() if raw_params is not None else {}
+        raw_params = first_event.get("impact", {})
+        impact_dict = raw_params.copy() if raw_params else {}
         
-        # Inyección implícita de contexto
-        params["config"] = self.config
-        params["app_set"] = self.apps
-        params["user_set"] = self.users
-        params["infrastructure"] = self.infrastructure
-        params["sim_set"] = self.sim_set
-        params["event_set"] = self.events
+        composed_of = impact_dict.get("composed_of")
         
-        action_method = getattr(target_object, first_event["action"])
-        action_result = action_method(first_event["object_id"], **params)
-        
-        if isinstance(action_result, str):
-            first_event["message"] = action_result
-            logger.info(f"Processing event: {action_result}")
-        elif isinstance(action_result, dict):
-            first_event.update(action_result)
-            logger.info(f"Processing event: {action_result.get('message', 'Action executed with details')}")
+        if composed_of and isinstance(composed_of, list):
+            messages = []
+            executed_details = []
+            for sub_action in composed_of:
+                sub_action_name = sub_action.get("action_type")
+                sub_type = sub_action.get("type_object", first_event.get("type_object", "global"))
+                sub_target_object = set_map.get(sub_type)
+                if not sub_target_object:
+                    continue
+                
+                sub_params = sub_action.get("impact_params", {}).copy()
+                
+                # Context injection
+                sub_params["config"] = self.config
+                sub_params["app_set"] = self.apps
+                sub_params["user_set"] = self.users
+                sub_params["infrastructure"] = self.infrastructure
+                sub_params["sim_set"] = self.sim_set
+                sub_params["event_set"] = self.events
+                
+                targets = resolve_targets(first_event, sub_action, self.apps, self.users, self.infrastructure, self.sim_set)
+                
+                for target_id in targets:
+                    action_method = getattr(sub_target_object, sub_action_name)
+                    action_result = action_method(target_id, **sub_params)
+                    
+                    sub_event_record = {
+                        "type_object": sub_type,
+                        "object_id": target_id,
+                        "action_type": sub_action_name
+                    }
+                    
+                    if isinstance(action_result, str):
+                        messages.append(f"[{sub_type}:{target_id}] {action_result}")
+                        sub_event_record["message"] = action_result
+                    elif isinstance(action_result, dict):
+                        if 'message' in action_result:
+                            messages.append(f"[{sub_type}:{target_id}] {action_result['message']}")
+                        sub_event_record.update(action_result)
+                    
+                    executed_details.append(sub_event_record)
+                        
+            first_event["message"] = " | ".join(messages)
+            first_event["executed_sub_actions"] = executed_details
+            logger.info(f"Processing composite event: {first_event['message']}")
+            
+        else:
+            if not target_object:
+                logger.warning(f"No valid target object for action {first_event['action']}")
+                first_event["message"] = "Invalid Action Target"
+            else:
+                params = impact_dict
+                params["config"] = self.config
+                params["app_set"] = self.apps
+                params["user_set"] = self.users
+                params["infrastructure"] = self.infrastructure
+                params["sim_set"] = self.sim_set
+                params["event_set"] = self.events
+                
+                # Simple events do not go through target_resolution, they use their original object_id
+                action_type = first_event.get('action_type', first_event["action"])
+                action_method = getattr(target_object, action_type)
+                action_result = action_method(first_event.get("object_id"), **params)
+                
+                if isinstance(action_result, str):
+                    first_event["message"] = action_result
+                    logger.info(f"Processing event: {action_result}")
+                elif isinstance(action_result, dict):
+                    first_event.update(action_result)
+                    logger.info(f"Processing event: {action_result.get('message', 'Action executed with details')}")
 
         # 4. Terminal conditions
         # stop_simulation uses exceptions now, so we can exit cleanly.

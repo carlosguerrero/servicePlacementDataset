@@ -178,19 +178,55 @@ class ApplicationSet:
         message = f"Popularity of app {self.applications[app_id]['name']} decreased from {old_popularity} to {self.applications[app_id]['popularity']}"
         return message
 
-    def update_app(self, app_id: str, sim_set: Any, config: Any, **kwargs: Any) -> str:
+    def update_app_footprint(self, app_id: str, sim_set: Any, config: Any, **kwargs: Any) -> str:
         app = self.applications.get(app_id)
         if not app:
-            return "Application not found for update_app."
+            return "Application not found for update_app_footprint."
 
         rng = sim_set.rng_app
         events_conf = kwargs
         
         sigma_footprint_val = sim_set.parse_distribution(events_conf.get('sigma_footprint'), context='app')
         sigma_footprint = float(sigma_footprint_val) if sigma_footprint_val is not None else 0.1
+
+        for ms in app.get('microservices', []):
+            delta_cpu = rng.normal(0, sigma_footprint)
+            delta_ram = rng.normal(0, sigma_footprint)
+            ms['cpu'] = round(max(0.01, ms['cpu'] * (1 + delta_cpu)), 2)
+            ms['ram'] = round(max(0.01, ms['ram'] * (1 + delta_ram)), 2)
+        app['cpu'] = sum(ms['cpu'] for ms in app.get('microservices', []))
+        app['ram'] = sum(ms['ram'] for ms in app.get('microservices', []))
+        
+        return f"App {app['name']} updated: Footprint mutated"
+
+    def update_app_network(self, app_id: str, sim_set: Any, config: Any, **kwargs: Any) -> str:
+        app = self.applications.get(app_id)
+        if not app:
+            return "Application not found for update_app_network."
+
+        rng = sim_set.rng_app
+        events_conf = kwargs
         
         sigma_net_val = sim_set.parse_distribution(events_conf.get('sigma_net'), context='app')
         sigma_net = float(sigma_net_val) if sigma_net_val is not None else 0.1
+
+        msg_parts = []
+        if 'bw' in app and 'l_max' in app:
+            delta_bw = rng.normal(0, sigma_net)
+            delta_lmax = rng.normal(0, sigma_net)
+            app['bw'] = round(max(1.0, app['bw'] * (1 + delta_bw)), 2)
+            app['l_max'] = round(max(1.0, app['l_max'] * (1 + delta_lmax)), 2)
+            msg_parts.append("Network mutated")
+            return f"App {app['name']} updated: " + ", ".join(msg_parts)
+        return f"App {app['name']} network update skipped (no bw or l_max)"
+
+    def update_app_topology(self, app_id: str, sim_set: Any, config: Any, **kwargs: Any) -> str:
+        app = self.applications.get(app_id)
+        if not app:
+            return "Application not found for update_app_topology."
+
+        rng = sim_set.rng_app
+        events_conf = kwargs
         
         p_topo_val = sim_set.parse_distribution(events_conf.get('p_topo'), context='app')
         p_topo = float(p_topo_val) if p_topo_val is not None else 0.15
@@ -202,26 +238,6 @@ class ApplicationSet:
         l_max_global = int(l_max_global_val) if l_max_global_val is not None else 6
 
         msg_parts = []
-
-        # 1. Footprint Mutation
-        for ms in app.get('microservices', []):
-            delta_cpu = rng.normal(0, sigma_footprint)
-            delta_ram = rng.normal(0, sigma_footprint)
-            ms['cpu'] = round(max(0.01, ms['cpu'] * (1 + delta_cpu)), 2)
-            ms['ram'] = round(max(0.01, ms['ram'] * (1 + delta_ram)), 2)
-        app['cpu'] = sum(ms['cpu'] for ms in app.get('microservices', []))
-        app['ram'] = sum(ms['ram'] for ms in app.get('microservices', []))
-        msg_parts.append("Footprint mutated")
-
-        # 2. Network Constraints Mutation
-        if 'bw' in app and 'l_max' in app:
-            delta_bw = rng.normal(0, sigma_net)
-            delta_lmax = rng.normal(0, sigma_net)
-            app['bw'] = round(max(1.0, app['bw'] * (1 + delta_bw)), 2)
-            app['l_max'] = round(max(1.0, app['l_max'] * (1 + delta_lmax)), 2)
-            msg_parts.append("Network mutated")
-
-        # 3. SFC Topology Mutation
         architecture = config.get('app', {}).get('architecture', 'microservice')
         if architecture != 'monolithic':
             if rng.random() < p_topo:
@@ -245,8 +261,10 @@ class ApplicationSet:
                         del_idx = rng.integers(0, L)
                         app['microservices'].pop(del_idx)
                         msg_parts.append(f"Topology mutated (deleted MS at {del_idx})")
-
-        return f"App {app['name']} updated: " + ", ".join(msg_parts)
+            if not msg_parts:
+                return f"App {app['name']} topology update checked, no mutation occurred"
+            return f"App {app['name']} updated: " + ", ".join(msg_parts)
+        return f"App {app['name']} topology update skipped (monolithic)"
 
     def _rank_swap(self, app_id1: str, app_id2: str) -> None:
         if app_id1 in self.applications and app_id2 in self.applications:

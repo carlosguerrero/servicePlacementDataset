@@ -11,6 +11,19 @@ class TriggerPolicyManager:
         self.event_counter = 0
         self.last_execution_time = 0.0
 
+    def _is_critical_event(self, event: Dict[str, Any], critical_events: list) -> bool:
+        # Check action or action_type
+        actual_action = event.get('action_type', event.get('action'))
+        if actual_action in critical_events:
+            return True
+            
+        composed_of = event.get('impact', {}).get('composed_of', [])
+        for sub_action in composed_of:
+            if sub_action.get('action_type') in critical_events:
+                return True
+                
+        return False
+
     def should_execute_ilp(self, event: Dict[str, Any], global_time: float) -> bool:
         self.event_counter += 1
         policy_type = self.config.get('type', 'solve_all')
@@ -61,11 +74,11 @@ class TriggerPolicyManager:
             
         elif policy_type == 'solve_on_event_types':
             critical_events = self.config.get('critical_events', [])
-            return event.get('action') in critical_events
+            return self._is_critical_event(event, critical_events)
             
         elif policy_type == 'combined':
             critical_events = self.config.get('critical_events', [])
-            if event.get('action') in critical_events:
+            if self._is_critical_event(event, critical_events):
                 self.last_execution_time = global_time
                 return True
                 
