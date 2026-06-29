@@ -108,7 +108,7 @@ class ApplicationSet:
                 return app['ram']
         return None
 
-    def newAppItem(self, name: str, popularity: float, microservices: List[Dict[str, Any]], actions: Dict[str, Any], is_local: bool = False, pos: Optional[Tuple[float, float]] = None, bw: float = 0.0, l_max: float = 0.0, edges: Optional[List[Dict[str, str]]] = None) -> Dict[str, Any]:
+    def newAppItem(self, name: str, popularity: float, microservices: List[Dict[str, Any]], actions: Dict[str, Any], is_local: bool = False, pos: Optional[Tuple[float, float]] = None, network_reqs: Optional[Dict[str, float]] = None, edges: Optional[List[Dict[str, str]]] = None) -> Dict[str, Any]:
         """Creates a new application item with the given attributes."""
         # Calculate aggregated resources dynamically
         aggregated_resources = {}
@@ -128,8 +128,7 @@ class ApplicationSet:
             'ram': total_ram,
             **aggregated_resources,
             'disk': aggregated_resources.get('disk', 0.0),
-            'bw': bw,
-            'l_max': l_max,
+            'network_reqs': network_reqs if network_reqs is not None else {},
             'time': 0.0,
             'actions': actions,
             'is_local': is_local,
@@ -189,13 +188,16 @@ class ApplicationSet:
         sigma_footprint_val = sim_set.parse_distribution(events_conf.get('sigma_footprint'), context='app')
         sigma_footprint = float(sigma_footprint_val) if sigma_footprint_val is not None else 0.1
 
+        numeric_keys = set()
         for ms in app.get('microservices', []):
-            delta_cpu = rng.normal(0, sigma_footprint)
-            delta_ram = rng.normal(0, sigma_footprint)
-            ms['cpu'] = round(max(0.01, ms['cpu'] * (1 + delta_cpu)), 2)
-            ms['ram'] = round(max(0.01, ms['ram'] * (1 + delta_ram)), 2)
-        app['cpu'] = sum(ms['cpu'] for ms in app.get('microservices', []))
-        app['ram'] = sum(ms['ram'] for ms in app.get('microservices', []))
+            for k, v in list(ms.items()):
+                if k != 'id' and isinstance(v, (int, float)):
+                    numeric_keys.add(k)
+                    delta = rng.normal(0, sigma_footprint)
+                    ms[k] = round(max(0.01, v * (1 + delta)), 2)
+                    
+        for k in numeric_keys:
+            app[k] = sum(ms.get(k, 0.0) for ms in app.get('microservices', []))
         
         return f"App {app['name']} updated: Footprint mutated"
 
@@ -211,14 +213,17 @@ class ApplicationSet:
         sigma_net = float(sigma_net_val) if sigma_net_val is not None else 0.1
 
         msg_parts = []
-        if 'bw' in app and 'l_max' in app:
-            delta_bw = rng.normal(0, sigma_net)
-            delta_lmax = rng.normal(0, sigma_net)
-            app['bw'] = round(max(1.0, app['bw'] * (1 + delta_bw)), 2)
-            app['l_max'] = round(max(1.0, app['l_max'] * (1 + delta_lmax)), 2)
+        network_reqs = app.get('network_reqs', {})
+        
+        if network_reqs:
+            for k, v in network_reqs.items():
+                if isinstance(v, (int, float)):
+                    delta = rng.normal(0, sigma_net)
+                    network_reqs[k] = round(max(0.01, v * (1 + delta)), 2)
             msg_parts.append("Network mutated")
             return f"App {app['name']} updated: " + ", ".join(msg_parts)
-        return f"App {app['name']} network update skipped (no bw or l_max)"
+            
+        return f"App {app['name']} network update skipped (no network_reqs configured)"
 
     def update_app_topology(self, app_id: str, sim_set: Any, config: Any, **kwargs: Any) -> str:
         app = self.applications.get(app_id)
@@ -228,8 +233,7 @@ class ApplicationSet:
         rng = sim_set.rng_app
         events_conf = kwargs
         
-        p_topo_val = sim_set.parse_distribution(events_conf.get('p_topo'), context='app')
-        p_topo = float(p_topo_val) if p_topo_val is not None else 0.15
+        
         
         l_min_val = sim_set.parse_distribution(events_conf.get('l_min'), context='app')
         l_min = int(l_min_val) if l_min_val is not None else 2
@@ -239,28 +243,77 @@ class ApplicationSet:
 
         msg_parts = []
         architecture = config.get('app', {}).get('architecture', 'microservice')
+        topology_model = config.get('app', {}).get('services', {}).get('topology_model', 'sfc')
+        scale_free_settings = config.get('app', {}).get('services', {}).get('scale_free_settings', {})
+        
         if architecture != 'monolithic':
-            if rng.random() < p_topo:
-                L = len(app.get('microservices', []))
-                if rng.random() < 0.5:
-                    # Insert
-                    if L < l_max_global:
-                        ms_cpu = rng.lognormal(mean=0.5, sigma=0.2)
-                        ms_ram = rng.lognormal(mean=0.5, sigma=0.2)
-                        new_ms = {
-                            'id': f"{app['name']}_ms_new_{rng.integers(1000, 9999)}",
-                            'cpu': round(float(ms_cpu), 2),
-                            'ram': round(float(ms_ram), 2)
-                        }
-                        insert_idx = rng.integers(0, L + 1)
-                        app['microservices'].insert(insert_idx, new_ms)
-                        msg_parts.append(f"Topology mutated (inserted MS at {insert_idx})")
-                else:
-                    # Delete
-                    if L > l_min:
-                        del_idx = rng.integers(0, L)
-                        app['microservices'].pop(del_idx)
-                        msg_parts.append(f"Topology mutated (deleted MS at {del_idx})")
+            L = len(app.get('microservices', []))
+            if rng.random() < 0.5:
+                # Insert
+                if L < l_max_global:
+                    new_ms = {'id': f"{app['name']}_ms_new_{rng.integers(1000, 9999)}"}
+                    template_ms = app['microservices'][0] if L > 0 else {}
+                    for k, v in template_ms.items():
+                        if k != 'id' and isinstance(v, (int, float)):
+                            avg_val = sum(m.get(k, 0.0) for m in app['microservices']) / L if L > 0 else 1.0
+                            noise = rng.normal(0, 0.2)
+                            new_ms[k] = round(max(0.01, float(avg_val * (1 + noise))), 2)
+                    insert_idx = rng.integers(0, L + 1)
+                    app['microservices'].insert(insert_idx, new_ms)
+                    msg_parts.append(f"Topology mutated (inserted MS at {insert_idx})")
+                    
+                    # Update Edges (Insert)
+                    if topology_model == 'sfc':
+                        app['edges'] = []
+                        for i in range(len(app['microservices']) - 1):
+                            app['edges'].append({'source': app['microservices'][i]['id'], 'target': app['microservices'][i+1]['id']})
+                    elif topology_model == 'directed_scale_free':
+                        existing_nodes = [ms['id'] for ms in app['microservices'][:insert_idx]]
+                        if existing_nodes:
+                            m = scale_free_settings.get('edges_per_node', 2)
+                            degrees = {ms_id: 0 for ms_id in existing_nodes}
+                            for e in app.get('edges', []):
+                                if e['source'] in degrees:
+                                    degrees[e['source']] += 1
+                                if e['target'] in degrees:
+                                    degrees[e['target']] += 1
+                                    
+                            total_degree = sum(degrees.values())
+                            if total_degree == 0:
+                                probs = [1.0 / len(existing_nodes)] * len(existing_nodes)
+                            else:
+                                probs = [degrees[node] / total_degree for node in existing_nodes]
+                                
+                            num_edges = min(m, len(existing_nodes))
+                            targets = rng.choice(existing_nodes, size=num_edges, replace=False, p=probs)
+                            for target_id in targets:
+                                app.setdefault('edges', []).append({'source': target_id, 'target': new_ms['id']})
+            else:
+                # Delete
+                if L > l_min:
+                    del_idx = rng.integers(0, L)
+                    deleted_id = app['microservices'][del_idx]['id']
+                    app['microservices'].pop(del_idx)
+                    msg_parts.append(f"Topology mutated (deleted MS at {del_idx})")
+                    
+                    # Update Edges (Delete)
+                    if topology_model == 'sfc':
+                        app['edges'] = []
+                        for i in range(len(app['microservices']) - 1):
+                            app['edges'].append({'source': app['microservices'][i]['id'], 'target': app['microservices'][i+1]['id']})
+                    elif topology_model == 'directed_scale_free':
+                        app['edges'] = [e for e in app.get('edges', []) if e['source'] != deleted_id and e['target'] != deleted_id]
+                        
+            # Recalculate totals if mutation occurred
+            if msg_parts:
+                numeric_keys = set()
+                for ms in app.get('microservices', []):
+                    for k, v in ms.items():
+                        if k != 'id' and isinstance(v, (int, float)):
+                            numeric_keys.add(k)
+                for k in numeric_keys:
+                    app[k] = sum(ms.get(k, 0.0) for ms in app.get('microservices', []))
+                    
             if not msg_parts:
                 return f"App {app['name']} topology update checked, no mutation occurred"
             return f"App {app['name']} updated: " + ", ".join(msg_parts)
@@ -525,8 +578,12 @@ def create_new_app(config: Dict[str, Any], application_set: ApplicationSet, even
 
     # 3. Network Requirements
     net_conf = services_conf.get('network', {})
-    bw = round(float(rng.uniform(net_conf.get('bw_min', 10.0), net_conf.get('bw_max', 100.0))), 2)
-    l_max = round(float(rng.uniform(net_conf.get('l_max_min', 10.0), net_conf.get('l_max_max', 50.0))), 2)
+    network_reqs = {}
+    for attr_name, attr_config in net_conf.items():
+        dist_config = attr_config.get('distribution', attr_config)
+        val = sim_set.parse_distribution(dist_config, context='app')
+        if val is not None:
+            network_reqs[attr_name] = round(float(val), 2)
 
     appAttributes = application_set.newAppItem(
         name=application_set.getNextAppId(),
@@ -535,8 +592,7 @@ def create_new_app(config: Dict[str, Any], application_set: ApplicationSet, even
         actions=app_actions_config,
         is_local=is_local,
         pos=pos,
-        bw=bw,
-        l_max=l_max,
+        network_reqs=network_reqs,
         edges=edges
     )
     

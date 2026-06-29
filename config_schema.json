@@ -253,20 +253,9 @@
             },
             "network": {
               "type": "object",
-              "description": "Network requirements (bandwidth and maximum latency) for the app.",
-              "properties": {
-                "bw_min": {
-                  "type": "number"
-                },
-                "bw_max": {
-                  "type": "number"
-                },
-                "l_max_min": {
-                  "type": "number"
-                },
-                "l_max_max": {
-                  "type": "number"
-                }
+              "description": "Dynamic network requirements for the app.",
+              "additionalProperties": {
+                "$ref": "#/definitions/attributeDef"
               }
             }
           }

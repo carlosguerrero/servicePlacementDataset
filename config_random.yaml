@@ -110,6 +110,17 @@ app:
   num_apps: 20
   architecture: monolithic
   services:
+    network:
+      delay:
+        distribution:
+          type: uniform
+          low: 10.0
+          high: 50.0
+      bandwidth:
+        distribution:
+          type: uniform
+          low: 10.0
+          high: 100.0
     topology_model: directed_scale_free # Puede ser 'sfc' o 'directed_scale_free'
     scale_free_settings:
       initial_nodes: 2
@@ -181,10 +192,6 @@ app:
         type: exponential
         scale: 120
       impact:
-        p_topo:
-          type: uniform
-          low: 0.1
-          high: 0.2
         l_min:
           type: integers
           low: 2

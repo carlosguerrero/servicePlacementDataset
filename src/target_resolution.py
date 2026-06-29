@@ -145,7 +145,12 @@ def resolve_targets(first_event: Dict[str, Any], sub_action: Dict[str, Any], app
             
     if mode == 'group':
         strategy = group_config.get('strategy', 'random')
-        num_elements = group_config.get('num_elements', 1)
+        raw_num_elements = group_config.get('num_elements', 1)
+        
+        if isinstance(raw_num_elements, float) and 0.0 <= raw_num_elements <= 1.0:
+            num_elements = max(1, int(len(all_candidates) * raw_num_elements))
+        else:
+            num_elements = int(raw_num_elements)
         
         if strategy == 'list':
             return group_config.get('list', [])[:num_elements]
