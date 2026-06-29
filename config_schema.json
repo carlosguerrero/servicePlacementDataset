@@ -534,21 +534,71 @@
     },
     "actionItem": {
       "type": "object",
-      "description": "Configuration object describing a stochastic event or action.",
+      "description": "Configuration object describing a stochastic event, sub-action, or macro-event.",
       "properties": {
+        "type_object": {
+          "type": "string",
+          "enum": ["global", "graph_node", "graph_edge", "app", "user"],
+          "description": "The entity type this action originates from or affects."
+        },
+        "action_type": {
+          "type": "string",
+          "description": "The name of the action to execute (e.g., 'disable_node', 'surge_popularity')."
+        },
         "frequency": {
           "description": "Statistical distribution specifying the time interval until the next event trigger.",
           "$ref": "#/definitions/distributionDef"
         },
         "impact": {
           "type": "object",
-          "description": "Contextual parameters passed internally to the action handler.",
+          "description": "Contextual parameters for macro-events, including the composed_of array.",
+          "properties": {
+            "composed_of": {
+              "type": "array",
+              "description": "List of sub-actions to execute when this encapsulated macro-event triggers.",
+              "items": {
+                "$ref": "#/definitions/actionItem"
+              }
+            }
+          },
+          "additionalProperties": true
+        },
+        "impact_params": {
+          "type": "object",
+          "description": "Parameters for individual sub-actions, such as target_resolution.",
+          "properties": {
+            "target_resolution": {
+              "type": "object",
+              "properties": {
+                "mode": {
+                  "type": "string",
+                  "enum": ["self", "random", "id", "intelligent", "group"]
+                },
+                "id": {
+                  "type": "string"
+                },
+                "group_config": {
+                  "type": "object",
+                  "properties": {
+                    "strategy": {
+                      "type": "string",
+                      "enum": ["list", "random", "self_random", "self_proximity", "random_proximity"]
+                    },
+                    "num_elements": {
+                      "type": ["integer", "number"]
+                    },
+                    "list": {
+                      "type": "array",
+                      "items": {"type": "string"}
+                    }
+                  }
+                }
+              }
+            }
+          },
           "additionalProperties": true
         }
-      },
-      "required": [
-        "frequency"
-      ]
+      }
     },
     "attributeDef": {
       "type": "object",
