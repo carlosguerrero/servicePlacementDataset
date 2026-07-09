@@ -29,17 +29,26 @@ def add_and_log_user_count(user_set: Any, i: int, csv_users: str, action: Option
         # Write the new row (e.g., Entry 1, 50 users)
         writer.writerow([i, new_count, action if action else 'No Action'])
 
-def create_simulation_folder() -> Optional[str]:
+def create_simulation_folder(config: Optional[Dict[str, Any]] = None) -> Optional[str]:
     """
-    Creates a base 'Simulations' directory and a timestamped subdirectory.
+    Creates a base 'Simulations_raw' directory and a timestamped subdirectory
+    named <scenario_name>_<solver_name>_<timestamp>.
     Returns the path to the specific timestamped folder.
     """
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     base_dir = "Simulations_raw"
-    folder_name = f"Sim_{timestamp}"
-    
+    scenario_name = config.get("scenario_name", "Sim") if config else "Sim"
+    solver_name = config.get("solver_name", "") if config else ""
+
+    if solver_name:
+        folder_name = f"{scenario_name}_{solver_name}_{timestamp}"
+    elif scenario_name != "Sim":
+        folder_name = f"{scenario_name}_{timestamp}"
+    else:
+        folder_name = f"Sim_{timestamp}"
+
     full_path = os.path.join(base_dir, folder_name)
-    
+
     try:
         os.makedirs(full_path, exist_ok=True)
         logger.info(f"Directory created: {full_path}")

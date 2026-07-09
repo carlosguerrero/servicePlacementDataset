@@ -222,9 +222,9 @@
                 }
               }
             },
-            "length_range": {
+            "num_services_range": {
               "type": "array",
-              "description": "Minimum and maximum number of microservices per chain.",
+              "description": "Minimum and maximum number of microservices per application graph.",
               "items": {
                 "type": "integer"
               },
@@ -482,7 +482,7 @@
   "definitions": {
     "distributionDef": {
       "type": "object",
-      "description": "Statistical distribution specification.",
+      "description": "Statistical distribution specification or layered mapping.",
       "properties": {
         "type": {
           "type": "string",
@@ -526,11 +526,25 @@
         "sigma": {
           "type": "number",
           "description": "Standard deviation parameter."
+        },
+        "min": {
+          "type": "number",
+          "description": "Minimum clamped limit applied to the generated value."
+        },
+        "max": {
+          "type": "number",
+          "description": "Maximum clamped limit applied to the generated value."
+        },
+        "cloud": {
+          "$ref": "#/definitions/distributionDef"
+        },
+        "fog": {
+          "$ref": "#/definitions/distributionDef"
+        },
+        "edge": {
+          "$ref": "#/definitions/distributionDef"
         }
-      },
-      "required": [
-        "type"
-      ]
+      }
     },
     "actionItem": {
       "type": "object",
@@ -616,7 +630,7 @@
           "description": "Mechanism determining how values are generated across nodes/edges. homogenic implies the same base distribution. centrality_based alters values by betweenness."
         },
         "distribution": {
-          "description": "Base distribution from which the attribute values are drawn.",
+          "description": "Base distribution or layered mapping from which attribute values are drawn.",
           "$ref": "#/definitions/distributionDef"
         },
         "min": {
@@ -635,21 +649,6 @@
           ],
           "description": "Whether high centrality results in a higher multiplier (direct) or lower multiplier (inverted)."
         },
-        "cloud": {
-          "type": "object",
-          "description": "Exclusive overriding distribution applied only if the node is in the cloud layer.",
-          "properties": {
-            "distribution": {
-              "$ref": "#/definitions/distributionDef"
-            },
-            "min": {
-              "type": "number"
-            },
-            "max": {
-              "type": "number"
-            }
-          }
-        },
         "thresholds": {
           "type": "object",
           "description": "Thresholds used by modes like centrality_based_layer.",
@@ -666,13 +665,6 @@
             "fog_max": {
               "type": "integer"
             }
-          }
-        },
-        "distributions": {
-          "type": "object",
-          "description": "Map mapping layer names (e.g. 'cloud', 'fog', 'edge') to their respective distributions. Used exclusively in 'layered' mode.",
-          "additionalProperties": {
-            "$ref": "#/definitions/distributionDef"
           }
         }
       }

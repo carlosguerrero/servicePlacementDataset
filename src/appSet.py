@@ -486,10 +486,10 @@ def create_new_app(config: Dict[str, Any], application_set: ApplicationSet, even
         raise InvalidTopologyModelError(f"Unsupported topology_model: {topology_model}")
     
     # 1. SFC/DAG Generation
-    length_range = services_conf.get('length_range', [2, 6])
-    if length_range[0] > length_range[1]:
-        length_range = [2, 6] # Fallback
-    chain_length = rng.integers(length_range[0], length_range[1] + 1)
+    num_services_range = services_conf.get('num_services_range', services_conf.get('length_range', [2, 6]))
+    if num_services_range[0] > num_services_range[1]:
+        num_services_range = [2, 6] # Fallback
+    num_services = rng.integers(num_services_range[0], num_services_range[1] + 1)
     
     profiles = services_conf.get('profiles', {})
     if not profiles:
@@ -513,7 +513,7 @@ def create_new_app(config: Dict[str, Any], application_set: ApplicationSet, even
     attributes_def = selected_profile.get('attributes', {})
     
     microservices = []
-    for i in range(chain_length):
+    for i in range(num_services):
         ms_item = {'id': f"{application_set.app_counter}_ms_{i}"}
         for attr_name, attr_config in attributes_def.items():
             dist_config = attr_config.get('distribution', attr_config)

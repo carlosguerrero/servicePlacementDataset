@@ -1,5 +1,6 @@
 # General defaults
-DEFAULT_CONFIG_FILE = "config_random.yaml"
+DEFAULT_SCENARIO_CONFIG_FILE = "scenario_config.yaml"
+DEFAULT_SOLVER_CONFIG_FILE = "solver_config.yaml"
 DEFAULT_MASTER_SEED = 42
 DEFAULT_TOTAL_ITERATIONS = 500
 

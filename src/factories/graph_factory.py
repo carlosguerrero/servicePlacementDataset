@@ -175,13 +175,13 @@ def _generate_random_graph(config: Dict[str, Any], event_set: Any, sim_set: Any)
                     
                     for i, node_id in enumerate(temp_graph.nodes()):
                         layer_name = temp_graph.nodes[node_id].get('layer') or temp_graph.nodes[node_id].get('type')
-                        if layer_name and layer_name in attr_config:
-                            c_dist = attr_config[layer_name].get('distribution')
+                        if layer_name and dist_config and layer_name in dist_config:
+                            c_dist = dist_config[layer_name]
                             if c_dist:
                                 val = sim_set.parse_distribution(c_dist, context='graph', num_nodes=num_nodes)
                                 if val is not None:
-                                    c_min = attr_config[layer_name].get('min')
-                                    c_max = attr_config[layer_name].get('max')
+                                    c_min = c_dist.get('min') if isinstance(c_dist, dict) else None
+                                    c_max = c_dist.get('max') if isinstance(c_dist, dict) else None
                                     if c_min is not None or c_max is not None:
                                         val = np.clip(val, a_min=c_min, a_max=c_max)
                                     temp_graph.nodes[node_id][attr_name] = round(float(val), 2)
@@ -192,13 +192,13 @@ def _generate_random_graph(config: Dict[str, Any], event_set: Any, sim_set: Any)
             centrality_type = attr_config.get('centrality_type', 'direct_proportional')
             for node_id in temp_graph.nodes():
                 layer_name = temp_graph.nodes[node_id].get('layer') or temp_graph.nodes[node_id].get('type')
-                if layer_name and layer_name in attr_config:
-                    c_dist = attr_config[layer_name].get('distribution')
+                if layer_name and dist_config and layer_name in dist_config:
+                    c_dist = dist_config[layer_name]
                     if c_dist:
                         val = sim_set.parse_distribution(c_dist, context='graph', num_nodes=num_nodes)
                         if val is not None:
-                            c_min = attr_config[layer_name].get('min')
-                            c_max = attr_config[layer_name].get('max')
+                            c_min = c_dist.get('min') if isinstance(c_dist, dict) else None
+                            c_max = c_dist.get('max') if isinstance(c_dist, dict) else None
                             if c_min is not None or c_max is not None:
                                 val = np.clip(val, a_min=c_min, a_max=c_max)
                             temp_graph.nodes[node_id][attr_name] = round(float(val), 2)
@@ -262,7 +262,7 @@ def _generate_random_graph(config: Dict[str, Any], event_set: Any, sim_set: Any)
                 temp_graph.nodes[node_id][attr_name] = val
                 
         elif mode == 'layered':
-            layer_dists = attr_config.get('distributions', {})
+            layer_dists = attr_config.get('distribution', {})
             for node_id in temp_graph.nodes():
                 node_layer = temp_graph.nodes[node_id].get('layer') or temp_graph.nodes[node_id].get('type') or 'edge'
                 dist_for_node = layer_dists.get(node_layer)
@@ -275,8 +275,12 @@ def _generate_random_graph(config: Dict[str, Any], event_set: Any, sim_set: Any)
                         
                 val = sim_set.parse_distribution(dist_for_node, context='graph', num_nodes=num_nodes)
                 if val is not None:
-                    min_val = attr_config.get('min')
-                    max_val = attr_config.get('max')
+                    min_val = dist_for_node.get('min') if isinstance(dist_for_node, dict) else None
+                    if min_val is None:
+                        min_val = attr_config.get('min')
+                    max_val = dist_for_node.get('max') if isinstance(dist_for_node, dict) else None
+                    if max_val is None:
+                        max_val = attr_config.get('max')
                     if min_val is not None or max_val is not None:
                         val = np.clip(val, a_min=min_val, a_max=max_val)
                     temp_graph.nodes[node_id][attr_name] = round(float(val), 2)
@@ -290,8 +294,30 @@ def _generate_random_graph(config: Dict[str, Any], event_set: Any, sim_set: Any)
         mode = attr_config.get('mode', 'homogenic')
         dist_config = attr_config.get('distribution', None)
         
+        layer_priority = {'cloud': 3, 'fog': 2, 'edge': 1}
+        
         if mode == 'homogenic':
             for u, v in temp_graph.edges():
+                layer_u = temp_graph.nodes[u].get('layer') or temp_graph.nodes[u].get('type') or 'edge'
+                layer_v = temp_graph.nodes[v].get('layer') or temp_graph.nodes[v].get('type') or 'edge'
+                edge_layer = layer_u if layer_priority.get(layer_u, 1) >= layer_priority.get(layer_v, 1) else layer_v
+                
+                if edge_layer and isinstance(dist_config, dict) and edge_layer in dist_config:
+                    c_dist = dist_config[edge_layer]
+                    if c_dist:
+                        val = sim_set.parse_distribution(c_dist, context='graph', num_nodes=num_nodes)
+                        if val is not None:
+                            c_min = c_dist.get('min') if isinstance(c_dist, dict) else None
+                            if c_min is None:
+                                c_min = attr_config.get('min')
+                            c_max = c_dist.get('max') if isinstance(c_dist, dict) else None
+                            if c_max is None:
+                                c_max = attr_config.get('max')
+                            if c_min is not None or c_max is not None:
+                                val = np.clip(val, a_min=c_min, a_max=c_max)
+                            temp_graph.edges[u, v][attr_name] = round(float(val), 2)
+                            continue
+                            
                 val = sim_set.parse_distribution(dist_config, context='graph', num_nodes=num_nodes)
                 if val is not None:
                     min_val = attr_config.get('min')
@@ -302,6 +328,26 @@ def _generate_random_graph(config: Dict[str, Any], event_set: Any, sim_set: Any)
         elif mode == 'centrality_based':
             centrality_type = attr_config.get('centrality_type', 'direct_proportional')
             for u, v in temp_graph.edges():
+                layer_u = temp_graph.nodes[u].get('layer') or temp_graph.nodes[u].get('type') or 'edge'
+                layer_v = temp_graph.nodes[v].get('layer') or temp_graph.nodes[v].get('type') or 'edge'
+                edge_layer = layer_u if layer_priority.get(layer_u, 1) >= layer_priority.get(layer_v, 1) else layer_v
+                
+                if edge_layer and isinstance(dist_config, dict) and edge_layer in dist_config:
+                    c_dist = dist_config[edge_layer]
+                    if c_dist:
+                        val = sim_set.parse_distribution(c_dist, context='graph', num_nodes=num_nodes)
+                        if val is not None:
+                            c_min = c_dist.get('min') if isinstance(c_dist, dict) else None
+                            if c_min is None:
+                                c_min = attr_config.get('min')
+                            c_max = c_dist.get('max') if isinstance(c_dist, dict) else None
+                            if c_max is None:
+                                c_max = attr_config.get('max')
+                            if c_min is not None or c_max is not None:
+                                val = np.clip(val, a_min=c_min, a_max=c_max)
+                            temp_graph.edges[u, v][attr_name] = round(float(val), 2)
+                            continue
+                            
                 val = sim_set.parse_distribution(dist_config, context='graph', num_nodes=num_nodes)
                 if val is not None:
                     cent_u = temp_graph.nodes[u].get('betweenness_centrality', 0.5)
@@ -323,15 +369,26 @@ def _generate_random_graph(config: Dict[str, Any], event_set: Any, sim_set: Any)
                         final_val = np.clip(final_val, a_min=min_val, a_max=max_val)
                     temp_graph.edges[u, v][attr_name] = round(float(final_val), 2)
         elif mode == 'layered':
-            layer_dists = attr_config.get('distributions', {})
-            fallback_dist = layer_dists.get('edge')
-            if not fallback_dist and layer_dists:
-                fallback_dist = list(layer_dists.values())[0]
+            layer_dists = attr_config.get('distribution', {})
             for u, v in temp_graph.edges():
-                val = sim_set.parse_distribution(fallback_dist, context='graph', num_nodes=num_nodes)
+                layer_u = temp_graph.nodes[u].get('layer') or temp_graph.nodes[u].get('type') or 'edge'
+                layer_v = temp_graph.nodes[v].get('layer') or temp_graph.nodes[v].get('type') or 'edge'
+                edge_layer = layer_u if layer_priority.get(layer_u, 1) >= layer_priority.get(layer_v, 1) else layer_v
+                
+                dist_for_edge = layer_dists.get(edge_layer)
+                if not dist_for_edge:
+                    if layer_dists:
+                        dist_for_edge = list(layer_dists.values())[0]
+                    else:
+                        continue
+                val = sim_set.parse_distribution(dist_for_edge, context='graph', num_nodes=num_nodes)
                 if val is not None:
-                    min_val = attr_config.get('min')
-                    max_val = attr_config.get('max')
+                    min_val = dist_for_edge.get('min') if isinstance(dist_for_edge, dict) else None
+                    if min_val is None:
+                        min_val = attr_config.get('min')
+                    max_val = dist_for_edge.get('max') if isinstance(dist_for_edge, dict) else None
+                    if max_val is None:
+                        max_val = attr_config.get('max')
                     if min_val is not None or max_val is not None:
                         val = np.clip(val, a_min=min_val, a_max=max_val)
                     temp_graph.edges[u, v][attr_name] = round(float(val), 2)

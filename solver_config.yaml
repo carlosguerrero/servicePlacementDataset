@@ -1,0 +1,21 @@
+solver_name: multi_ilp_all
+
+setup:
+  mode: random
+  ilp_solver:
+    timeLimit: 60
+    gapRel: 0.05
+    objective: multi-objective # can be single-objective or multi-objective
+    weights:
+      latency: 1.0
+      migration: 100.0
+      server_usage: 50.0  # Tolerancia relativa para el óptimo (ej: 0.05 = 5%). Evita time-outs en modos complejos o en modo monolithic.
+
+trigger_policy:
+  type: solve_all
+  # Ejemplo de politica periodica (solve_every_t_seconds)
+  # interval_seconds: 10.0
+  # Ejemplo de politica combinada:
+  # type: combined
+  # critical_events: ["disable_node", "disable_edge", "update_app_footprint", "update_app_network", "update_app_topology", "surge_popularity"]
+  # interval_seconds: 10.0

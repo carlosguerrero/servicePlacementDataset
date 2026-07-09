@@ -428,7 +428,15 @@ class ServicePlacementSimulation:
             logger.warning("No feasible solution found for application placement.")
 
         # 3) Run the event-driven iterations
-        sim_folder = create_simulation_folder()
+        sim_folder = create_simulation_folder(self.config)
+        if sim_folder:
+            import shutil
+            scenario_path = self.config.get("_scenario_config_path")
+            solver_path = self.config.get("_solver_config_path")
+            if scenario_path and os.path.exists(scenario_path):
+                shutil.copy(scenario_path, os.path.join(sim_folder, os.path.basename(scenario_path)))
+            if solver_path and os.path.exists(solver_path):
+                shutil.copy(solver_path, os.path.join(sim_folder, os.path.basename(solver_path)))
         
         # Configure FileHandler for DEBUG logs
         file_handler = logging.FileHandler(os.path.join(sim_folder, "execution.log"))

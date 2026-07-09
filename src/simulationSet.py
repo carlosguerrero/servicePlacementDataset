@@ -86,7 +86,7 @@ class SimulationSet:
             # Process parameters, applying formatting if they are strings
             dist_params = {}
             for k, v in dist_config.items():
-                if k == "type": continue
+                if k == "type" or isinstance(v, dict): continue
                 if isinstance(v, str):
                     try:
                         v = v.format(**kwargs)

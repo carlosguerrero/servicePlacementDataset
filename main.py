@@ -1,23 +1,36 @@
 import yaml
 import os
+import argparse
 import logging
 from src.simulationSet import SimulationSet
 from src.simulation_runner import ServicePlacementSimulation
-from src.constants import DEFAULT_CONFIG_FILE, DEFAULT_MASTER_SEED, DEFAULT_TOTAL_ITERATIONS
+from src.constants import (
+    DEFAULT_SCENARIO_CONFIG_FILE,
+    DEFAULT_SOLVER_CONFIG_FILE,
+    DEFAULT_MASTER_SEED,
+    DEFAULT_TOTAL_ITERATIONS,
+)
 
 def load_config(config_path):
     """Loads the YAML configuration file."""
     with open(config_path, 'r') as file:
         return yaml.safe_load(file)
 
-def run_simulation(config_path: str = DEFAULT_CONFIG_FILE, master_seed: int = DEFAULT_MASTER_SEED, total_iterations: int = DEFAULT_TOTAL_ITERATIONS) -> None:
-    # Keep entrypoint compatible, but delegate orchestration to the new runner.
+def run_simulation(
+    scenario_path: str = DEFAULT_SCENARIO_CONFIG_FILE,
+    solver_path: str = DEFAULT_SOLVER_CONFIG_FILE,
+    master_seed: int = DEFAULT_MASTER_SEED,
+    total_iterations: int = DEFAULT_TOTAL_ITERATIONS,
+) -> None:
     sim_set = SimulationSet(master_seed=master_seed)
 
-    full_config_path = config_path
-    if not os.path.isabs(full_config_path):
-        full_config_path = os.path.join(os.path.dirname(__file__), full_config_path)
-    config = load_config(full_config_path)
+    full_scenario_path = scenario_path if os.path.isabs(scenario_path) else os.path.join(os.path.dirname(__file__), scenario_path)
+    full_solver_path = solver_path if os.path.isabs(solver_path) else os.path.join(os.path.dirname(__file__), solver_path)
+    scenario_config = load_config(full_scenario_path) or {}
+    solver_config = load_config(full_solver_path) or {}
+    config = {**scenario_config, **solver_config}
+    config["_scenario_config_path"] = full_scenario_path
+    config["_solver_config_path"] = full_solver_path
 
     ServicePlacementSimulation(
         config=config,
@@ -35,7 +48,19 @@ def setup_logging():
 
 def main():
     setup_logging()
-    run_simulation()
+    parser = argparse.ArgumentParser(description="ECCOS Service Placement Simulator")
+    parser.add_argument("--scenario", "-s", type=str, default=DEFAULT_SCENARIO_CONFIG_FILE, help="Path to scenario config YAML")
+    parser.add_argument("--solver", "-c", type=str, default=DEFAULT_SOLVER_CONFIG_FILE, help="Path to solver config YAML")
+    parser.add_argument("--seed", type=int, default=DEFAULT_MASTER_SEED, help="Master random seed")
+    parser.add_argument("--iterations", "-i", type=int, default=DEFAULT_TOTAL_ITERATIONS, help="Total simulation iterations")
+    args = parser.parse_args()
+
+    run_simulation(
+        scenario_path=args.scenario,
+        solver_path=args.solver,
+        master_seed=args.seed,
+        total_iterations=args.iterations,
+    )
 
 
 if __name__ == "__main__":
