@@ -1,4 +1,3 @@
-import random
 import uuid
 import logging
 from typing import Any, Dict, List, Optional, Tuple
@@ -25,12 +24,13 @@ class ApplicationSet:
         self.app_counter += 1
         return name
 
-    def selectRandomAppByAggregatedPopularity(self, popularity: float) -> Optional[str]:
+    def selectRandomAppByAggregatedPopularity(self, popularity: float, sim_set: Any) -> Optional[str]:
         """
         Selects a random application based on the aggregated popularity of the applications.
 
         Args:
             popularity (float): The aggregated popularity value to use for selection.
+            sim_set: SimulationSet instance for deterministic RNG.
 
         Returns:
             str: The name of the selected application.
@@ -43,7 +43,9 @@ class ApplicationSet:
         normalized_popularity = {app_id: app['popularity'] / total_popularity for app_id, app in self.applications.items()}
 
         # Select a random application based on the normalized popularity
-        selected_app = random_app.choices(list(normalized_popularity.keys()), weights=normalized_popularity.values(), k=1)[0]
+        keys = list(normalized_popularity.keys())
+        weights = list(normalized_popularity.values())
+        selected_app = str(sim_set.rng_app.choice(keys, p=weights))
         return selected_app
     
     def selectRandomAppIdByPopularity(self, popularity: Optional[float], sim_set: Any) -> str:
@@ -136,9 +138,13 @@ class ApplicationSet:
             'edges': edges if edges is not None else []
         }
 
-    def add_application(self, appAttributes: Dict[str, Any]) -> str:
-        """Adds a new application to the set."""
-        app_id = str(uuid.uuid4())  # Generates a unique identifier
+    def add_application(self, appAttributes: Dict[str, Any], sim_set: Optional[Any] = None) -> str:
+        """Adds a new application to the set with a deterministic UUID."""
+        if sim_set is not None:
+            random_bytes = sim_set.rng_app.bytes(16)
+            app_id = str(uuid.UUID(bytes=random_bytes))
+        else:
+            app_id = str(uuid.uuid4())
         appAttributes['id'] = app_id
         self.applications[app_id] = appAttributes
         return app_id
@@ -361,7 +367,7 @@ class ApplicationSet:
                     action='restore_popularity',
                     impact={'target_app_id': target_app_id}
                 )
-                event_set.add_event(restore_event)
+                event_set.add_event(restore_event, sim_set=sim_set)
                 return f"Surged popularity of {app['name']} (swapped with {self.applications[target_app_id]['name']}) - Transient ({duration:.2f}s)"
             else:
                 return f"Surged popularity of {app['name']} (swapped with {self.applications[target_app_id]['name']}) - Permanent"
@@ -400,7 +406,7 @@ class ApplicationSet:
                     action='restore_popularity',
                     impact={'target_app_id': target_app_id}
                 )
-                event_set.add_event(restore_event)
+                event_set.add_event(restore_event, sim_set=sim_set)
                 return f"Dropped popularity of {app['name']} (swapped with {self.applications[target_app_id]['name']}) - Transient ({duration:.2f}s)"
             else:
                 return f"Dropped popularity of {app['name']} (swapped with {self.applications[target_app_id]['name']}) - Permanent"
@@ -596,7 +602,7 @@ def create_new_app(config: Dict[str, Any], application_set: ApplicationSet, even
         edges=edges
     )
     
-    application_set.add_application(appAttributes)
+    application_set.add_application(appAttributes, sim_set=sim_set)
     generate_events(appAttributes, 'app', event_set, sim_set)
 
     return appAttributes['ram']

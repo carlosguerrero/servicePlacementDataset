@@ -1,5 +1,12 @@
 scenario_name: random_scenario
 
+seeds:
+  master: 42  # Optional global baseline seed
+#   graph: 42   # Reproducible physical network topology
+#   app: 43     # Reproducible application ecosystem
+#   user: 44    # Reproducible user placement and mobility
+#   event: 45   # Independent seed for stochastic events and triggers
+
 infrastructure:
   num_nodes: 50
   model:

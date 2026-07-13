@@ -1,6 +1,5 @@
 import networkx as nx
 import numpy as np
-import random
 import logging
 from .eventSet import generate_events
 from .constants import DEFAULT_INFRA_ID
@@ -151,7 +150,7 @@ class InfrastructureSet:
                 action='revive_node',
                 impact={'event_set': None, 'associated_event_id': None}
             )
-            associated_event_id = event_set.add_event(eventAttributes)
+            associated_event_id = event_set.add_event(eventAttributes, sim_set=sim_set)
             event_set.events[associated_event_id]['impact']['associated_event_id'] = associated_event_id
 
             return f"Node {node_id} has been disabled. Scheduled revival in {distribution_to_enable_node + event_set.global_time} time units."
@@ -196,7 +195,7 @@ class InfrastructureSet:
                 action='revive_edge',
                 impact={'event_set': None, 'associated_event_id': None}
             )
-            associated_event_id = event_set.add_event(eventAttributes)
+            associated_event_id = event_set.add_event(eventAttributes, sim_set=sim_set)
             event_set.events[associated_event_id]['impact']['associated_event_id'] = associated_event_id
 
             return f"Edge {edge} has been disabled. Scheduled revival in {distribution_to_enable_edge + event_set.global_time} time units."
@@ -277,7 +276,7 @@ class InfrastructureSet:
                 action='restore_node',
                 impact={'event_set': None, 'associated_event_id': None}
             )
-            associated_event_id = event_set.add_event(eventAttributes)
+            associated_event_id = event_set.add_event(eventAttributes, sim_set=sim_set)
             event_set.events[associated_event_id]['impact']['associated_event_id'] = associated_event_id
 
             return f"Node {node_id} degraded capacity by {p_loss*100:.1f}%. Scheduled restoration in {distribution_to_restore_node + event_set.global_time} time units. - Transient"
@@ -346,7 +345,7 @@ class InfrastructureSet:
                 action='clear_edge',
                 impact={'event_set': None, 'associated_event_id': None}
             )
-            associated_event_id = event_set.add_event(eventAttributes)
+            associated_event_id = event_set.add_event(eventAttributes, sim_set=sim_set)
             event_set.events[associated_event_id]['impact']['associated_event_id'] = associated_event_id
 
             return f"Edge {edge} congested (BW loss: {p_loss*100:.1f}%, Latency mult: {multiplier:.2f}x). Scheduled clearance in {distribution_to_clear_edge + event_set.global_time} time units. - Transient"

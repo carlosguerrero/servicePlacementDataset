@@ -1,7 +1,7 @@
 from pulp import LpVariable, LpProblem, LpMinimize, lpSum, PULP_CBC_CMD, value, LpStatus
 import logging
 from typing import Any, Dict, Optional, Tuple
-from src.constants import PENALTY_DELAY, DEFAULT_INFRA_ID
+from src.constants import INFEASIBLE_PENALTY, PENALTY_DELAY, DEFAULT_INFRA_ID
 from .base_solver import BaseSolver
 
 logger = logging.getLogger(__name__)
@@ -16,6 +16,7 @@ class ILPMultiObjectiveSolver(BaseSolver):
         """
         if config is None:
             config = {}
+        infeasible_penalty = float(config.get('setup', {}).get('infeasible_penalty', INFEASIBLE_PENALTY))
         gap_rel = config.get('setup', {}).get('ilp_solver', {}).get('gapRel', 0.05)
         time_limit = config.get('setup', {}).get('ilp_solver', {}).get('timeLimit', 60)
 
@@ -23,7 +24,7 @@ class ILPMultiObjectiveSolver(BaseSolver):
 
         if graph is None:
             logger.error("Main graph not found in InfrastructureSet.")
-            return None, PENALTY_DELAY
+            return None, infeasible_penalty
 
         graph_item = graph_dict.infrastructures.get(DEFAULT_INFRA_ID, {})
         all_pairs_shortest_paths = graph_item.get('shortest_paths', {})
@@ -40,7 +41,7 @@ class ILPMultiObjectiveSolver(BaseSolver):
             previous_placement = {}
 
         if not active_nodes:
-            return None, PENALTY_DELAY
+            return None, infeasible_penalty
 
         # Prepare microservices lists
         # Each app has a list of microservices: [{'id': 'ms0', 'ram': 2.0}, ...]
@@ -80,7 +81,7 @@ class ILPMultiObjectiveSolver(BaseSolver):
 
                 for n in active_nodes:
                     paths_from_user = all_pairs_shortest_paths.get(user_home_node, {})
-                    delay_value = paths_from_user.get(n, PENALTY_DELAY)
+                    delay_value = paths_from_user.get(n, infeasible_penalty)
                     objective_terms.append(delay_value * user_data['requestRatio'] * x_amn[requested_app_id, first_ms_id, n])
 
         # 2. Internal SFC Latency: Delay between microservices
@@ -96,7 +97,7 @@ class ILPMultiObjectiveSolver(BaseSolver):
                 for n1 in active_nodes:
                     paths_from_n1 = all_pairs_shortest_paths.get(n1, {})
                     for n2 in active_nodes:
-                        delay_value = paths_from_n1.get(n2, PENALTY_DELAY)
+                        delay_value = paths_from_n1.get(n2, infeasible_penalty)
                         objective_terms.append(delay_value * app_request_ratio * y_amnn[(app_id, e_idx, n1, n2)])
 
         # 3. Symmetry Breaker: Add a tiny penalty based on node index to break symmetry for apps without users
@@ -185,7 +186,7 @@ class ILPMultiObjectiveSolver(BaseSolver):
 
         if LpStatus[prob.status] == "Optimal":
             current_objective = value(prob.objective)
-            if current_objective >= PENALTY_DELAY:
+            if current_objective >= infeasible_penalty:
                 return None, current_objective
 
             placement = {}
@@ -203,5 +204,5 @@ class ILPMultiObjectiveSolver(BaseSolver):
                             break
             return placement, current_objective
         else:
-            return None, PENALTY_DELAY
+            return None, infeasible_penalty
 

@@ -1,31 +1,65 @@
 import numpy as np
 import logging
-from typing import Any, Optional, Dict, Union
+from typing import Any, Optional, Dict, Union, List
 from .constants import DEFAULT_MASTER_SEED
 
 logger = logging.getLogger(__name__)
 
 class SimulationSet:
-    def __init__(self, master_seed: int = DEFAULT_MASTER_SEED) -> None:
+    def __init__(
+        self,
+        master_seed: int = DEFAULT_MASTER_SEED,
+        seed_graph: Optional[int] = None,
+        seed_app: Optional[int] = None,
+        seed_user: Optional[int] = None,
+        seed_event: Optional[int] = None,
+        domain_seeds: Optional[Dict[str, int]] = None,
+    ) -> None:
         """
         Initializes specific random generators for each simulation domain.
-        Using a master seed ensures the whole simulation is reproducible.
+        Decoupling domain seeds allows keeping e.g. the same infrastructure
+        (seed_graph) while changing the stochastic events (seed_event) or users.
         """
+        if domain_seeds is None:
+            domain_seeds = {}
+
         self.master_seed = master_seed
-        
-        self.rng_graph = np.random.default_rng(master_seed)
-        self.rng_app = np.random.default_rng(master_seed + 1)
-        self.rng_user = np.random.default_rng(master_seed + 2)
-        self.rng_event = np.random.default_rng(master_seed + 3)
+        self.seed_graph = seed_graph if seed_graph is not None else domain_seeds.get("graph", master_seed)
+        self.seed_app = seed_app if seed_app is not None else domain_seeds.get("app", master_seed + 1)
+        self.seed_user = seed_user if seed_user is not None else domain_seeds.get("user", master_seed + 2)
+        self.seed_event = seed_event if seed_event is not None else domain_seeds.get("event", master_seed + 3)
+
+        self.rng_graph = np.random.default_rng(self.seed_graph)
+        self.rng_app = np.random.default_rng(self.seed_app)
+        self.rng_user = np.random.default_rng(self.seed_user)
+        self.rng_event = np.random.default_rng(self.seed_event)
+
+    @classmethod
+    def from_config(cls, config: Dict[str, Any], default_master_seed: int = DEFAULT_MASTER_SEED) -> 'SimulationSet':
+        seeds_config = config.get('seeds', {})
+        master = seeds_config.get('master', seeds_config.get('master_seed', default_master_seed))
+        return cls(
+            master_seed=master,
+            seed_graph=seeds_config.get('graph'),
+            seed_app=seeds_config.get('app'),
+            seed_user=seeds_config.get('user'),
+            seed_event=seeds_config.get('event'),
+            domain_seeds=seeds_config,
+        )
+
+    def get_seeds_info(self) -> Dict[str, int]:
+        return {
+            "master_seed": self.master_seed,
+            "graph": self.seed_graph,
+            "app": self.seed_app,
+            "user": self.seed_user,
+            "event": self.seed_event,
+        }
 
     def _get_rng_for_context(self, context: str) -> np.random.Generator:
         """Returns the appropriate generator based on the context string."""
         context = context.lower()
-        if context in ['graph', 'graph_node', 'graph_edge']:
-            return self.rng_graph
-        if context == 'graph_creation':
-            # Backwards-compat: use the same RNG as 'graph' generation.
-            # (Previously referenced a non-existent attribute.)
+        if context in ['graph', 'graph_node', 'graph_edge', 'graph_creation']:
             return self.rng_graph
         elif context == 'app':
             return self.rng_app
@@ -35,6 +69,28 @@ class SimulationSet:
             return self.rng_event
         else:
             raise ValueError(f"Unknown context: {context}")
+
+    def choice(self, context: str, seq: List[Any]) -> Any:
+        """Deterministically chooses one element from seq using the domain RNG."""
+        if not seq:
+            raise IndexError("Cannot choose from an empty sequence")
+        rng = self._get_rng_for_context(context)
+        idx = int(rng.integers(0, len(seq)))
+        return seq[idx]
+
+    def sample(self, context: str, seq: List[Any], k: int) -> List[Any]:
+        """Deterministically samples k unique elements from seq using the domain RNG."""
+        if not seq:
+            return []
+        k = min(k, len(seq))
+        rng = self._get_rng_for_context(context)
+        indices = rng.choice(len(seq), size=k, replace=False)
+        return [seq[int(i)] for i in indices]
+
+    def shuffle(self, context: str, seq: List[Any]) -> None:
+        """Deterministically shuffles seq in-place using the domain RNG."""
+        rng = self._get_rng_for_context(context)
+        rng.shuffle(seq)
 
     def parse_distribution(self, dist_config: Union[int, float, str, Dict[str, Any], None], context: str, **kwargs: Any) -> Optional[Any]:
         """

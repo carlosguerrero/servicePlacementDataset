@@ -1,21 +1,53 @@
 solver_name: multi_ilp_all
 
 setup:
-  mode: random
-  ilp_solver:
-    timeLimit: 60
-    gapRel: 0.05
-    objective: multi-objective # can be single-objective or multi-objective
-    weights:
-      latency: 1.0
-      migration: 100.0
-      server_usage: 50.0  # Tolerancia relativa para el óptimo (ej: 0.05 = 5%). Evita time-outs en modos complejos o en modo monolithic.
+  solver: multi-objective        # can be "greedy", "single-objective" o "multi-objective"
+  infeasible_penalty: 1000000.0  # Penalty cost returned when a placement is infeasible
+  greedy_solver: {}              # Configuration parameters for GreedySolver (empty by default)
+  ilp_solver:                    # Configuration parameters for ILPSolver (single-objective and multi-objective)
+    timeLimit: 60                # Time limit for the ILP solver (in seconds)
+    gapRel: 0.05                 # Relative tolerance for the optimum (e.g., 0.05 = 5%). Prevents timeouts in complex modes or in monolithic mode.
+    weights:                     # Configuration parameters for ILPSolver (multi-objective only)
+      latency: 1.0               # Relative weight for the latency objective
+      migration: 100.0           # Relative weight for the migration objective
+      server_usage: 50.0         # Relative weight for minimizing active servers (resource consolidation / energy efficiency)
 
 trigger_policy:
   type: solve_all
-  # Ejemplo de politica periodica (solve_every_t_seconds)
-  # interval_seconds: 10.0
-  # Ejemplo de politica combinada:
-  # type: combined
-  # critical_events: ["disable_node", "disable_edge", "update_app_footprint", "update_app_network", "update_app_topology", "surge_popularity"]
-  # interval_seconds: 10.0
+
+#  type: solve_none
+
+#  type: solve_every_t_seconds
+#  interval_seconds: 30.0
+
+#  type: solve_every_n_events
+#  batch_size: 25
+
+#  type: solve_on_event_types
+#  critical_events:
+#    - "disable_node"
+#    - "disable_edge"
+#    - "surge_popularity"
+
+#  type: combined
+#  interval_seconds: 60.0
+#  critical_events:
+#    - "disable_node"
+#    - "disable_edge"
+#    - "surge_popularity"
+
+#  type: solve_random_prob
+#  probability: 0.10                              # 10\% of probability to execute the solver after each event
+
+#  type: solve_time_windows
+#  windows:
+#    - [0.0, 100.0]
+#    - [500.0, 600.0]
+
+#  type: solve_event_index_ranges
+#  ranges:
+#    - [1, 50]
+#    - [200, 250]
+
+#  type: solve_custom_pattern
+#  pattern: [true, false, false, false]           # Executes the solver exactly once every 4 events

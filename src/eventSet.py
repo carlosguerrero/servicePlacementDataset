@@ -1,5 +1,4 @@
 import uuid
-import random
 import copy
 import numpy as np
 import logging
@@ -30,8 +29,12 @@ class EventSet:
             'message': None
         }
     
-    def add_event(self, eventAttributes: Dict[str, Any]) -> str:
-        event_id = str(uuid.uuid4()) 
+    def add_event(self, eventAttributes: Dict[str, Any], sim_set: Optional[Any] = None) -> str:
+        if sim_set is not None:
+            random_bytes = sim_set.rng_event.bytes(16)
+            event_id = str(uuid.UUID(bytes=random_bytes))
+        else:
+            event_id = str(uuid.uuid4())
         eventAttributes['id'] = event_id
         self.events[event_id] = eventAttributes
         return event_id
@@ -114,7 +117,7 @@ def generate_events(object_item: Dict[str, Any], type_object: str, event_set: Ev
             impact=copy.deepcopy(action_details.get('impact', {}))  # Use deepcopy
         )
         eventAttributes['action_type'] = action_details.get('action_type', action_name)
-        event_set.add_event(eventAttributes)
+        event_set.add_event(eventAttributes, sim_set=sim_set)
 
     return event_set
 
@@ -140,7 +143,7 @@ def init_global_spawner(config: Dict[str, Any], event_set: EventSet, sim_set: An
                 impact = type_conf.get('impact')
             )
             eventAttributes['action_type'] = action
-            event_set.add_event(eventAttributes)
+            event_set.add_event(eventAttributes, sim_set=sim_set)
         return event_set
 
     for action_name, type_conf in actions_conf.items():
@@ -158,7 +161,7 @@ def init_global_spawner(config: Dict[str, Any], event_set: EventSet, sim_set: An
             impact = copy.deepcopy(type_conf.get('impact', {}))
         )
         eventAttributes['action_type'] = actual_action
-        event_set.add_event(eventAttributes)
+        event_set.add_event(eventAttributes, sim_set=sim_set)
 
     return event_set
 

@@ -16,6 +16,17 @@
           ],
           "description": "Generation mode for the simulator. Use 'random' for procedural generation, 'manual' to specify topology nodes and edges manually."
         },
+        "infeasible_penalty": {
+          "type": "number",
+          "description": "Penalty cost returned by the solver when a placement is infeasible."
+        },
+        "greedy_solver": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "Configuration parameters for the Greedy solver module (can be empty {})."
+        },
         "ilp_solver": {
           "type": "object",
           "description": "Configuration for the ILP solver module.",
@@ -32,9 +43,10 @@
               "type": "string",
               "enum": [
                 "single-objective",
-                "multi-objective"
+                "multi-objective",
+                "greedy"
               ],
-              "description": "Objective function type for the ILP solver."
+              "description": "Objective function type or algorithm for the solver."
             },
             "weights": {
               "type": "object",

@@ -1,13 +1,14 @@
-import random
-from typing import Dict, Any
+import numpy as np
+from typing import Dict, Any, Optional
 
 class TriggerPolicyManager:
     """
     Evaluates execution policies for the ILP solver to prevent continuous and unrealistic
     execution on every discrete event.
     """
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: Dict[str, Any], sim_set: Optional[Any] = None):
         self.config = config.get('trigger_policy', {'type': 'solve_all'})
+        self.sim_set = sim_set
         self.event_counter = 0
         self.last_execution_time = 0.0
 
@@ -36,7 +37,11 @@ class TriggerPolicyManager:
             
         elif policy_type == 'solve_random_prob':
             prob = self.config.get('probability', 0.05)
-            return random.random() < prob
+            if self.sim_set is not None:
+                rand_val = float(self.sim_set.rng_event.random())
+            else:
+                rand_val = float(np.random.default_rng().random())
+            return rand_val < prob
             
         elif policy_type == 'solve_time_windows':
             windows = self.config.get('windows', [])

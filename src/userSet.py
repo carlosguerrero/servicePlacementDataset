@@ -1,4 +1,3 @@
-import random
 import uuid
 import numpy as np
 import logging
@@ -278,7 +277,7 @@ class UserSet:
                         action='resume_user',
                         impact={'event_set': None, 'associated_event_id': None}
                     )
-                    associated_event_id = event_set.add_event(eventAttributes)
+                    associated_event_id = event_set.add_event(eventAttributes, sim_set=sim_set)
                     event_set.events[associated_event_id]['impact']['associated_event_id'] = associated_event_id
                 
                 return {

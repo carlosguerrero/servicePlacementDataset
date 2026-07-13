@@ -22,8 +22,6 @@ def run_simulation(
     master_seed: int = DEFAULT_MASTER_SEED,
     total_iterations: int = DEFAULT_TOTAL_ITERATIONS,
 ) -> None:
-    sim_set = SimulationSet(master_seed=master_seed)
-
     full_scenario_path = scenario_path if os.path.isabs(scenario_path) else os.path.join(os.path.dirname(__file__), scenario_path)
     full_solver_path = solver_path if os.path.isabs(solver_path) else os.path.join(os.path.dirname(__file__), solver_path)
     scenario_config = load_config(full_scenario_path) or {}
@@ -31,6 +29,8 @@ def run_simulation(
     config = {**scenario_config, **solver_config}
     config["_scenario_config_path"] = full_scenario_path
     config["_solver_config_path"] = full_solver_path
+
+    sim_set = SimulationSet.from_config(config, default_master_seed=master_seed)
 
     ServicePlacementSimulation(
         config=config,

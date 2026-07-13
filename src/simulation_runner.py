@@ -121,7 +121,7 @@ class ServicePlacementSimulation:
         self.infrastructure = None
         self.apps = None
         self.users = None
-        self.trigger_manager = TriggerPolicyManager(self.config)
+        self.trigger_manager = TriggerPolicyManager(self.config, sim_set=self.sim_set)
         self.last_opt_placement = None
         self.last_total_latency = None
         self.last_ilp_event_index = 0

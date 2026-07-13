@@ -2,6 +2,7 @@ from typing import Dict, Any
 from .base_solver import BaseSolver
 from .ilp_single_objective import ILPSingleObjectiveSolver
 from .ilp_multi_objective import ILPMultiObjectiveSolver
+from .greedy_solver import GreedySolver
 import logging
 
 logger = logging.getLogger(__name__)
@@ -12,12 +13,20 @@ class SolverFactory:
     """
     SOLVER_REGISTRY = {
         "single-objective": ILPSingleObjectiveSolver,
-        "multi-objective": ILPMultiObjectiveSolver
+        "multi-objective": ILPMultiObjectiveSolver,
+        "greedy": GreedySolver,
     }
 
     @classmethod
     def get_solver(cls, config: Dict[str, Any]) -> BaseSolver:
-        objective_mode = config.get('setup', {}).get('ilp_solver', {}).get('objective', 'single-objective')
+        setup_config = config.get('setup', {})
+        objective_mode = (
+            setup_config.get('solver') or
+            setup_config.get('algorithm') or
+            setup_config.get('ilp_solver', {}).get('objective') or
+            setup_config.get('ilp_solver', {}).get('algorithm') or
+            'single-objective'
+        )
         
         solver_class = cls.SOLVER_REGISTRY.get(objective_mode)
         if not solver_class:
@@ -25,3 +34,4 @@ class SolverFactory:
             solver_class = cls.SOLVER_REGISTRY["single-objective"]
             
         return solver_class()
+
